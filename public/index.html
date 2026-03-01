@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BC Financial Reporter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+  .header { background: #1a1a2e; color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 18px; font-weight: 600; }
+  .header .subtitle { font-size: 12px; color: #aaa; }
+  .controls { display: flex; gap: 12px; padding: 14px 24px; background: white; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; align-items: flex-end; }
+  .controls label { font-size: 12px; color: #666; display: block; margin-bottom: 2px; }
+  .controls select, .controls input { padding: 6px 10px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 13px; }
+  .controls input[type="date"] { font-size: 13px; }
+  .btn { padding: 7px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
+  .btn-primary { background: #1a1a2e; color: white; }
+  .btn-primary:hover { background: #2d2d5e; }
+  .btn-primary:disabled { background: #999; cursor: wait; }
+  .btn-export { background: #2e7d32; color: white; }
+  .btn-export:hover { background: #1b5e20; }
+  .btn-pdf { background: #c62828; color: white; }
+  .btn-pdf:hover { background: #b71c1c; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .export-bar { display: none; gap: 8px; padding: 8px 24px; background: #fafafa; border-bottom: 1px solid #e0e0e0; align-items: center; }
+  .export-bar.show { display: flex; }
+  .export-bar span { font-size: 12px; color: #666; }
+  .content { padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .card { background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 15px; font-weight: 600; }
+  .card-header .badge { font-size: 11px; padding: 3px 10px; border-radius: 12px; }
+  .badge-internal { background: #fff3e0; color: #e65100; }
+  .badge-external { background: #e3f2fd; color: #1565c0; }
+  .card-body { padding: 16px 20px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 8px 12px; text-align: left; font-size: 13px; white-space: nowrap; }
+  th { color: #666; font-weight: 500; border-bottom: 2px solid #f0f0f0; }
+  td { border-bottom: 1px solid #f5f5f5; }
+  tr.total td { font-weight: 700; border-top: 2px solid #1a1a2e; background: #fafafa; }
+  tr.subtotal td { font-weight: 600; background: #f8f9fa; }
+  tr.section-header td { font-weight: 700; font-size: 12px; color: #333; padding-top: 12px; border-bottom: 1px solid #ddd; }
+  tr.section-sub td { font-weight: 600; font-size: 12px; color: #555; padding-top: 10px; }
+  tr.spacer td { padding: 4px; border: none; }
+  tr.da-row td { color: #666; font-style: italic; }
+  .amount { text-align: right; font-variant-numeric: tabular-nums; }
+  .prev-col { color: #888; }
+  .change-up { color: #2e7d32; font-size: 12px; }
+  .change-down { color: #c62828; font-size: 12px; }
+  .change-zero { color: #999; font-size: 12px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .summary-item { padding: 14px; background: #f8f9fa; border-radius: 8px; }
+  .summary-item .label { font-size: 11px; color: #666; margin-bottom: 3px; }
+  .summary-item .value { font-size: 20px; font-weight: 700; }
+  .summary-item .sub { font-size: 11px; color: #999; margin-top: 2px; }
+  .summary-item .change-info { font-size: 12px; margin-top: 3px; }
+  .loading { text-align: center; padding: 60px; color: #999; }
+  .error { text-align: center; padding: 40px; color: #c62828; background: #ffebee; border-radius: 8px; margin: 20px; }
+  .report-title { text-align: center; margin-bottom: 14px; }
+  .report-title .company { font-size: 15px; font-weight: 700; }
+  .report-title .report-name { font-size: 13px; font-weight: 600; color: #444; }
+  .report-title .currency-line { font-size: 11px; color: #999; margin-top: 2px; }
+  .margin-row td { font-size: 11px; color: #888; border: none; padding-top: 2px; }
+  optgroup { font-weight: 600; }
+
+  /* Print styles for PDF export */
+  @media print {
+    .header, .controls, .export-bar, .summary-grid, .btn, .card-header { display: none !important; }
+    body { background: white; }
+    .content { padding: 0; max-width: 100%; }
+    .card { box-shadow: none; border: none; }
+    .card-body { overflow: visible !important; padding: 0 10px; }
+    .report-title { margin-top: 10px; margin-bottom: 10px; }
+    .report-title .company { font-size: 16px; }
+    .report-title .report-name { font-size: 14px; }
+    table { width: 100%; font-size: 11px; }
+    th, td { padding: 4px 8px; white-space: normal; }
+    th:first-child, td:first-child { min-width: 180px; }
+    @page { margin: 1.5cm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>BC Financial Reporter</h1>
+    <div class="subtitle">品辰科技物流股份有限公司</div>
+  </div>
+  <div class="user-info" style="display:flex;align-items:center;gap:10px;">
+    <span id="userDisplay" style="font-size:13px;color:#aaa;"></span>
+    <button class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;" onclick="openChangePw()">改密碼</button>
+    <a id="adminLink" href="/admin" class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;text-decoration:none;display:none;">帳號管理</a>
+    <button class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;" onclick="doLogout()">登出</button>
+  </div>
+</div>
+
+<div class="controls">
+  <div id="companyGroup">
+    <label>公司</label>
+    <select id="companySelect"></select>
+  </div>
+  <div>
+    <label>報表</label>
+    <select id="reportType">
+      <optgroup label="EBITDA">
+        <option value="ebitda-detailed">EBITDA — 詳細 (內部)</option>
+        <option value="ebitda-simple">EBITDA — 簡要 (外部)</option>
+      </optgroup>
+      <optgroup label="損益表 Income Statement">
+        <option value="is-detailed">損益表 — 詳細 (內部)</option>
+        <option value="is-simple">損益表 — 簡要 (外部)</option>
+      </optgroup>
+      <optgroup label="資產負債表 Balance Sheet">
+        <option value="bs-detailed">資產負債表 — 詳細 (內部)</option>
+        <option value="bs-simple">資產負債表 — 簡要 (外部)</option>
+      </optgroup>
+    </select>
+  </div>
+  <div>
+    <label>語言</label>
+    <select id="lang">
+      <option value="zh">中文</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+  <div>
+    <label>期間</label>
+    <select id="periodType" onchange="onPeriodChange()">
+      <option value="month">月報</option>
+      <option value="quarter">季報</option>
+      <option value="half">半年報</option>
+      <option value="year">年報</option>
+      <option value="custom">自訂</option>
+    </select>
+  </div>
+  <div>
+    <label>起始日期</label>
+    <input type="date" id="startDate">
+  </div>
+  <div>
+    <label>結束日期</label>
+    <input type="date" id="endDate">
+  </div>
+  <div>
+    <label>比較</label>
+    <select id="compare">
+      <option value="none">不比較</option>
+      <option value="yoy">去年同期 (YoY)</option>
+      <option value="mom">上期 (MoM)</option>
+      <option value="qoq">上一季 (QoQ)</option>
+    </select>
+  </div>
+  <div>
+    <button class="btn btn-primary" id="fetchBtn" onclick="fetchReport()">查詢</button>
+  </div>
+</div>
+
+<div class="export-bar" id="exportBar">
+  <span>匯出：</span>
+  <button class="btn btn-export btn-sm" onclick="exportExcel()">Excel (.xlsx)</button>
+  <button class="btn btn-pdf btn-sm" onclick="exportPDF()">PDF (列印)</button>
+</div>
+
+<div class="content" id="reportArea">
+  <div class="loading">選擇報表類型和期間，點擊「查詢」</div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="pwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:10px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,0.2);">
+    <h3 style="font-size:16px;margin-bottom:18px;">變更密碼</h3>
+    <div id="pwError" style="color:#c62828;font-size:12px;margin-bottom:10px;display:none;"></div>
+    <div style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;">目前密碼</label><input type="password" id="pwCurrent" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;">新密碼</label><input type="password" id="pwNew" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;">確認新密碼</label><input type="password" id="pwConfirm" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closePwModal()">取消</button>
+      <button class="btn btn-sm btn-primary" onclick="submitChangePw()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+//  Auth check
+// ==========================================
+let companiesList = [];
+(async () => {
+  try {
+    const res = await fetch('/auth/me');
+    if (!res.ok) { window.location.href = '/login'; return; }
+    const { user } = await res.json();
+    document.getElementById('userDisplay').textContent = user.displayName || user.username;
+    if (user.role === 'admin') document.getElementById('adminLink').style.display = 'inline-flex';
+
+    // Load companies
+    const cRes = await fetch('/api/companies');
+    if (cRes.ok) {
+      companiesList = await cRes.json();
+      const sel = document.getElementById('companySelect');
+      sel.innerHTML = companiesList.map(c => `<option value="${c.id}" data-name="${c.name}" data-name-en="${c.nameEn}">${c.name}</option>`).join('');
+      if (companiesList.length <= 1) document.getElementById('companyGroup').style.display = 'none';
+    }
+  } catch { window.location.href = '/login'; }
+})();
+
+async function doLogout() {
+  await fetch('/auth/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+function openChangePw() {
+  document.getElementById('pwCurrent').value = '';
+  document.getElementById('pwNew').value = '';
+  document.getElementById('pwConfirm').value = '';
+  document.getElementById('pwError').style.display = 'none';
+  document.getElementById('pwModal').style.display = 'flex';
+}
+function closePwModal() { document.getElementById('pwModal').style.display = 'none'; }
+
+async function submitChangePw() {
+  const errEl = document.getElementById('pwError');
+  errEl.style.display = 'none';
+  const cur = document.getElementById('pwCurrent').value;
+  const nw = document.getElementById('pwNew').value;
+  const cf = document.getElementById('pwConfirm').value;
+  if (!cur || !nw) { errEl.textContent = '請填寫所有欄位'; errEl.style.display = 'block'; return; }
+  if (nw !== cf) { errEl.textContent = '新密碼與確認密碼不一致'; errEl.style.display = 'block'; return; }
+  try {
+    const res = await fetch('/auth/change-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: cur, newPassword: nw }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    alert('密碼已變更');
+    closePwModal();
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+}
+
+// ==========================================
+//  i18n Labels
+// ==========================================
+const LABELS = {
+  zh: {
+    company: '品辰科技物流股份有限公司',
+    currency: '金額單位：新台幣元（NTD）',
+
+    // Card headers
+    ebitdaDetailedCard: 'EBITDA 分析 — 詳細',
+    ebitdaSimpleCard: 'EBITDA 報告',
+    isDetailedCard: '損益表 — 詳細',
+    isSimpleCard: '損益表',
+    bsDetailedCard: '資產負債表 — 詳細',
+    bsSimpleCard: '資產負債表',
+
+    // Report center titles
+    ebitdaDetailedTitle: '損益暨 EBITDA 分析表',
+    ebitdaSimpleTitle: '損益表',
+    isTitle: '損益表',
+    bsTitle: '資產負債表',
+
+    // Badges
+    internal: '內部報表',
+    external: '外部報表',
+
+    // Table header
+    account: '科目',
+    change: '變化',
+
+    // Comparison
+    yoy: '去年同期', mom: '上期', qoq: '上一季',
+    vs: 'vs',
+
+    // IS sections
+    revenue: '營業收入',
+    cogs: '營業成本',
+    grossProfit: '營業毛利',
+    opex: '營業費用',
+    operatingIncome: '營業利益',
+    addDep: '(+) 折舊 *',
+    addAmort: '(+) 攤銷 *',
+    nonOpIncome: '營業外收入',
+    nonOpExpense: '營業外費用',
+    preTaxIncome: '稅前淨利',
+    incomeTax: '所得稅費用',
+    netIncome: '稅後淨利',
+    daNote: '* 折舊攤銷科目',
+
+    // IS simple section headers
+    revenueH: '營業收入：',
+    cogsH: '營業成本：',
+    opexH: '營業費用：',
+    totalRevenue: '營業收入合計',
+    netSales: '營業收入淨額',
+    totalCOGS: '營業成本合計',
+    totalOpex: '營業費用合計',
+    da: '折舊及攤銷',
+    opPL: '營業利益（損失）',
+    ebt: '稅前淨利',
+    taxExp: '所得稅費用',
+    netEarnings: '稅後淨利',
+
+    // BS sections
+    assetsH: '資產',
+    currentAssetsH: '流動資產：',
+    nonCurrentAssetsH: '非流動資產：',
+    totalCurrentAssets: '流動資產合計',
+    totalNonCurrentAssets: '非流動資產合計',
+    totalAssets: '資產合計',
+    liabEquityH: '負債及股東權益',
+    currentLiabH: '流動負債：',
+    nonCurrentLiabH: '非流動負債：',
+    totalCurrentLiab: '流動負債合計',
+    totalNonCurrentLiab: '非流動負債合計',
+    totalLiabilities: '負債合計',
+    equityH: '股東權益：',
+    totalEquity: '股東權益合計',
+    totalLiabEquity: '負債及股東權益合計',
+
+    // BS detailed
+    currentAssets: '流動資產',
+    nonCurrentAssets: '非流動資產',
+    currentLiabilities: '流動負債',
+    nonCurrentLiabilities: '非流動負債',
+    equity: '業主權益',
+    liabAndEquity: '負債及業主權益合計',
+
+    // Summary cards
+    sRevenue: '營業收入',
+    sGrossMargin: '毛利率',
+    sOpMargin: '營業利益率',
+    sNetMargin: '淨利率',
+    sNetIncome: '淨利',
+    sGrossProfit: '毛利',
+    sOpIncome: '營業利益',
+    sNetIncomeF: '稅後淨利',
+    sTotalAssets: '資產合計',
+    sTotalLiab: '負債合計',
+    sEquity: '業主權益',
+    sLiabEquity: '負債+權益',
+    sMargin: '利潤率',
+
+    // Period helpers
+    periodRange: (s, e) => `${s} ~ ${e}`,
+    asOf: (d) => `截至 ${d}`,
+  },
+  en: {
+    company: 'Pin Chen Technology Logistics Co., Ltd.',
+    currency: 'Amounts in New Taiwan Dollars (NTD)',
+
+    ebitdaDetailedCard: 'EBITDA Analysis — Detailed',
+    ebitdaSimpleCard: 'EBITDA Report',
+    isDetailedCard: 'Income Statement — Detailed',
+    isSimpleCard: 'Income Statement',
+    bsDetailedCard: 'Balance Sheet — Detailed',
+    bsSimpleCard: 'Balance Sheet',
+
+    ebitdaDetailedTitle: 'EBITDA Analysis',
+    ebitdaSimpleTitle: 'Statements of Earnings',
+    isTitle: 'Income Statement',
+    bsTitle: 'Balance Sheet',
+
+    internal: 'Internal',
+    external: 'External',
+
+    account: 'Account',
+    change: 'Change',
+
+    yoy: 'Prior Year', mom: 'Prior Period', qoq: 'Prior Quarter',
+    vs: 'vs',
+
+    revenue: 'Revenue',
+    cogs: 'Cost of Goods Sold',
+    grossProfit: 'Gross Profit',
+    opex: 'Operating Expenses',
+    operatingIncome: 'Operating Income',
+    addDep: '(+) Depreciation *',
+    addAmort: '(+) Amortization *',
+    nonOpIncome: 'Non-operating Income',
+    nonOpExpense: 'Non-operating Expense',
+    preTaxIncome: 'Earnings Before Tax',
+    incomeTax: 'Income Tax Expense',
+    netIncome: 'Net Income',
+    daNote: '* Depreciation and amortization',
+
+    revenueH: 'Net revenues:',
+    cogsH: 'Cost of sales:',
+    opexH: 'Operating expenses:',
+    totalRevenue: 'Total net revenues',
+    netSales: 'Net sales',
+    totalCOGS: 'Total cost of sales',
+    totalOpex: 'Total operating expenses',
+    da: 'Depreciation and amortization',
+    opPL: 'Operating profit (loss)',
+    ebt: 'Earnings before income taxes',
+    taxExp: 'Income tax expense',
+    netEarnings: 'Net earnings',
+
+    assetsH: 'ASSETS',
+    currentAssetsH: 'Current assets:',
+    nonCurrentAssetsH: 'Non-current assets:',
+    totalCurrentAssets: 'Total current assets',
+    totalNonCurrentAssets: 'Total non-current assets',
+    totalAssets: 'Total assets',
+    liabEquityH: "LIABILITIES AND SHAREHOLDERS' EQUITY",
+    currentLiabH: 'Current liabilities:',
+    nonCurrentLiabH: 'Non-current liabilities:',
+    totalCurrentLiab: 'Total current liabilities',
+    totalNonCurrentLiab: 'Total non-current liabilities',
+    totalLiabilities: 'Total liabilities',
+    equityH: "Shareholders' equity:",
+    totalEquity: "Total shareholders' equity",
+    totalLiabEquity: 'Total liabilities and equity',
+
+    currentAssets: 'Current Assets',
+    nonCurrentAssets: 'Non-current Assets',
+    currentLiabilities: 'Current Liabilities',
+    nonCurrentLiabilities: 'Non-current Liabilities',
+    equity: "Shareholders' Equity",
+    liabAndEquity: 'Total Liabilities and Equity',
+
+    sRevenue: 'Revenue',
+    sGrossMargin: 'Gross Margin',
+    sOpMargin: 'Operating Margin',
+    sNetMargin: 'Net Margin',
+    sNetIncome: 'Net Income',
+    sGrossProfit: 'Gross Profit',
+    sOpIncome: 'Operating Income',
+    sNetIncomeF: 'Net Income',
+    sTotalAssets: 'Total Assets',
+    sTotalLiab: 'Total Liabilities',
+    sEquity: 'Equity',
+    sLiabEquity: 'Liab + Equity',
+    sMargin: 'Margin',
+
+    periodRange: (s, e) => `${s} ~ ${e}`,
+    asOf: (d) => `As of ${d}`,
+  }
+};
+
+// ==========================================
+//  Helpers
+// ==========================================
+function getLang() { return document.getElementById('lang').value; }
+function L() { return LABELS[getLang()]; }
+function getCompanyId() { return document.getElementById('companySelect').value; }
+function getCompanyName() {
+  const sel = document.getElementById('companySelect');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt) return L().company;
+  return getLang() === 'en' ? (opt.dataset.nameEn || opt.textContent) : opt.textContent;
+}
+
+const API_MAP = {
+  'ebitda-detailed': 'income-statement', 'ebitda-simple': 'income-statement',
+  'is-detailed': 'income-statement', 'is-simple': 'income-statement',
+  'bs-detailed': 'balance-sheet', 'bs-simple': 'balance-sheet',
+};
+
+let lastQuery = {};
+
+function fmt(n) {
+  if (n == null) return '—';
+  if (getLang() === 'zh') {
+    const abs = Math.abs(n);
+    if (abs >= 1e8) return (n / 1e8).toFixed(2) + ' 億';
+    if (abs >= 1e4) return (n / 1e4).toFixed(1) + ' 萬';
+    return n.toLocaleString('zh-TW', { maximumFractionDigits: 0 });
+  }
+  return n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+function pctFmt(n) { if (n == null) return ''; return (n * 100).toFixed(1) + '%'; }
+
+function changeCell(diff, pctVal) {
+  if (diff == null) return '<td class="amount">—</td>';
+  if (diff === 0) return '<td class="amount change-zero">—</td>';
+  const cls = diff > 0 ? 'change-up' : 'change-down';
+  const arrow = diff > 0 ? '↑' : '↓';
+  const p = pctVal != null ? ` (${(Math.abs(pctVal) * 100).toFixed(1)}%)` : '';
+  return `<td class="amount ${cls}">${arrow} ${fmt(Math.abs(diff))}${p}</td>`;
+}
+
+function groupItems(items, field) {
+  const groups = {}; const order = [];
+  for (const item of items) {
+    const key = item.subCategory || item.displayName;
+    if (!groups[key]) { groups[key] = 0; order.push(key); }
+    groups[key] += item[field] || 0;
+  }
+  return order.map(name => ({ name, [field]: groups[name] })).filter(g => Math.abs(g[field]) > 0.5);
+}
+
+function summaryBadge(ch, key, compLabel) {
+  if (!ch?.[key]) return '';
+  const d = ch[key].diff;
+  const cls = d > 0 ? 'change-up' : d < 0 ? 'change-down' : 'change-zero';
+  const arrow = d > 0 ? '↑' : d < 0 ? '↓' : '';
+  return `<div class="change-info ${cls}">${arrow} ${fmt(Math.abs(d))} vs ${compLabel}</div>`;
+}
+
+// ===== Table helper functions =====
+function colN(h) { return h ? 4 : 2; }
+function hdr(label, curH, prevH, h) {
+  const l = L();
+  return `<tr><th>${label}</th><th class="amount">${curH}</th>${h ? `<th class="amount prev-col">${prevH}</th><th class="amount">${l.change}</th>` : ''}</tr>`;
+}
+function sr(label, v, pv, chObj, cls, h) {
+  return `<tr class="${cls}"><td>${label}</td><td class="amount">${fmt(v)}</td>
+    ${h ? `<td class="amount prev-col">${pv != null ? fmt(pv) : '—'}</td>` : ''}
+    ${h ? (chObj ? changeCell(chObj.diff, chObj.pct) : '<td class="amount">—</td>') : ''}
+  </tr>`;
+}
+function ir(label, v, pv, h, indent, cls) {
+  return `<tr class="${cls||''}"><td style="padding-left:${indent||24}px">${label}</td><td class="amount">${fmt(v)}</td>
+    ${h ? `<td class="amount prev-col">${pv != null ? fmt(pv) : '—'}</td><td></td>` : ''}</tr>`;
+}
+function sp(c) { return `<tr class="spacer"><td colspan="${c}"></td></tr>`; }
+function sh(t, c) { return `<tr class="section-header"><td colspan="${c}">${t}</td></tr>`; }
+function ssub(t, c) { return `<tr class="section-sub"><td colspan="${c}">${t}</td></tr>`; }
+
+function periodLabel(p) {
+  const l = L();
+  if (p.startDate && p.endDate) return l.periodRange(p.startDate, p.endDate);
+  if (p.endDate) return l.asOf(p.endDate);
+  if (p.year && p.month) return `${p.year}/${p.month}`;
+  return '';
+}
+
+function reportHeader(companyName, reportName, currencyLine) {
+  return `<div class="report-title"><div class="company">${companyName}</div><div class="report-name">${reportName}</div><div class="currency-line">${currencyLine}</div></div>`;
+}
+
+// ===== Date helpers =====
+function initDates() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  setMonthPeriod(m === 0 ? y - 1 : y, m === 0 ? 12 : m);
+}
+
+function setMonthPeriod(y, m) {
+  const s = `${y}-${String(m).padStart(2, '0')}-01`;
+  const lastDay = new Date(y, m, 0).getDate();
+  const e = `${y}-${String(m).padStart(2, '0')}-${lastDay}`;
+  document.getElementById('startDate').value = s;
+  document.getElementById('endDate').value = e;
+}
+
+function onPeriodChange() {
+  const type = document.getElementById('periodType').value;
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  if (type === 'month') {
+    const pm = m === 1 ? 12 : m - 1;
+    const py = m === 1 ? y - 1 : y;
+    setMonthPeriod(py, pm);
+  } else if (type === 'quarter') {
+    const q = Math.ceil(m / 3) - 1 || 4;
+    const qy = q === 4 && m <= 3 ? y - 1 : y;
+    const qs = (q - 1) * 3 + 1;
+    const qe = q * 3;
+    document.getElementById('startDate').value = `${qy}-${String(qs).padStart(2, '0')}-01`;
+    const lastDay = new Date(qy, qe, 0).getDate();
+    document.getElementById('endDate').value = `${qy}-${String(qe).padStart(2, '0')}-${lastDay}`;
+  } else if (type === 'half') {
+    if (m > 6) {
+      document.getElementById('startDate').value = `${y}-01-01`;
+      document.getElementById('endDate').value = `${y}-06-30`;
+    } else {
+      document.getElementById('startDate').value = `${y - 1}-07-01`;
+      document.getElementById('endDate').value = `${y - 1}-12-31`;
+    }
+  } else if (type === 'year') {
+    document.getElementById('startDate').value = `${y - 1}-01-01`;
+    document.getElementById('endDate').value = `${y - 1}-12-31`;
+  }
+}
+
+// ===== Extract data helpers =====
+function getReport(data, compare) {
+  const l = L();
+  const hasCompare = compare !== 'none';
+  const report = hasCompare ? data.current : data.data;
+  const prev = hasCompare ? (data.previous || null) : null;
+  return { hasCompare, report, prev, ch: data.changes || null,
+    s: report.summary, ps: prev?.summary,
+    sec: report.sections, prevSec: prev?.sections,
+    compLabel: l[compare] || '',
+    period: report.period || data.period || {},
+    compPeriod: data.comparePeriod || {} };
+}
+
+// ===== Fetch =====
+async function fetchReport() {
+  const type = document.getElementById('reportType').value;
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  const compare = document.getElementById('compare').value;
+  const btn = document.getElementById('fetchBtn');
+  const area = document.getElementById('reportArea');
+
+  if (!startDate || !endDate) { alert('請選擇日期範圍'); return; }
+
+  const companyId = getCompanyId();
+  if (!companyId) { alert('請選擇公司'); return; }
+
+  btn.disabled = true; btn.textContent = '查詢中...';
+  area.innerHTML = '<div class="loading">正在從 Business Central 取得資料...</div>';
+
+  lastQuery = { type, startDate, endDate, compare, companyId };
+
+  try {
+    const apiType = API_MAP[type];
+    const url = `/api/${apiType}?startDate=${startDate}&endDate=${endDate}&compare=${compare}&companyId=${companyId}`;
+    const res = await fetch(url);
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    const data = await res.json();
+
+    const R = {
+      'ebitda-detailed': renderEbitdaDetailed, 'ebitda-simple': renderEbitdaSimple,
+      'is-detailed': renderISDetailed, 'is-simple': renderISSimple,
+      'bs-detailed': renderBSDetailed, 'bs-simple': renderBSSimple,
+    };
+    R[type](data, compare);
+    document.getElementById('exportBar').classList.add('show');
+  } catch (e) {
+    area.innerHTML = `<div class="error">查詢失敗：${e.message}</div>`;
+    document.getElementById('exportBar').classList.remove('show');
+  } finally { btn.disabled = false; btn.textContent = '查詢'; }
+}
+
+// ===== Export =====
+function exportExcel() {
+  const { type, startDate, endDate, compare, companyId } = lastQuery;
+  const lang = getLang();
+  const apiType = type.startsWith('ebitda') ? 'ebitda' : (type.startsWith('is') ? 'income-statement' : 'balance-sheet');
+  const view = type.includes('simple') ? 'simple' : 'detailed';
+  window.location.href = `/api/export/excel?type=${apiType}&startDate=${startDate}&endDate=${endDate}&compare=${compare}&view=${view}&lang=${lang}&companyId=${companyId}`;
+}
+
+function exportPDF() { window.print(); }
+
+// ==========================================
+//  EBITDA Detailed (Internal)
+// ==========================================
+function renderEbitdaDetailed(data, compare) {
+  const l = L();
+  const d = getReport(data, compare);
+  const { hasCompare: h, s, ps, sec, prevSec, ch, compLabel, period, compPeriod } = d;
+  const c = colN(h);
+  const curH = periodLabel(period);
+  const prevH = periodLabel(compPeriod);
+
+  const detail = (section, prevSection, neg) => {
+    if (!section?.items) return '';
+    return section.items.map(i => {
+      const pi = prevSection?.items?.find(x => x.accountNumber === i.accountNumber);
+      const v = neg ? -i.amount : i.amount;
+      const pv = pi ? (neg ? -pi.amount : pi.amount) : null;
+      return ir(`${i.accountNumber} ${i.displayName}${i.isDA ? ' *' : ''}`, v, pv, h, 24, i.isDA ? 'da-row' : '');
+    }).join('');
+  };
+  const S = (label, v, pv, k, cls) => sr(label, v, pv, ch?.[k], cls, h);
+
+  document.getElementById('reportArea').innerHTML = `
+    <div class="summary-grid">
+      <div class="summary-item"><div class="label">EBITDA</div><div class="value">${fmt(s.ebitda)}</div><div class="sub">${l.sMargin} ${pctFmt(s.ebitdaMargin)}</div>${summaryBadge(ch,'ebitda',compLabel)}</div>
+      <div class="summary-item"><div class="label">${l.sRevenue}</div><div class="value">${fmt(s.revenue)}</div>${summaryBadge(ch,'revenue',compLabel)}</div>
+      <div class="summary-item"><div class="label">${l.sGrossMargin}</div><div class="value">${pctFmt(s.grossMargin)}</div></div>
+      <div class="summary-item"><div class="label">${l.sOpIncome}</div><div class="value">${fmt(s.operatingIncome)}</div><div class="sub">${l.sOpMargin} ${pctFmt(s.operatingMargin)}</div>${summaryBadge(ch,'operatingIncome',compLabel)}</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>${l.ebitdaDetailedCard}</h2></div>
+      <div class="card-body">
+        ${reportHeader(getCompanyName(), l.ebitdaDetailedTitle, l.currency)}
+        <table>
+          ${hdr(l.account, curH, prevH, h)}
+          ${S(l.revenue, sec.revenue.total, prevSec?.revenue?.total, 'revenue', 'subtotal')}
+          ${detail(sec.revenue, prevSec?.revenue, false)}
+          ${S(l.cogs, -sec.cogs.total, prevSec ? -prevSec.cogs.total : null, null, 'subtotal')}
+          ${detail(sec.cogs, prevSec?.cogs, true)}
+          ${S(l.grossProfit, s.grossProfit, ps?.grossProfit, 'grossProfit', 'total')}
+          ${S(l.opex, -sec.operatingExpenses.total, prevSec ? -prevSec.operatingExpenses.total : null, null, 'subtotal')}
+          ${detail(sec.operatingExpenses, prevSec?.operatingExpenses, true)}
+          ${S(l.operatingIncome, s.operatingIncome, ps?.operatingIncome, 'operatingIncome', 'total')}
+          ${sp(c)}
+          ${ir(l.addDep, s.depreciation, ps?.depreciation, h, 12)}
+          ${ir(l.addAmort, s.amortization, ps?.amortization, h, 12)}
+          ${S('EBITDA', s.ebitda, ps?.ebitda, 'ebitda', 'total')}
+        </table>
+        <div style="font-size:10px;color:#999;margin-top:6px">${l.daNote}</div>
+      </div>
+    </div>`;
+}
+
+// ==========================================
+//  EBITDA Simple (External)
+// ==========================================
+function renderEbitdaSimple(data, compare) {
+  const l = L();
+  const d = getReport(data, compare);
+  const { hasCompare: h, s, ps, sec, prevSec, ch, compLabel, period, compPeriod } = d;
+  const c = colN(h);
+  const curH = periodLabel(period);
+  const prevH = periodLabel(compPeriod);
+
+  const opex = sec.operatingExpenses.items.filter(i => !i.isDA);
+  const da = sec.operatingExpenses.items.filter(i => i.isDA);
+  const opG = groupItems(opex, 'amount');
+  const pOpex = prevSec?.operatingExpenses?.items?.filter(i => !i.isDA) || [];
+  const pDa = prevSec?.operatingExpenses?.items?.filter(i => i.isDA) || [];
+  const pOpG = groupItems(pOpex, 'amount');
+  const daT = da.reduce((t, i) => t + i.amount, 0);
+  const pDaT = pDa.reduce((t, i) => t + i.amount, 0);
+  const revG = groupItems(sec.revenue.items, 'amount');
+  const pRevG = prevSec ? groupItems(prevSec.revenue.items, 'amount') : [];
+  const cogG = groupItems(sec.cogs.items, 'amount');
+  const pCogG = prevSec ? groupItems(prevSec.cogs.items, 'amount') : [];
+
+  const gr = (groups, prevGroups, f) => groups.map(g => {
+    const pg = prevGroups.find(p => p.name === g.name);
+    return ir(g.name, g[f], pg?.[f] ?? null, h, 20);
+  }).join('');
+
+  const S = (label, v, pv, cls) => sr(label, v, pv, null, cls, h);
+  const totOpex = sec.operatingExpenses.total + sec.cogs.total;
+  const pTotOpex = prevSec ? prevSec.operatingExpenses.total + prevSec.cogs.total : null;
+
+  document.getElementById('reportArea').innerHTML = `
+    <div class="card">
+      <div class="card-header"><h2>${l.ebitdaSimpleCard}</h2></div>
+      <div class="card-body">
+        ${reportHeader(getCompanyName(), l.ebitdaSimpleTitle, l.currency)}
+        <table>
+          ${hdr('', curH, prevH, h)}
+          ${sh(l.revenueH, c)}
+          ${gr(revG, pRevG, 'amount')}
+          ${S(l.totalRevenue, s.revenue, ps?.revenue, 'subtotal')}
+          ${sh(l.cogsH, c)}
+          ${gr(cogG, pCogG, 'amount')}
+          ${sh(l.opexH, c)}
+          ${gr(opG, pOpG, 'amount')}
+          ${ir(l.da, daT, pDaT || null, h, 20, 'da-row')}
+          ${S(l.totalOpex, totOpex, pTotOpex, 'subtotal')}
+          ${sp(c)}
+          ${S(l.operatingIncome, s.operatingIncome, ps?.operatingIncome, 'subtotal')}
+          ${S('EBITDA', s.ebitda, ps?.ebitda, 'total')}
+          <tr class="margin-row"><td colspan="${c}">EBITDA ${l.sMargin}: ${pctFmt(s.ebitdaMargin)} | ${l.sGrossMargin}: ${pctFmt(s.grossMargin)} | ${l.sOpMargin}: ${pctFmt(s.operatingMargin)}</td></tr>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ==========================================
+//  Income Statement Detailed (Internal)
+// ==========================================
+function renderISDetailed(data, compare) {
+  const l = L();
+  const d = getReport(data, compare);
+  const { hasCompare: h, s, ps, sec, prevSec, ch, compLabel, period, compPeriod } = d;
+  const c = colN(h);
+  const curH = periodLabel(period);
+  const prevH = periodLabel(compPeriod);
+
+  const detail = (section, prevSection, neg) => {
+    if (!section?.items) return '';
+    return section.items.map(i => {
+      const pi = prevSection?.items?.find(x => x.accountNumber === i.accountNumber);
+      return ir(`${i.accountNumber} ${i.displayName}`, neg ? -i.amount : i.amount, pi ? (neg ? -pi.amount : pi.amount) : null, h, 24);
+    }).join('');
+  };
+  const S = (label, v, pv, k, cls) => sr(label, v, pv, ch?.[k], cls, h);
+
+  document.getElementById('reportArea').innerHTML = `
+    <div class="summary-grid">
+      <div class="summary-item"><div class="label">${l.sRevenue}</div><div class="value">${fmt(s.revenue)}</div></div>
+      <div class="summary-item"><div class="label">${l.sGrossProfit}</div><div class="value">${fmt(s.grossProfit)}</div><div class="sub">${l.sGrossMargin} ${pctFmt(s.grossMargin)}</div></div>
+      <div class="summary-item"><div class="label">${l.sOpIncome}</div><div class="value">${fmt(s.operatingIncome)}</div><div class="sub">${pctFmt(s.operatingMargin)}</div></div>
+      <div class="summary-item"><div class="label">${l.sNetIncomeF}</div><div class="value">${fmt(s.netIncome)}</div><div class="sub">${pctFmt(s.netMargin)}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>${l.isDetailedCard}</h2></div>
+      <div class="card-body">
+        ${reportHeader(getCompanyName(), l.isTitle, l.currency)}
+        <table>
+          ${hdr(l.account, curH, prevH, h)}
+          ${S(l.revenue, sec.revenue.total, prevSec?.revenue?.total, 'revenue', 'subtotal')}
+          ${detail(sec.revenue, prevSec?.revenue, false)}
+          ${S(l.cogs, -sec.cogs.total, prevSec ? -prevSec.cogs.total : null, null, 'subtotal')}
+          ${detail(sec.cogs, prevSec?.cogs, true)}
+          ${S(l.grossProfit, s.grossProfit, ps?.grossProfit, 'grossProfit', 'total')}
+          ${S(l.opex, -sec.operatingExpenses.total, prevSec ? -prevSec.operatingExpenses.total : null, null, 'subtotal')}
+          ${detail(sec.operatingExpenses, prevSec?.operatingExpenses, true)}
+          ${S(l.operatingIncome, s.operatingIncome, ps?.operatingIncome, 'operatingIncome', 'total')}
+          ${sec.nonOperatingIncome.items.length > 0 ? S(l.nonOpIncome, sec.nonOperatingIncome.total, prevSec?.nonOperatingIncome?.total, null, 'subtotal') + detail(sec.nonOperatingIncome, prevSec?.nonOperatingIncome, false) : ''}
+          ${sec.nonOperatingExpense.items.length > 0 ? S(l.nonOpExpense, -sec.nonOperatingExpense.total, prevSec ? -prevSec.nonOperatingExpense.total : null, null, 'subtotal') + detail(sec.nonOperatingExpense, prevSec?.nonOperatingExpense, true) : ''}
+          ${S(l.preTaxIncome, s.preTaxIncome, ps?.preTaxIncome, 'preTaxIncome', 'total')}
+          ${S(l.incomeTax, -s.tax, ps ? -ps.tax : null, null, 'subtotal')}
+          ${S(l.netIncome, s.netIncome, ps?.netIncome, 'netIncome', 'total')}
+        </table>
+      </div>
+    </div>`;
+}
+
+// ==========================================
+//  Income Statement Simple (External)
+// ==========================================
+function renderISSimple(data, compare) {
+  const l = L();
+  const d = getReport(data, compare);
+  const { hasCompare: h, s, ps, sec, prevSec, period, compPeriod } = d;
+  const c = colN(h);
+  const curH = periodLabel(period);
+  const prevH = periodLabel(compPeriod);
+
+  const gr = (section, prevSection, f) => {
+    const g = groupItems(section?.items || [], f);
+    const pg = prevSection ? groupItems(prevSection.items || [], f) : [];
+    return g.map(x => { const px = pg.find(p => p.name === x.name); return ir(x.name, x[f], px?.[f] ?? null, h, 20); }).join('');
+  };
+  const S = (label, v, pv, cls) => sr(label, v, pv, null, cls, h);
+
+  document.getElementById('reportArea').innerHTML = `
+    <div class="card">
+      <div class="card-header"><h2>${l.isSimpleCard}</h2></div>
+      <div class="card-body">
+        ${reportHeader(getCompanyName(), l.isTitle, l.currency)}
+        <table>
+          ${hdr('', curH, prevH, h)}
+          ${sh(l.revenueH, c)}
+          ${gr(sec.revenue, prevSec?.revenue, 'amount')}
+          ${S(l.netSales, s.revenue, ps?.revenue, 'subtotal')}
+          ${sp(c)}
+          ${sh(l.cogsH, c)}
+          ${gr(sec.cogs, prevSec?.cogs, 'amount')}
+          ${S(l.totalCOGS, s.cogs, ps?.cogs, 'subtotal')}
+          ${S(l.grossProfit, s.grossProfit, ps?.grossProfit, 'total')}
+          ${sp(c)}
+          ${sh(l.opexH, c)}
+          ${gr(sec.operatingExpenses, prevSec?.operatingExpenses, 'amount')}
+          ${S(l.totalOpex, s.operatingExpenses, ps?.operatingExpenses, 'subtotal')}
+          ${S(l.opPL, s.operatingIncome, ps?.operatingIncome, 'total')}
+          ${sp(c)}
+          ${sec.nonOperatingIncome.items.length > 0 ? gr(sec.nonOperatingIncome, prevSec?.nonOperatingIncome, 'amount') : ''}
+          ${sec.nonOperatingExpense.items.length > 0 ? groupItems(sec.nonOperatingExpense.items, 'amount').map(g => { const pg = prevSec ? groupItems(prevSec.nonOperatingExpense.items, 'amount').find(p => p.name === g.name) : null; return ir(g.name, -g.amount, pg ? -pg.amount : null, h, 20); }).join('') : ''}
+          ${S(l.ebt, s.preTaxIncome, ps?.preTaxIncome, 'subtotal')}
+          ${ir(l.taxExp, s.tax, ps?.tax, h, 20)}
+          ${sp(c)}
+          ${S(l.netEarnings, s.netIncome, ps?.netIncome, 'total')}
+        </table>
+      </div>
+    </div>`;
+}
+
+// ==========================================
+//  Balance Sheet Detailed (Internal)
+// ==========================================
+function renderBSDetailed(data, compare) {
+  const l = L();
+  const d = getReport(data, compare);
+  const { hasCompare: h, s, ps, sec, prevSec, ch, compLabel, period, compPeriod } = d;
+  const c = colN(h);
+  const curH = periodLabel(period);
+  const prevH = periodLabel(compPeriod);
+
+  const detail = (section, prevSection) => {
+    if (!section?.items) return '';
+    return section.items.filter(i => Math.abs(i.balance) > 0).map(i => {
+      const pi = prevSection?.items?.find(x => x.accountNumber === i.accountNumber);
+      return ir(`${i.accountNumber} ${i.displayName}`, i.balance, pi?.balance ?? null, h, 24);
+    }).join('');
+  };
+  const S = (label, v, pv, k, cls) => sr(label, v, pv, ch?.[k], cls, h);
+
+  document.getElementById('reportArea').innerHTML = `
+    <div class="summary-grid">
+      <div class="summary-item"><div class="label">${l.sTotalAssets}</div><div class="value">${fmt(s.totalAssets)}</div></div>
+      <div class="summary-item"><div class="label">${l.sTotalLiab}</div><div class="value">${fmt(s.totalLiabilities)}</div></div>
+      <div class="summary-item"><div class="label">${l.sEquity}</div><div class="value">${fmt(s.equity)}</div></div>
+      <div class="summary-item"><div class="label">${l.sLiabEquity}</div><div class="value">${fmt(s.totalLiabilitiesAndEquity)}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>${l.bsDetailedCard}</h2></div>
+      <div class="card-body">
+        ${reportHeader(getCompanyName(), l.bsTitle, l.currency)}
+        <table>
+          ${hdr(l.account, curH, prevH, h)}
+          ${S(l.currentAssets, sec.currentAssets.total, ps?.currentAssets, 'currentAssets', 'subtotal')}
+          ${detail(sec.currentAssets, prevSec?.currentAssets)}
+          ${S(l.nonCurrentAssets, sec.nonCurrentAssets.total, ps?.nonCurrentAssets, 'nonCurrentAssets', 'subtotal')}
+          ${detail(sec.nonCurrentAssets, prevSec?.nonCurrentAssets)}
+          ${S(l.totalAssets, s.totalAssets, ps?.totalAssets, 'totalAssets', 'total')}
+          ${sp(c)}
+          ${S(l.currentLiabilities, sec.currentLiabilities.total, ps?.currentLiabilities, 'currentLiabilities', 'subtotal')}
+          ${detail(sec.currentLiabilities, prevSec?.currentLiabilities)}
+          ${S(l.nonCurrentLiabilities, sec.nonCurrentLiabilities.total, ps?.nonCurrentLiabilities, 'nonCurrentLiabilities', 'subtotal')}
+          ${detail(sec.nonCurrentLiabilities, prevSec?.nonCurrentLiabilities)}
+          ${S(l.totalLiabilities, s.totalLiabilities, ps?.totalLiabilities, 'totalLiabilities', 'total')}
+          ${S(l.equity, s.equity, ps?.equity, 'equity', 'subtotal')}
+          ${detail(sec.equity, prevSec?.equity)}
+          ${S(l.liabAndEquity, s.totalLiabilitiesAndEquity, ps?.totalLiabilitiesAndEquity, 'totalLiabilitiesAndEquity', 'total')}
+        </table>
+      </div>
+    </div>`;
+}
+
+// ==========================================
+//  Balance Sheet Simple (External)
+// ==========================================
+function renderBSSimple(data, compare) {
+  const l = L();
+  const d = getReport(data, compare);
+  const { hasCompare: h, s, ps, sec, prevSec, period, compPeriod } = d;
+  const c = colN(h);
+  const curH = periodLabel(period);
+  const prevH = periodLabel(compPeriod);
+
+  const gr = (section, prevSection) => {
+    const g = groupItems(section?.items || [], 'balance');
+    const pg = prevSection ? groupItems(prevSection.items || [], 'balance') : [];
+    return g.map(x => { const px = pg.find(p => p.name === x.name); return ir(x.name, x.balance, px?.balance ?? null, h, 20); }).join('');
+  };
+  const S = (label, v, pv, cls) => sr(label, v, pv, null, cls, h);
+
+  document.getElementById('reportArea').innerHTML = `
+    <div class="card">
+      <div class="card-header"><h2>${l.bsSimpleCard}</h2></div>
+      <div class="card-body">
+        ${reportHeader(getCompanyName(), l.bsTitle, l.currency)}
+        <table>
+          ${hdr('', curH, prevH, h)}
+          ${sh(l.assetsH, c)}
+          ${ssub(l.currentAssetsH, c)}
+          ${gr(sec.currentAssets, prevSec?.currentAssets)}
+          ${S(l.totalCurrentAssets, sec.currentAssets.total, prevSec?.currentAssets?.total, 'subtotal')}
+          ${ssub(l.nonCurrentAssetsH, c)}
+          ${gr(sec.nonCurrentAssets, prevSec?.nonCurrentAssets)}
+          ${S(l.totalNonCurrentAssets, sec.nonCurrentAssets.total, prevSec?.nonCurrentAssets?.total, 'subtotal')}
+          ${S(l.totalAssets, s.totalAssets, ps?.totalAssets, 'total')}
+          ${sp(c)}
+          ${sh(l.liabEquityH, c)}
+          ${ssub(l.currentLiabH, c)}
+          ${gr(sec.currentLiabilities, prevSec?.currentLiabilities)}
+          ${S(l.totalCurrentLiab, sec.currentLiabilities.total, prevSec?.currentLiabilities?.total, 'subtotal')}
+          ${ssub(l.nonCurrentLiabH, c)}
+          ${gr(sec.nonCurrentLiabilities, prevSec?.nonCurrentLiabilities)}
+          ${S(l.totalNonCurrentLiab, sec.nonCurrentLiabilities.total, prevSec?.nonCurrentLiabilities?.total, 'subtotal')}
+          ${S(l.totalLiabilities, s.totalLiabilities, ps?.totalLiabilities, 'total')}
+          ${sp(c)}
+          ${ssub(l.equityH, c)}
+          ${gr(sec.equity, prevSec?.equity)}
+          ${S(l.totalEquity, s.equity, ps?.equity, 'subtotal')}
+          ${S(l.totalLiabEquity, s.totalLiabilitiesAndEquity, ps?.totalLiabilitiesAndEquity, 'total')}
+        </table>
+      </div>
+    </div>`;
+}
+
+// Init
+initDates();
+</script>
+</body>
+</html>

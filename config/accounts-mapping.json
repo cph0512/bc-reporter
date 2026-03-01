@@ -1,35 +1,14 @@
 {
-  "_comment": "會計科目對照表 — 請根據你公司的 Chart of Accounts 調整科目範圍",
-  "_usage": "每個 key 對應一組科目號碼範圍，用於 EBITDA 計算。格式：'起始-結束' 或單一科目號。",
+  "_comment": "品辰科技物流 — 會計科目對照表（六碼科目）",
 
-  "revenue": ["4000-4999"],
-  "cogs": ["5000-5999"],
-  "operating_expenses": ["6000-6799"],
-  "depreciation": ["6800-6899"],
-  "amortization": ["6900-6999"],
-  "interest_expense": ["7100-7199"],
-  "tax_expense": ["8000-8099"],
+  "revenue": ["410000-489999"],
+  "cogs": ["500000-580099"],
+  "operating_expenses": ["620000-628899"],
+  "depreciation": ["622411", "622412"],
+  "amortization": ["622511"],
+  "interest_expense": ["751011"],
+  "tax_expense": ["795111", "795211"],
 
-  "_examples": {
-    "tw_standard": {
-      "_note": "台灣常見科目範圍（僅供參考，請以你公司實際科目為準）",
-      "revenue": ["4100-4999"],
-      "cogs": ["5100-5999"],
-      "operating_expenses": ["6100-6399"],
-      "depreciation": ["6100"],
-      "amortization": ["6200"],
-      "interest_expense": ["7510"],
-      "tax_expense": ["8100"]
-    },
-    "us_standard": {
-      "_note": "US common account ranges (reference only)",
-      "revenue": ["4000-4999"],
-      "cogs": ["5000-5999"],
-      "operating_expenses": ["6000-6999"],
-      "depreciation": ["6800-6849"],
-      "amortization": ["6850-6899"],
-      "interest_expense": ["7100-7199"],
-      "tax_expense": ["8000-8099"]
-    }
-  }
+  "non_operating_income": ["700000-739999"],
+  "non_operating_expense": ["750000-779999"]
 }

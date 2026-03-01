@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>帳號管理 — BC Financial Reporter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+  .header { background: #1a1a2e; color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 18px; font-weight: 600; }
+  .header .subtitle { font-size: 12px; color: #aaa; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .header-right span { font-size: 13px; color: #aaa; }
+  .btn { padding: 7px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-back { background: #444; color: #fff; border: 1px solid #666; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-back:hover { background: #555; }
+  .btn-primary { background: #1a1a2e; color: white; }
+  .btn-primary:hover { background: #2d2d5e; }
+  .btn-danger { background: #c62828; color: white; }
+  .btn-danger:hover { background: #b71c1c; }
+  .btn-edit { background: #e3f2fd; color: #1565c0; }
+  .btn-edit:hover { background: #bbdefb; }
+  .content { padding: 24px; max-width: 900px; margin: 0 auto; }
+  .card { background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 15px; font-weight: 600; }
+  .card-body { padding: 16px 20px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 10px 14px; text-align: left; font-size: 13px; }
+  th { color: #666; font-weight: 500; border-bottom: 2px solid #f0f0f0; }
+  td { border-bottom: 1px solid #f5f5f5; }
+  .role-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+  .role-admin { background: #fff3e0; color: #e65100; }
+  .role-user { background: #e8f5e9; color: #2e7d32; }
+  .actions { display: flex; gap: 6px; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: white; border-radius: 10px; padding: 28px 24px; width: 100%; max-width: 400px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+  .modal h3 { font-size: 16px; margin-bottom: 18px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; font-weight: 500; }
+  .form-group input, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 13px; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: #1a1a2e; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .error-msg { color: #c62828; font-size: 12px; margin-bottom: 10px; display: none; }
+  .empty-msg { text-align: center; padding: 30px; color: #999; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>帳號管理</h1>
+    <div class="subtitle">User Management</div>
+  </div>
+  <div class="header-right">
+    <span id="userDisplay"></span>
+    <a href="/" class="btn btn-sm btn-back">← 返回報表</a>
+  </div>
+</div>
+
+<div class="content">
+  <div class="card">
+    <div class="card-header">
+      <h2>使用者列表</h2>
+      <button class="btn btn-primary btn-sm" onclick="openCreate()">+ 新增帳號</button>
+    </div>
+    <div class="card-body">
+      <table>
+        <thead>
+          <tr>
+            <th>帳號</th>
+            <th>顯示名稱</th>
+            <th>角色</th>
+            <th>公司權限</th>
+            <th>建立時間</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="userTable"></tbody>
+      </table>
+      <div class="empty-msg" id="emptyMsg" style="display:none;">尚無使用者</div>
+    </div>
+  </div>
+</div>
+
+<!-- Create / Edit Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle">新增帳號</h3>
+    <div class="error-msg" id="modalError"></div>
+    <div class="form-group">
+      <label>帳號 (Username)</label>
+      <input type="text" id="mUsername" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>顯示名稱</label>
+      <input type="text" id="mDisplayName">
+    </div>
+    <div class="form-group">
+      <label>角色</label>
+      <select id="mRole">
+        <option value="user">一般使用者</option>
+        <option value="admin">管理員</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>公司權限（不勾 = 全部）</label>
+      <div id="mCompanies" style="max-height:120px;overflow-y:auto;border:1px solid #d0d0d0;border-radius:6px;padding:8px;"></div>
+    </div>
+    <div class="form-group" id="pwGroup">
+      <label id="pwLabel">密碼</label>
+      <input type="password" id="mPassword" autocomplete="new-password">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeModal()">取消</button>
+      <button class="btn btn-sm btn-primary" id="modalSaveBtn" onclick="saveUser()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentUser = null;
+let editingId = null;
+let allCompanies = [];
+let usersData = [];
+
+// Auth check + load companies
+(async () => {
+  try {
+    const res = await fetch('/auth/me');
+    if (!res.ok) { window.location.href = '/login'; return; }
+    const { user } = await res.json();
+    if (user.role !== 'admin') { window.location.href = '/'; return; }
+    currentUser = user;
+    document.getElementById('userDisplay').textContent = user.displayName || user.username;
+
+    const cRes = await fetch('/api/companies');
+    if (cRes.ok) allCompanies = await cRes.json();
+
+    loadUsers();
+  } catch { window.location.href = '/login'; }
+})();
+
+async function loadUsers() {
+  const res = await fetch('/api/admin/users');
+  if (res.status === 401) { window.location.href = '/login'; return; }
+  usersData = await res.json();
+  const tbody = document.getElementById('userTable');
+  const empty = document.getElementById('emptyMsg');
+
+  if (!usersData.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = usersData.map(u => {
+    const comps = u.companies && u.companies.length
+      ? u.companies.map(cid => { const c = allCompanies.find(x => x.id === cid); return c ? esc(c.name) : esc(cid); }).join(', ')
+      : '<span style="color:#999;">全部</span>';
+    const compJson = esc(JSON.stringify(u.companies || []));
+    return `<tr>
+      <td><strong>${esc(u.username)}</strong></td>
+      <td>${esc(u.displayName)}</td>
+      <td><span class="role-badge role-${u.role}">${u.role === 'admin' ? '管理員' : '使用者'}</span></td>
+      <td style="font-size:12px;">${comps}</td>
+      <td>${new Date(u.createdAt).toLocaleDateString('zh-TW')}</td>
+      <td class="actions">
+        <button class="btn btn-sm btn-edit" onclick='openEdit(${JSON.stringify(u.id)},${JSON.stringify(u.username)},${JSON.stringify(u.displayName)},${JSON.stringify(u.role)},${JSON.stringify(u.companies||[])})'>編輯</button>
+        ${u.id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}','${esc(u.username)}')">刪除</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function renderCompanyCheckboxes(selected = []) {
+  const container = document.getElementById('mCompanies');
+  if (!allCompanies.length) { container.innerHTML = '<span style="color:#999;font-size:12px;">尚無公司設定</span>'; return; }
+  container.innerHTML = allCompanies.map(c => {
+    const checked = selected.includes(c.id) ? 'checked' : '';
+    return `<label style="display:block;font-size:12px;margin-bottom:4px;cursor:pointer;">
+      <input type="checkbox" value="${esc(c.id)}" ${checked} style="margin-right:6px;">${esc(c.name)}
+    </label>`;
+  }).join('');
+}
+
+function getSelectedCompanies() {
+  return Array.from(document.querySelectorAll('#mCompanies input[type=checkbox]:checked')).map(cb => cb.value);
+}
+
+function openCreate() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = '新增帳號';
+  document.getElementById('mUsername').value = '';
+  document.getElementById('mUsername').disabled = false;
+  document.getElementById('mDisplayName').value = '';
+  document.getElementById('mRole').value = 'user';
+  document.getElementById('mPassword').value = '';
+  document.getElementById('pwLabel').textContent = '密碼';
+  document.getElementById('modalError').style.display = 'none';
+  renderCompanyCheckboxes([]);
+  document.getElementById('modal').classList.add('show');
+}
+
+function openEdit(id, username, displayName, role, companies) {
+  editingId = id;
+  document.getElementById('modalTitle').textContent = '編輯帳號';
+  document.getElementById('mUsername').value = username;
+  document.getElementById('mUsername').disabled = true;
+  document.getElementById('mDisplayName').value = displayName;
+  document.getElementById('mRole').value = role;
+  document.getElementById('mPassword').value = '';
+  document.getElementById('pwLabel').textContent = '新密碼（留空不更改）';
+  document.getElementById('modalError').style.display = 'none';
+  renderCompanyCheckboxes(companies || []);
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+async function saveUser() {
+  const errEl = document.getElementById('modalError');
+  errEl.style.display = 'none';
+
+  const username = document.getElementById('mUsername').value.trim();
+  const displayName = document.getElementById('mDisplayName').value.trim();
+  const role = document.getElementById('mRole').value;
+  const password = document.getElementById('mPassword').value;
+
+  const companies = getSelectedCompanies();
+
+  if (!editingId) {
+    // Create
+    if (!username || !password) { errEl.textContent = '帳號和密碼為必填'; errEl.style.display = 'block'; return; }
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, role, displayName: displayName || username, companies }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      closeModal();
+      loadUsers();
+    } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+  } else {
+    // Update
+    const body = { displayName, role, companies };
+    if (password) body.password = password;
+    try {
+      const res = await fetch(`/api/admin/users/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      closeModal();
+      loadUsers();
+    } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+  }
+}
+
+async function deleteUser(id, username) {
+  if (!confirm(`確定要刪除帳號「${username}」嗎？`)) return;
+  try {
+    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    loadUsers();
+  } catch (e) { alert(e.message); }
+}
+</script>
+</body>
+</html>

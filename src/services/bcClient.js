@@ -13,22 +13,20 @@ class BCClient {
     this.companyId = config.BC_COMPANY_ID;
 
     this.baseUrl = `https://api.businesscentral.dynamics.com/v2.0/${this.tenantId}/${this.environment}/api/v2.0`;
-    this.financeApiUrl = `https://api.businesscentral.dynamics.com/v2.0/${this.tenantId}/${this.environment}/api/microsoft/reportsFinance/beta`;
 
     this.token = null;
     this.tokenExpiry = null;
+    this._accountsCache = new Map(); // keyed by companyId
   }
 
   // ===== Authentication =====
 
   async getToken() {
-    // Reuse token if still valid (with 5 min buffer)
     if (this.token && this.tokenExpiry && Date.now() < this.tokenExpiry - 300000) {
       return this.token;
     }
 
     const tokenUrl = `https://login.microsoftonline.com/${this.tenantId}/oauth2/v2.0/token`;
-
     const params = new URLSearchParams({
       grant_type: 'client_credentials',
       client_id: this.clientId,
@@ -40,7 +38,6 @@ class BCClient {
       const response = await axios.post(tokenUrl, params.toString(), {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
-
       this.token = response.data.access_token;
       this.tokenExpiry = Date.now() + response.data.expires_in * 1000;
       console.log('[BCClient] Token acquired, expires in', response.data.expires_in, 'seconds');
@@ -54,7 +51,6 @@ class BCClient {
   async request(url, params = {}) {
     const token = await this.getToken();
 
-    // Build OData query string
     const queryParts = [];
     if (params.$filter) queryParts.push(`$filter=${params.$filter}`);
     if (params.$select) queryParts.push(`$select=${params.$select}`);
@@ -75,59 +71,88 @@ class BCClient {
       return response.data.value || response.data;
     } catch (error) {
       if (error.response?.status === 429) {
-        // Rate limited — wait and retry
         const retryAfter = parseInt(error.response.headers['retry-after'] || '5', 10);
         console.warn(`[BCClient] Rate limited, retrying in ${retryAfter}s`);
         await new Promise(r => setTimeout(r, retryAfter * 1000));
         return this.request(url, params);
       }
-      console.error('[BCClient] API request failed:', error.response?.data || error.message);
       throw error;
     }
   }
 
+  /**
+   * 分頁查詢所有資料（處理 @odata.nextLink）
+   */
+  async requestAll(url, params = {}) {
+    const token = await this.getToken();
+
+    const queryParts = [];
+    if (params.$filter) queryParts.push(`$filter=${params.$filter}`);
+    if (params.$select) queryParts.push(`$select=${params.$select}`);
+    if (params.$orderby) queryParts.push(`$orderby=${params.$orderby}`);
+
+    let fullUrl = queryParts.length > 0 ? `${url}?${queryParts.join('&')}` : url;
+    let allResults = [];
+
+    while (fullUrl) {
+      const response = await axios.get(fullUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+      const data = response.data;
+      allResults = allResults.concat(data.value || []);
+      fullUrl = data['@odata.nextLink'] || null;
+    }
+
+    console.log(`[BCClient] requestAll fetched ${allResults.length} records`);
+    return allResults;
+  }
+
   // ===== Standard API v2.0 Endpoints =====
 
-  companyUrl(endpoint) {
-    return `${this.baseUrl}/companies(${this.companyId})/${endpoint}`;
-  }
-
-  financeUrl(endpoint) {
-    return `${this.financeApiUrl}/companies(${this.companyId})/${endpoint}`;
+  companyUrl(endpoint, companyId) {
+    const cid = companyId || this.companyId;
+    return `${this.baseUrl}/companies(${cid})/${endpoint}`;
   }
 
   /**
-   * 損益表 (Income Statement)
-   * @param {string} dateFilter - e.g. '2025-01-01..2025-01-31' or '2025-01-01..2025-12-31'
+   * 損益表 — 先嘗試標準 API，失敗則用 GL Entries 建構
    */
-  async getIncomeStatement(dateFilter) {
-    return this.request(this.companyUrl('incomeStatement'), {
-      $filter: dateFilter ? `dateFilter eq '${dateFilter}'` : undefined,
-    });
+  async getIncomeStatement(dateFilter, options = {}) {
+    try {
+      return await this.request(this.companyUrl('incomeStatement', options.companyId), {
+        $filter: dateFilter ? `dateFilter eq '${dateFilter}'` : undefined,
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] incomeStatement API not available, building from GL entries');
+        return null; // reportEngine will handle fallback
+      }
+      throw error;
+    }
   }
 
   /**
-   * 資產負債表 (Balance Sheet)
-   * @param {string} dateFilter - e.g. '..2025-03-31' (up to a date)
+   * 資產負債表 — 先嘗試標準 API，失敗則用 GL Entries 建構
    */
-  async getBalanceSheet(dateFilter) {
-    return this.request(this.companyUrl('balanceSheet'), {
-      $filter: dateFilter ? `dateFilter eq '${dateFilter}'` : undefined,
-    });
-  }
-
-  /**
-   * 試算表 (Trial Balance)
-   */
-  async getTrialBalance(dateFilter) {
-    return this.request(this.companyUrl('trialBalance'), {
-      $filter: dateFilter ? `dateFilter eq '${dateFilter}'` : undefined,
-    });
+  async getBalanceSheet(dateFilter, options = {}) {
+    try {
+      return await this.request(this.companyUrl('balanceSheet', options.companyId), {
+        $filter: dateFilter ? `dateFilter eq '${dateFilter}'` : undefined,
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] balanceSheet API not available, building from GL entries');
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
    * 總帳分錄 (General Ledger Entries)
-   * For detailed EBITDA calculation
    */
   async getGeneralLedgerEntries(startDate, endDate, options = {}) {
     const filters = [];
@@ -135,7 +160,14 @@ class BCClient {
     if (endDate) filters.push(`postingDate le ${endDate}`);
     if (options.accountNumber) filters.push(`accountNumber eq '${options.accountNumber}'`);
 
-    return this.request(this.companyUrl('generalLedgerEntries'), {
+    if (options.fetchAll) {
+      return this.requestAll(this.companyUrl('generalLedgerEntries', options.companyId), {
+        $filter: filters.length > 0 ? filters.join(' and ') : undefined,
+        $orderby: 'entryNumber asc',
+      });
+    }
+
+    return this.request(this.companyUrl('generalLedgerEntries', options.companyId), {
       $filter: filters.length > 0 ? filters.join(' and ') : undefined,
       $orderby: 'postingDate desc',
       $top: options.top || 5000,
@@ -143,38 +175,39 @@ class BCClient {
   }
 
   /**
-   * 會計科目表 (Chart of Accounts)
+   * 會計科目表 (Chart of Accounts) — 含快取
    */
-  async getAccounts() {
-    return this.request(this.companyUrl('accounts'), {
-      $select: 'id,number,displayName,category,subCategory,blocked',
+  async getAccounts(options = {}) {
+    const cid = options.companyId || this.companyId;
+    if (this._accountsCache.has(cid)) return this._accountsCache.get(cid);
+
+    const accounts = await this.request(this.companyUrl('accounts', cid), {
+      $select: 'id,number,displayName,category,subCategory,blocked,accountType',
       $filter: "blocked eq false",
     });
-  }
-
-  // ===== Advanced Finance APIs (reportsFinance/beta) =====
-
-  /**
-   * GL Entries with dimensions — for more granular reporting
-   */
-  async getGLEntriesWithDimensions(startDate, endDate) {
-    return this.request(this.financeUrl('generalLedgerEntries'), {
-      $filter: `postingDate ge ${startDate} and postingDate le ${endDate}`,
-    });
+    this._accountsCache.set(cid, accounts);
+    return accounts;
   }
 
   /**
-   * GL Budgets
+   * 建構帳戶分類 Map（accountNumber → category info）
    */
-  async getGLBudgets() {
-    return this.request(this.financeUrl('generalLedgerBudgets'));
+  async getAccountsMap(options = {}) {
+    const accounts = await this.getAccounts(options);
+    const map = {};
+    for (const a of accounts) {
+      map[a.number] = {
+        displayName: a.displayName,
+        category: a.category,
+        subCategory: a.subCategory || '',
+        accountType: a.accountType,
+      };
+    }
+    return map;
   }
 
   // ===== Helper Methods =====
 
-  /**
-   * 取得指定月份的日期範圍
-   */
   static getMonthRange(year, month) {
     const start = `${year}-${String(month).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
@@ -182,9 +215,6 @@ class BCClient {
     return { start, end, filter: `${start}..${end}` };
   }
 
-  /**
-   * 取得到指定月底的日期（資產負債表用）
-   */
   static getEndOfMonth(year, month) {
     const lastDay = new Date(year, month, 0).getDate();
     return `..${year}-${String(month).padStart(2, '0')}-${lastDay}`;

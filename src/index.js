@@ -3,11 +3,20 @@
 
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
 const cors = require('cors');
+const path = require('path');
 const BCClient = require('./services/bcClient');
 const ReportEngine = require('./services/reportEngine');
 const LineBotService = require('./services/lineBot');
+const userStore = require('./services/userStore');
 const createReportRoutes = require('./routes/reports');
+const docsRoutes = require('./routes/docs');
+const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const { requireAuth, requireAdmin } = require('./middleware/auth');
+const companyAccess = require('./middleware/companyAccess');
+const companyStore = require('./services/companyStore');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +24,16 @@ const PORT = process.env.PORT || 3000;
 // ===== Middleware =====
 app.use(cors());
 app.use(express.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'bc-reporter-default-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    httpOnly: true,
+    sameSite: 'lax',
+  },
+}));
 
 // ===== Initialize Services =====
 const bcClient = new BCClient({
@@ -27,10 +46,22 @@ const bcClient = new BCClient({
 
 const reportEngine = new ReportEngine(bcClient);
 
-// ===== API Routes =====
-app.use('/api', createReportRoutes(reportEngine));
+// ===== Public Routes (no auth) =====
 
-// ===== LINE Bot Webhook =====
+// Login page
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+// Auth API (login/logout/me)
+app.use('/auth', authRoutes);
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// LINE Bot Webhook (signature-validated by LINE SDK)
 if (process.env.LINE_CHANNEL_SECRET && process.env.LINE_CHANNEL_ACCESS_TOKEN) {
   const lineBot = new LineBotService(process.env, reportEngine);
 
@@ -44,23 +75,45 @@ if (process.env.LINE_CHANNEL_SECRET && process.env.LINE_CHANNEL_ACCESS_TOKEN) {
     }
   });
 
-  console.log('✅ LINE Bot webhook enabled at /webhook/line');
+  console.log('LINE Bot webhook enabled at /webhook/line');
 }
 
-// ===== Health Check =====
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// ===== Protected: Dashboard & Admin =====
+app.get('/', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+app.get('/admin', requireAuth, requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
 
-// ===== Start Server =====
-app.listen(PORT, () => {
-  console.log(`
-╔══════════════════════════════════════════════╗
-║  📊 BC Financial Reporter                   ║
-║  Server running on port ${PORT}                ║
-║                                              ║
-║  API:   http://localhost:${PORT}/api           ║
-║  LINE:  http://localhost:${PORT}/webhook/line  ║
-╚══════════════════════════════════════════════╝
-  `);
+// ===== Protected API Routes =====
+app.get('/api/companies', requireAuth, (req, res) => {
+  const companies = companyStore.getForUser(req.session.user);
+  res.json(companies);
 });
+app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
+app.use('/api', requireAuth, companyAccess, createReportRoutes(reportEngine));
+app.use('/docs', requireAuth, docsRoutes);
+
+// ===== Static Files (CSS/JS assets — after route matching) =====
+app.use(express.static(path.join(__dirname, '../public')));
+
+// ===== Start Server (local) / Export (Vercel) =====
+userStore.ensureDefaultAdmin().catch(() => {});
+
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`
+╔══════════════════════════════════════════════╗
+║  BC Financial Reporter                       ║
+║  Server running on port ${PORT}                  ║
+║                                              ║
+║  Web:   http://localhost:${PORT}                 ║
+║  API:   http://localhost:${PORT}/api             ║
+║  LINE:  http://localhost:${PORT}/webhook/line    ║
+╚══════════════════════════════════════════════╝
+    `);
+  });
+}
+
+module.exports = app;
