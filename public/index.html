@@ -535,6 +535,11 @@ let lastQuery = {};
 
 function fmt(n) {
   if (n == null) return '—';
+  return n.toLocaleString(getLang() === 'zh' ? 'zh-TW' : 'en-US', { maximumFractionDigits: 0 });
+}
+
+function fmtShort(n) {
+  if (n == null) return '—';
   if (getLang() === 'zh') {
     const abs = Math.abs(n);
     if (abs >= 1e8) return (n / 1e8).toFixed(2) + ' 億';
@@ -1067,7 +1072,7 @@ function fmtKpi(n, type) {
   if (n == null) return null;
   if (type === 'pct') return (n * 100).toFixed(1) + '%';
   if (type === 'days') return n.toFixed(1);
-  return fmt(n);
+  return fmtShort(n);
 }
 
 function kpiCard(label, value, sub, isNA) {
@@ -1150,7 +1155,7 @@ function renderCharts(charts) {
         labels: charts.top5Vendors.map(d => d.name),
         datasets: [{ data: charts.top5Vendors.map(d => Math.abs(d.value)), backgroundColor: '#3a7ca5', borderRadius: 4 }]
       },
-      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => fmt(v) } } } }
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => fmtShort(v) } } } }
     }));
   } else if (vendEl) {
     vendEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
