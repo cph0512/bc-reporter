@@ -66,6 +66,15 @@ app.get('/health', (req, res) => {
       environment: bcClient.environment,
       hasToken: !!bcClient.token,
     },
+    envCheck: {
+      BC_TENANT_ID: process.env.BC_TENANT_ID ? 'SET (' + process.env.BC_TENANT_ID.substring(0, 8) + '...)' : 'MISSING',
+      BC_CLIENT_ID: process.env.BC_CLIENT_ID ? 'SET' : 'MISSING',
+      BC_CLIENT_SECRET: process.env.BC_CLIENT_SECRET ? 'SET' : 'MISSING',
+      BC_ENVIRONMENT: process.env.BC_ENVIRONMENT || 'MISSING',
+      BC_COMPANY_ID: process.env.BC_COMPANY_ID ? 'SET' : 'MISSING',
+      PORT: process.env.PORT || 'MISSING',
+      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT || 'N/A',
+    },
   });
 });
 
