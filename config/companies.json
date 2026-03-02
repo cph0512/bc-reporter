@@ -3,7 +3,28 @@
     "id": "pinchen",
     "name": "品辰科技物流股份有限公司",
     "nameEn": "Pin Chen Technology Logistics Co., Ltd.",
-    "bcCompanyId": "aca05dc8-264e-ef11-bfe6-6045bdac9a88",
+    "bcCompanyId": "cf7f11c8-e758-f011-8eed-6045bd1f167c",
+    "accountsMapping": "accounts-mapping.json"
+  },
+  {
+    "id": "bbtruck",
+    "name": "BBTRUCK 全球合併",
+    "nameEn": "BBTRUCK Global Consolidated",
+    "bcCompanyId": "a4698e52-e0d3-f011-8542-002248590ad3",
+    "accountsMapping": "accounts-mapping.json"
+  },
+  {
+    "id": "shine",
+    "name": "Shine Solution Inc.",
+    "nameEn": "Shine Solution Inc.",
+    "bcCompanyId": "38280548-60b3-f011-89fd-000d3a083309",
+    "accountsMapping": "accounts-mapping.json"
+  },
+  {
+    "id": "thexin",
+    "name": "泰欣通運有限公司THE",
+    "nameEn": "THE Xin Transportation Co., Ltd.",
+    "bcCompanyId": "6187d9df-f782-f011-a708-000d3a083309",
     "accountsMapping": "accounts-mapping.json"
   }
 ]
