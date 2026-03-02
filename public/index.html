@@ -514,9 +514,9 @@ const LABELS = {
     dNPMTrend: '淨利率趨勢', dAssetTurnover: '資產週轉率趨勢',
     dLoading: '載入儀表板中...', dNoData: '無資料',
     // Sales Dashboard
-    sTotalSales: '銷售額 (LCY)', sInvoiceCount: '發票數量', sAvgInvoice: '平均發票金額',
-    sTopCustomerSales: '最大客戶銷售額', sSalesByMonth: '月銷售額',
-    sTop5CustomersSales: '前五大客戶（銷售額）', sSalesBySalesperson: '業務員銷售額', sTopItems: '熱銷品項',
+    sTotalRevenue: '營業收入', sTotalCogs: '營業成本', sGrossProfit: '營業毛利',
+    sGrossMargin: '毛利率', sTopCustomer: '最大客戶 (應收)', sRevenueByMonth: '月營收趨勢',
+    sRevenueByCategory: '營收分類', sTop5Customers: '前五大客戶（應收餘額）', sGrossProfitByMonth: '月毛利趨勢',
     // Purchasing Dashboard
     pTotalPurchases: '採購總額 (LCY)', pPrevYearPurchases: '去年同期採購額',
     pOutstandingOrders: '未結訂單數', pOutstandingAmount: '未結訂單金額',
@@ -626,9 +626,9 @@ const LABELS = {
     dNPMTrend: 'Net Profit Margin Trend', dAssetTurnover: 'Asset Turnover Trend',
     dLoading: 'Loading dashboard...', dNoData: 'No Data',
     // Sales Dashboard
-    sTotalSales: 'Sales (LCY)', sInvoiceCount: 'Invoice Count', sAvgInvoice: 'Avg Invoice Amount',
-    sTopCustomerSales: 'Top Customer Sales', sSalesByMonth: 'Sales by Month',
-    sTop5CustomersSales: 'Top 5 Customers', sSalesBySalesperson: 'Sales by Salesperson', sTopItems: 'Top Items',
+    sTotalRevenue: 'Revenue', sTotalCogs: 'COGS', sGrossProfit: 'Gross Profit',
+    sGrossMargin: 'Gross Margin', sTopCustomer: 'Top Customer (AR)', sRevenueByMonth: 'Revenue by Month',
+    sRevenueByCategory: 'Revenue by Category', sTop5Customers: 'Top 5 Customers (AR)', sGrossProfitByMonth: 'Gross Profit Trend',
     // Purchasing Dashboard
     pTotalPurchases: 'Purchases (LCY)', pPrevYearPurchases: 'Purchases PY',
     pOutstandingOrders: 'Outstanding Orders', pOutstandingAmount: 'Outstanding Amount',
@@ -1351,20 +1351,21 @@ function renderSalesDashboard(data, container) {
   const periodStr = `${data.period.startDate} ~ ${data.period.endDate}`;
 
   const kpis = `<div class="kpi-grid">
-    ${kpiCard(l.sTotalSales, fmtKpi(k.totalSales), periodStr, k.totalSales == null)}
-    ${kpiCard(l.sInvoiceCount, fmtKpi(k.invoiceCount, 'int'), '', k.invoiceCount == null)}
-    ${kpiCard(l.sAvgInvoice, fmtKpi(k.avgInvoiceAmount), '', k.avgInvoiceAmount == null)}
-    ${kpiCard(l.sTopCustomerSales, fmtKpi(k.topCustomerSales), k.topCustomerName || '', k.topCustomerSales == null)}
+    ${kpiCard(l.sTotalRevenue, fmtKpi(k.totalRevenue), periodStr, k.totalRevenue == null)}
+    ${kpiCard(l.sTotalCogs, fmtKpi(k.totalCogs), '', k.totalCogs == null)}
+    ${kpiCard(l.sGrossProfit, fmtKpi(k.grossProfit), '', k.grossProfit == null)}
+    ${kpiCard(l.sGrossMargin, fmtKpi(k.grossMargin, 'pct'), '', k.grossMargin == null)}
+    ${kpiCard(l.sTopCustomer, fmtKpi(k.topCustomerBalance), k.topCustomerName || '', k.topCustomerName == null)}
   </div>`;
 
   const charts = `
   <div class="chart-row-2">
-    <div class="chart-card"><h3>${l.sSalesByMonth}</h3><canvas id="chartSalesMonth"></canvas></div>
-    <div class="chart-card"><h3>${l.sTop5CustomersSales}</h3><canvas id="chartSalesCust"></canvas></div>
+    <div class="chart-card"><h3>${l.sRevenueByMonth}</h3><canvas id="chartRevenueMonth"></canvas></div>
+    <div class="chart-card"><h3>${l.sTop5Customers}</h3><canvas id="chartSalesCust"></canvas></div>
   </div>
   <div class="chart-row-2">
-    <div class="chart-card"><h3>${l.sSalesBySalesperson}</h3><canvas id="chartSalesPerson"></canvas></div>
-    <div class="chart-card"><h3>${l.sTopItems}</h3><canvas id="chartTopItems"></canvas></div>
+    <div class="chart-card"><h3>${l.sRevenueByCategory}</h3><canvas id="chartRevCategory"></canvas></div>
+    <div class="chart-card"><h3>${l.sGrossProfitByMonth}</h3><canvas id="chartGrossProfitMonth"></canvas></div>
   </div>`;
 
   container.innerHTML = kpis + charts;
@@ -1378,12 +1379,12 @@ function renderSalesCharts(charts) {
   const hBarColor = '#2d4a7a';
   const doughnutColors = ['#1a1a2e', '#2d4a7a', '#3a7ca5', '#5cb3a0', '#8cd17d', '#b6d957', '#ffc857', '#e9724c', '#c5283d', '#481d24'];
 
-  // Sales by Month (bar)
-  const monthEl = document.getElementById('chartSalesMonth');
-  if (charts.salesByMonth?.length && monthEl) {
+  // Revenue by Month (bar)
+  const monthEl = document.getElementById('chartRevenueMonth');
+  if (charts.revenueByMonth?.length && monthEl) {
     salesDashCharts.push(new Chart(monthEl, {
       type: 'bar',
-      data: { labels: charts.salesByMonth.map(d => d.label), datasets: [{ data: charts.salesByMonth.map(d => d.value), backgroundColor: barColor, borderRadius: 4 }] },
+      data: { labels: charts.revenueByMonth.map(d => d.label), datasets: [{ data: charts.revenueByMonth.map(d => d.value), backgroundColor: barColor, borderRadius: 4 }] },
       options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtShort(v) } } } }
     }));
   }
@@ -1400,28 +1401,35 @@ function renderSalesCharts(charts) {
     custEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
   }
 
-  // Sales by Salesperson (bar)
-  const spEl = document.getElementById('chartSalesPerson');
-  if (charts.salesBySalesperson?.length && spEl) {
-    salesDashCharts.push(new Chart(spEl, {
-      type: 'bar',
-      data: { labels: charts.salesBySalesperson.map(d => d.name), datasets: [{ data: charts.salesBySalesperson.map(d => d.value), backgroundColor: '#3a7ca5', borderRadius: 4 }] },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtShort(v) } } } }
-    }));
-  } else if (spEl) {
-    spEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
-  }
-
-  // Top Items (doughnut)
-  const itemEl = document.getElementById('chartTopItems');
-  if (charts.topItems?.length && itemEl) {
-    salesDashCharts.push(new Chart(itemEl, {
+  // Revenue by Category (doughnut)
+  const catEl = document.getElementById('chartRevCategory');
+  if (charts.revenueByCategory?.length && catEl) {
+    salesDashCharts.push(new Chart(catEl, {
       type: 'doughnut',
-      data: { labels: charts.topItems.map(d => d.name), datasets: [{ data: charts.topItems.map(d => d.value), backgroundColor: doughnutColors }] },
+      data: { labels: charts.revenueByCategory.map(d => d.name), datasets: [{ data: charts.revenueByCategory.map(d => d.value), backgroundColor: doughnutColors }] },
       options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
     }));
-  } else if (itemEl) {
-    itemEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
+  } else if (catEl) {
+    catEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
+  }
+
+  // Gross Profit by Month (multi-bar: revenue vs cogs + line)
+  const gpEl = document.getElementById('chartGrossProfitMonth');
+  if (charts.grossProfitByMonth?.length && gpEl) {
+    salesDashCharts.push(new Chart(gpEl, {
+      type: 'bar',
+      data: {
+        labels: charts.grossProfitByMonth.map(d => d.label),
+        datasets: [
+          { label: '營收', data: charts.grossProfitByMonth.map(d => d.revenue), backgroundColor: '#1565c0', borderRadius: 4 },
+          { label: '成本', data: charts.grossProfitByMonth.map(d => d.cogs), backgroundColor: '#e9724c', borderRadius: 4 },
+          { label: '毛利', data: charts.grossProfitByMonth.map(d => d.grossProfit), type: 'line', borderColor: '#5cb3a0', backgroundColor: 'transparent', pointRadius: 3, tension: 0.3 },
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { labels: { boxWidth: 12, font: { size: 11 } } } }, scales: { y: { ticks: { callback: v => fmtShort(v) } } } }
+    }));
+  } else if (gpEl) {
+    gpEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
   }
 }
 

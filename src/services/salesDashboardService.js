@@ -1,8 +1,10 @@
 // src/services/salesDashboardService.js
-// Sales Dashboard KPI + Chart data service
-// Supports date filters via opts.startDate / opts.endDate
+// Sales Dashboard — 使用 GL Entries + Customers + Accounts Map
+// 不依賴 salesInvoices API（多數租戶未開啟）
 
 const BCClient = require('./bcClient');
+const path = require('path');
+const fs = require('fs');
 
 class SalesDashboardService {
   constructor(reportEngine) {
@@ -25,12 +27,30 @@ class SalesDashboardService {
     this.cache.set(key, { data, ts: Date.now() });
   }
 
+  // ===== Load account mapping =====
+
+  loadMapping(mappingFile) {
+    const filename = mappingFile || 'accounts-mapping.json';
+    const configPath = path.join(__dirname, '../../config', filename);
+    return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  }
+
+  inRange(accNum, ranges) {
+    return ranges.some(range => {
+      if (range.includes('-')) {
+        const [lo, hi] = range.split('-');
+        return accNum >= lo && accNum <= hi;
+      }
+      return accNum === range;
+    });
+  }
+
   // ===== Main Entry =====
 
   async getSalesDashboardData(opts = {}) {
     const cid = opts.companyId || 'default';
 
-    // Determine period: use provided dates or default to current month
+    // Determine period
     let periodStart, periodEnd, targetYear, targetMonth;
 
     if (opts.startDate && opts.endDate) {
@@ -51,62 +71,94 @@ class SalesDashboardService {
     const cached = this.getCached(cacheKey);
     if (cached) return cached;
 
-    // Build 12-month range ending at periodEnd month
+    // Load accounts mapping for revenue/cogs ranges
+    const mapping = this.loadMapping(opts.accountsMapping);
+    const revenueRanges = mapping.revenue || [];
+    const cogsRanges = mapping.cogs || [];
+
+    // Build 12-month windows
     const months = this.getLast12Months(targetYear, targetMonth);
     const twelveMonthStart = months[0].start;
 
-    // Fetch sales invoices (12-month window for chart) + optionally with lines (period only)
-    const [invoices, invoicesWithLines] = await Promise.all([
-      this.safeGetSalesInvoices(twelveMonthStart, periodEnd, opts),
-      this.safeGetSalesInvoicesWithLines(periodStart, periodEnd, opts),
+    // Fetch GL entries (12-month window) + accounts map + customers in parallel
+    const [glEntries, accountsMap, customers] = await Promise.all([
+      this.safeGetGLEntries(twelveMonthStart, periodEnd, opts),
+      this.safeGetAccountsMap(opts),
+      this.safeGetCustomers(opts),
     ]);
 
-    if (!invoices) {
+    if (!glEntries) {
       return {
         period: { startDate: periodStart, endDate: periodEnd, year: targetYear, month: targetMonth },
-        error: 'salesInvoices API not available',
-        kpis: { totalSales: null, invoiceCount: null, avgInvoiceAmount: null, topCustomerName: null, topCustomerSales: null },
-        charts: { salesByMonth: [], top5Customers: [], salesBySalesperson: [], topItems: [] },
+        error: 'GL entries not available',
+        kpis: { totalRevenue: 0, totalCogs: 0, grossProfit: 0, grossMargin: 0, topCustomerName: null, topCustomerBalance: 0 },
+        charts: { revenueByMonth: [], revenueByCategory: [], top5Customers: [], grossProfitByMonth: [] },
       };
     }
 
+    // Classify GL entries into revenue and COGS
+    const revenueEntries = [];
+    const cogsEntries = [];
+
+    for (const entry of glEntries) {
+      const accNum = entry.accountNumber || '';
+      if (this.inRange(accNum, revenueRanges)) {
+        revenueEntries.push(entry);
+      } else if (this.inRange(accNum, cogsRanges)) {
+        cogsEntries.push(entry);
+      }
+    }
+
     // Filter to requested period for KPIs
-    const periodInvoices = invoices.filter(
-      i => i.postingDate >= periodStart && i.postingDate <= periodEnd
+    const periodRevEntries = revenueEntries.filter(
+      e => e.postingDate >= periodStart && e.postingDate <= periodEnd
+    );
+    const periodCogsEntries = cogsEntries.filter(
+      e => e.postingDate >= periodStart && e.postingDate <= periodEnd
     );
 
-    // KPIs
-    const totalSales = periodInvoices.reduce((s, i) => s + (i.totalAmountExcludingTax || 0), 0);
-    const invoiceCount = periodInvoices.length;
-    const avgInvoice = invoiceCount > 0 ? totalSales / invoiceCount : 0;
+    // Compute KPIs
+    const totalRevenue = periodRevEntries.reduce((s, e) => s + Math.abs(e.creditAmount - e.debitAmount), 0);
+    const totalCogs = periodCogsEntries.reduce((s, e) => s + Math.abs(e.debitAmount - e.creditAmount), 0);
+    const grossProfit = totalRevenue - totalCogs;
+    const grossMargin = totalRevenue > 0 ? grossProfit / totalRevenue : 0;
 
-    const customerSales = this.groupBy(periodInvoices, 'customerName', 'totalAmountExcludingTax');
-    const topCustomer = customerSales.length > 0 ? customerSales[0] : null;
+    // Top customer from customers API (by balance = AR)
+    const sortedCustomers = (customers || [])
+      .filter(c => c.balance != null)
+      .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance));
+    const topCustomer = sortedCustomers.length > 0 ? sortedCustomers[0] : null;
 
     const kpis = {
-      totalSales,
-      invoiceCount,
-      avgInvoiceAmount: avgInvoice,
-      topCustomerName: topCustomer?.name || null,
-      topCustomerSales: topCustomer?.value || null,
+      totalRevenue,
+      totalCogs,
+      grossProfit,
+      grossMargin,
+      topCustomerName: topCustomer?.displayName || null,
+      topCustomerBalance: topCustomer ? Math.abs(topCustomer.balance) : 0,
     };
 
     // Charts
-    const salesByMonth = this.computeMonthlyTotals(invoices, months);
-    const top5Customers = customerSales.slice(0, 5);
-    const salesBySalesperson = this.groupBy(periodInvoices, 'salespersonCode', 'totalAmountExcludingTax')
-      .filter(sp => sp.name && sp.name !== 'Unknown');
 
-    // Optional: Top items from line-level data
-    let topItems = [];
-    if (invoicesWithLines) {
-      topItems = this.computeTopItems(invoicesWithLines);
-    }
+    // 1. Revenue by month (12 months)
+    const revenueByMonth = this.computeMonthlyTotals(revenueEntries, months, true);
+
+    // 2. Revenue by sub-category (from accounts map)
+    const revenueByCategory = this.computeRevenueByCategory(periodRevEntries, accountsMap);
+
+    // 3. Top 5 customers (by balance)
+    const top5Customers = sortedCustomers.slice(0, 5).map(c => ({
+      name: c.displayName || c.number,
+      value: Math.abs(c.balance || 0),
+    }));
+
+    // 4. Gross profit by month (revenue - cogs per month)
+    const grossProfitByMonth = this.computeGrossProfitByMonth(revenueEntries, cogsEntries, months);
 
     const result = {
       period: { startDate: periodStart, endDate: periodEnd, year: targetYear, month: targetMonth },
       kpis,
-      charts: { salesByMonth, top5Customers, salesBySalesperson, topItems },
+      charts: { revenueByMonth, revenueByCategory, top5Customers, grossProfitByMonth },
     };
 
     this.setCache(cacheKey, result);
@@ -127,59 +179,77 @@ class SalesDashboardService {
     return months;
   }
 
-  computeMonthlyTotals(invoices, months) {
+  computeMonthlyTotals(entries, months, isRevenue = true) {
     return months.map(({ year, month, start, end }) => {
       const label = `${year}-${String(month).padStart(2, '0')}`;
-      const total = invoices
-        .filter(i => i.postingDate >= start && i.postingDate <= end)
-        .reduce((s, i) => s + (i.totalAmountExcludingTax || 0), 0);
+      const filtered = entries.filter(e => e.postingDate >= start && e.postingDate <= end);
+      const total = filtered.reduce((s, e) => {
+        return s + Math.abs(isRevenue ? (e.creditAmount - e.debitAmount) : (e.debitAmount - e.creditAmount));
+      }, 0);
       return { label, value: total };
     });
   }
 
-  groupBy(items, nameField, valueField) {
-    const map = {};
-    for (const item of items) {
-      const key = item[nameField] || 'Unknown';
-      map[key] = (map[key] || 0) + (item[valueField] || 0);
+  computeRevenueByCategory(entries, accountsMap) {
+    const categoryMap = {};
+    for (const entry of entries) {
+      const accNum = entry.accountNumber || '';
+      const accInfo = accountsMap?.[accNum];
+      const catName = accInfo?.subCategory || accInfo?.displayName || accNum;
+      // Skip "合計" summary accounts
+      if (catName.includes('合計')) continue;
+      const amount = Math.abs(entry.creditAmount - entry.debitAmount);
+      if (amount < 0.5) continue;
+      categoryMap[catName] = (categoryMap[catName] || 0) + amount;
     }
-    return Object.entries(map)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }
-
-  computeTopItems(invoicesWithLines) {
-    const itemMap = {};
-    for (const inv of invoicesWithLines) {
-      const lines = inv.salesInvoiceLines || [];
-      for (const line of lines) {
-        if (line.lineType === 'Item' || line.lineType === 'Resource') {
-          const key = line.description || line.lineObjectNumber || 'Unknown';
-          itemMap[key] = (itemMap[key] || 0) + (line.netAmount || 0);
-        }
-      }
-    }
-    return Object.entries(itemMap)
+    return Object.entries(categoryMap)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
   }
 
-  async safeGetSalesInvoices(start, end, opts) {
+  computeGrossProfitByMonth(revenueEntries, cogsEntries, months) {
+    return months.map(({ year, month, start, end }) => {
+      const label = `${year}-${String(month).padStart(2, '0')}`;
+      const rev = revenueEntries
+        .filter(e => e.postingDate >= start && e.postingDate <= end)
+        .reduce((s, e) => s + Math.abs(e.creditAmount - e.debitAmount), 0);
+      const cogs = cogsEntries
+        .filter(e => e.postingDate >= start && e.postingDate <= end)
+        .reduce((s, e) => s + Math.abs(e.debitAmount - e.creditAmount), 0);
+      return { label, revenue: rev, cogs, grossProfit: rev - cogs };
+    });
+  }
+
+  // ===== Safe API calls =====
+
+  async safeGetGLEntries(start, end, opts) {
     try {
-      return await this.bc.getSalesInvoices(start, end, { companyId: opts.companyId });
+      return await this.bc.getGeneralLedgerEntries(start, end, {
+        companyId: opts.companyId,
+        fetchAll: true,
+      });
     } catch (e) {
-      console.error('[SalesDashboard] getSalesInvoices error:', e.message);
+      console.error('[SalesDashboard] GL entries error:', e.message);
       return null;
     }
   }
 
-  async safeGetSalesInvoicesWithLines(start, end, opts) {
+  async safeGetAccountsMap(opts) {
     try {
-      return await this.bc.getSalesInvoicesWithLines(start, end, { companyId: opts.companyId });
+      return await this.bc.getAccountsMap({ companyId: opts.companyId });
     } catch (e) {
-      console.error('[SalesDashboard] getSalesInvoicesWithLines error:', e.message);
-      return null;
+      console.error('[SalesDashboard] AccountsMap error:', e.message);
+      return {};
+    }
+  }
+
+  async safeGetCustomers(opts) {
+    try {
+      return await this.bc.getCustomers({ companyId: opts.companyId }) || [];
+    } catch (e) {
+      console.error('[SalesDashboard] Customers error:', e.message);
+      return [];
     }
   }
 }
