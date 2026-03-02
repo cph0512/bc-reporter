@@ -64,9 +64,33 @@
   .margin-row td { font-size: 11px; color: #888; border: none; padding-top: 2px; }
   optgroup { font-weight: 600; }
 
+  /* Tab bar */
+  .tab-bar { display: flex; background: white; border-bottom: 2px solid #e0e0e0; padding: 0 24px; }
+  .tab { padding: 12px 20px; border: none; background: none; font-size: 14px; font-weight: 500; color: #666; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+  .tab.active { color: #1a1a2e; border-bottom-color: #1a1a2e; font-weight: 600; }
+  .tab:hover { color: #1a1a2e; }
+
+  /* Dashboard */
+  .dashboard-content { padding: 24px; max-width: 1400px; margin: 0 auto; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .kpi-card { background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 18px 16px; }
+  .kpi-card .kpi-label { font-size: 11px; color: #666; margin-bottom: 6px; }
+  .kpi-card .kpi-value { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+  .kpi-card .kpi-sub { font-size: 11px; color: #999; margin-top: 4px; }
+  .kpi-card.na .kpi-value { color: #ccc; font-size: 16px; }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .chart-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .chart-card { background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 16px; }
+  .chart-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #333; }
+  .chart-card canvas { width: 100% !important; }
+  @media (max-width: 900px) {
+    .chart-row, .chart-row-2 { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  }
+
   /* Print styles for PDF export */
   @media print {
-    .header, .controls, .export-bar, .summary-grid, .btn, .card-header { display: none !important; }
+    .header, .controls, .export-bar, .summary-grid, .btn, .card-header, .tab-bar, #dashboardView { display: none !important; }
     body { background: white; }
     .content { padding: 0; max-width: 100%; }
     .card { box-shadow: none; border: none; }
@@ -80,6 +104,7 @@
     @page { margin: 1.5cm; }
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -96,11 +121,32 @@
   </div>
 </div>
 
-<div class="controls">
-  <div id="companyGroup">
-    <label>公司</label>
-    <select id="companySelect"></select>
+<div class="tab-bar">
+  <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">儀表板</button>
+  <button class="tab" data-tab="reports" onclick="switchTab('reports')">報表</button>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:12px;" id="tabBarRight">
+    <div id="companyGroup" style="display:flex;align-items:center;gap:6px;">
+      <label style="font-size:12px;color:#666;">公司</label>
+      <select id="companySelect" style="padding:5px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <label style="font-size:12px;color:#666;">語言</label>
+      <select id="lang" style="padding:5px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <option value="zh">中文</option>
+        <option value="en">English</option>
+      </select>
+    </div>
   </div>
+</div>
+
+<div id="dashboardView">
+  <div class="dashboard-content">
+    <div class="loading">載入中...</div>
+  </div>
+</div>
+
+<div id="reportsView" style="display:none">
+<div class="controls">
   <div>
     <label>報表</label>
     <select id="reportType">
@@ -116,13 +162,6 @@
         <option value="bs-detailed">資產負債表 — 詳細 (內部)</option>
         <option value="bs-simple">資產負債表 — 簡要 (外部)</option>
       </optgroup>
-    </select>
-  </div>
-  <div>
-    <label>語言</label>
-    <select id="lang">
-      <option value="zh">中文</option>
-      <option value="en">English</option>
     </select>
   </div>
   <div>
@@ -166,6 +205,7 @@
 <div class="content" id="reportArea">
   <div class="loading">選擇報表類型和期間，點擊「查詢」</div>
 </div>
+</div><!-- /reportsView -->
 
 <!-- Change Password Modal -->
 <div id="pwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
@@ -202,9 +242,24 @@ let companiesList = [];
       const sel = document.getElementById('companySelect');
       sel.innerHTML = companiesList.map(c => `<option value="${c.id}" data-name="${c.name}" data-name-en="${c.nameEn}">${c.name}</option>`).join('');
       if (companiesList.length <= 1) document.getElementById('companyGroup').style.display = 'none';
+      // Auto-load dashboard
+      loadDashboard();
     }
   } catch { window.location.href = '/login'; }
 })();
+
+// Reload dashboard on company change
+document.getElementById('companySelect').addEventListener('change', () => {
+  if (currentTab === 'dashboard') loadDashboard();
+});
+
+// Update tab labels + reload dashboard on language change
+document.getElementById('lang').addEventListener('change', () => {
+  const l = L();
+  document.querySelector('.tab[data-tab="dashboard"]').textContent = l.dTab;
+  document.querySelector('.tab[data-tab="reports"]').textContent = l.dReports;
+  if (currentTab === 'dashboard') loadDashboard();
+});
 
 async function doLogout() {
   await fetch('/auth/logout', { method: 'POST' });
@@ -343,6 +398,14 @@ const LABELS = {
     sLiabEquity: '負債+權益',
     sMargin: '利潤率',
 
+    // Dashboard
+    dTab: '儀表板', dReports: '報表',
+    dRevenue: '營業收入', dNetProfit: '稅後淨利', dNetProfitMargin: '淨利率',
+    dTotalAssets: '總資產', dDSO: '應收帳款天數 (DSO)', dDIO: '存貨週轉天數 (DIO)', dDPO: '應付帳款天數 (DPO)',
+    dROA: '資產報酬率 (ROA)', dTop5Customers: '前五大客戶', dTop5Vendors: '前五大供應商',
+    dNPMTrend: '淨利率趨勢', dAssetTurnover: '資產週轉率趨勢',
+    dLoading: '載入儀表板中...', dNoData: '無資料',
+
     // Period helpers
     periodRange: (s, e) => `${s} ~ ${e}`,
     asOf: (d) => `截至 ${d}`,
@@ -435,6 +498,14 @@ const LABELS = {
     sEquity: 'Equity',
     sLiabEquity: 'Liab + Equity',
     sMargin: 'Margin',
+
+    // Dashboard
+    dTab: 'Dashboard', dReports: 'Reports',
+    dRevenue: 'Revenue', dNetProfit: 'Net Profit', dNetProfitMargin: 'Net Profit Margin',
+    dTotalAssets: 'Total Assets', dDSO: 'Days Sales Outstanding (DSO)', dDIO: 'Days Inventory Outstanding (DIO)', dDPO: 'Days Payable Outstanding (DPO)',
+    dROA: 'Return on Assets (ROA)', dTop5Customers: 'Top 5 Customers', dTop5Vendors: 'Top 5 Vendors',
+    dNPMTrend: 'Net Profit Margin Trend', dAssetTurnover: 'Asset Turnover Trend',
+    dLoading: 'Loading dashboard...', dNoData: 'No Data',
 
     periodRange: (s, e) => `${s} ~ ${e}`,
     asOf: (d) => `As of ${d}`,
@@ -960,6 +1031,154 @@ function renderBSSimple(data, compare) {
         </table>
       </div>
     </div>`;
+}
+
+// ==========================================
+//  Dashboard
+// ==========================================
+let currentTab = 'dashboard';
+let dashCharts = [];
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('dashboardView').style.display = tab === 'dashboard' ? '' : 'none';
+  document.getElementById('reportsView').style.display = tab === 'reports' ? '' : 'none';
+  if (tab === 'dashboard') loadDashboard();
+}
+
+async function loadDashboard() {
+  const companyId = getCompanyId();
+  if (!companyId) return;
+  const container = document.querySelector('#dashboardView .dashboard-content');
+  container.innerHTML = `<div class="loading">${L().dLoading}</div>`;
+  try {
+    const res = await fetch(`/api/dashboard?companyId=${companyId}`);
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    const data = await res.json();
+    renderDashboard(data, container);
+  } catch (e) {
+    container.innerHTML = `<div class="error">Dashboard 載入失敗：${e.message}</div>`;
+  }
+}
+
+function fmtKpi(n, type) {
+  if (n == null) return null;
+  if (type === 'pct') return (n * 100).toFixed(1) + '%';
+  if (type === 'days') return n.toFixed(1);
+  return fmt(n);
+}
+
+function kpiCard(label, value, sub, isNA) {
+  return `<div class="kpi-card${isNA ? ' na' : ''}">
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-value">${isNA ? 'N/A' : value}</div>
+    ${sub ? `<div class="kpi-sub">${sub}</div>` : ''}
+  </div>`;
+}
+
+function renderDashboard(data, container) {
+  const l = L();
+  const k = data.kpis;
+  const periodStr = `${data.period.year}/${String(data.period.month).padStart(2, '0')}`;
+
+  const kpis = `<div class="kpi-grid">
+    ${kpiCard(l.dRevenue, fmtKpi(k.revenue), periodStr, k.revenue == null)}
+    ${kpiCard(l.dNetProfit, fmtKpi(k.netProfit), '', k.netProfit == null)}
+    ${kpiCard(l.dNetProfitMargin, fmtKpi(k.netProfitMargin, 'pct'), '', k.netProfitMargin == null)}
+    ${kpiCard(l.dTotalAssets, fmtKpi(k.totalAssets), '', k.totalAssets == null)}
+    ${kpiCard(l.dDSO, fmtKpi(k.dso, 'days'), '', k.dso == null)}
+    ${kpiCard(l.dDIO, fmtKpi(k.dio, 'days'), '', k.dio == null)}
+    ${kpiCard(l.dDPO, fmtKpi(k.dpo, 'days'), '', k.dpo == null)}
+  </div>`;
+
+  const charts = `
+  <div class="chart-row">
+    <div class="chart-card"><h3>${l.dROA}</h3><canvas id="chartROA"></canvas></div>
+    <div class="chart-card"><h3>${l.dTop5Customers}</h3><canvas id="chartCustomers"></canvas></div>
+    <div class="chart-card"><h3>${l.dTop5Vendors}</h3><canvas id="chartVendors"></canvas></div>
+  </div>
+  <div class="chart-row-2">
+    <div class="chart-card"><h3>${l.dNPMTrend}</h3><canvas id="chartNPM"></canvas></div>
+    <div class="chart-card"><h3>${l.dAssetTurnover}</h3><canvas id="chartAT"></canvas></div>
+  </div>`;
+
+  container.innerHTML = kpis + charts;
+  renderCharts(data.charts);
+}
+
+function renderCharts(charts) {
+  dashCharts.forEach(c => c.destroy());
+  dashCharts = [];
+  const barColor = '#1a1a2e';
+  const doughnutColors = ['#1a1a2e', '#2d4a7a', '#3a7ca5', '#5cb3a0', '#8cd17d'];
+
+  // ROA by Month (bar)
+  if (charts.roaByMonth?.length) {
+    dashCharts.push(new Chart(document.getElementById('chartROA'), {
+      type: 'bar',
+      data: {
+        labels: charts.roaByMonth.map(d => d.label),
+        datasets: [{ data: charts.roaByMonth.map(d => d.value != null ? +(d.value * 100).toFixed(2) : null), backgroundColor: barColor, borderRadius: 4 }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+    }));
+  }
+
+  // Top 5 Customers (doughnut)
+  const custEl = document.getElementById('chartCustomers');
+  if (charts.top5Customers?.length && custEl) {
+    dashCharts.push(new Chart(custEl, {
+      type: 'doughnut',
+      data: {
+        labels: charts.top5Customers.map(d => d.name),
+        datasets: [{ data: charts.top5Customers.map(d => Math.abs(d.value)), backgroundColor: doughnutColors }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+    }));
+  } else if (custEl) {
+    custEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
+  }
+
+  // Top 5 Vendors (horizontal bar)
+  const vendEl = document.getElementById('chartVendors');
+  if (charts.top5Vendors?.length && vendEl) {
+    dashCharts.push(new Chart(vendEl, {
+      type: 'bar',
+      data: {
+        labels: charts.top5Vendors.map(d => d.name),
+        datasets: [{ data: charts.top5Vendors.map(d => Math.abs(d.value)), backgroundColor: '#3a7ca5', borderRadius: 4 }]
+      },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => fmt(v) } } } }
+    }));
+  } else if (vendEl) {
+    vendEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
+  }
+
+  // Net Profit Margin Trend (line)
+  if (charts.netProfitMarginByMonth?.length) {
+    dashCharts.push(new Chart(document.getElementById('chartNPM'), {
+      type: 'line',
+      data: {
+        labels: charts.netProfitMarginByMonth.map(d => d.label),
+        datasets: [{ data: charts.netProfitMarginByMonth.map(d => d.value != null ? +(d.value * 100).toFixed(2) : null), borderColor: '#2d4a7a', backgroundColor: 'rgba(45,74,122,0.1)', fill: true, tension: 0.3, pointRadius: 3 }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+    }));
+  }
+
+  // Asset Turnover Trend (line)
+  if (charts.assetTurnoverByMonth?.length) {
+    dashCharts.push(new Chart(document.getElementById('chartAT'), {
+      type: 'line',
+      data: {
+        labels: charts.assetTurnoverByMonth.map(d => d.label),
+        datasets: [{ data: charts.assetTurnoverByMonth.map(d => d.value != null ? +d.value.toFixed(3) : null), borderColor: '#5cb3a0', backgroundColor: 'rgba(92,179,160,0.1)', fill: true, tension: 0.3, pointRadius: 3 }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => v.toFixed(2) + 'x' } } } }
+    }));
+  }
 }
 
 // Init

@@ -129,6 +129,22 @@ module.exports = function(reportEngine) {
     return null;
   }
 
+  // ===== Dashboard =====
+
+  const DashboardService = require('../services/dashboardService');
+  const dashService = new DashboardService(reportEngine);
+
+  router.get('/dashboard', async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      const data = await dashService.getDashboardData(co);
+      res.json(data);
+    } catch (error) {
+      console.error('[API] Dashboard error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ===== Income Statement =====
 
   router.get('/income-statement', async (req, res) => {

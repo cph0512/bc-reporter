@@ -206,6 +206,40 @@ class BCClient {
     return map;
   }
 
+  /**
+   * 客戶列表 (Customers) — Top 5 + AR
+   */
+  async getCustomers(options = {}) {
+    try {
+      return await this.requestAll(this.companyUrl('customers', options.companyId), {
+        $select: 'id,number,displayName,balance',
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] customers API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 供應商列表 (Vendors) — Top 5 + AP
+   */
+  async getVendors(options = {}) {
+    try {
+      return await this.requestAll(this.companyUrl('vendors', options.companyId), {
+        $select: 'id,number,displayName,balance',
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] vendors API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
   // ===== Helper Methods =====
 
   static getMonthRange(year, month) {

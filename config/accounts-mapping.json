@@ -10,5 +10,9 @@
   "tax_expense": ["795111", "795211"],
 
   "non_operating_income": ["700000-739999"],
-  "non_operating_expense": ["750000-779999"]
+  "non_operating_expense": ["750000-779999"],
+
+  "accounts_receivable": [],
+  "inventory": [],
+  "accounts_payable": []
 }
