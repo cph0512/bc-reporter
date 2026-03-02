@@ -90,6 +90,7 @@ class BCClient {
     if (params.$filter) queryParts.push(`$filter=${params.$filter}`);
     if (params.$select) queryParts.push(`$select=${params.$select}`);
     if (params.$orderby) queryParts.push(`$orderby=${params.$orderby}`);
+    if (params.$expand) queryParts.push(`$expand=${params.$expand}`);
 
     let fullUrl = queryParts.length > 0 ? `${url}?${queryParts.join('&')}` : url;
     let allResults = [];
@@ -234,6 +235,106 @@ class BCClient {
     } catch (error) {
       if (error.response?.status === 404) {
         console.log('[BCClient] vendors API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  // ===== Sales & Purchasing Endpoints =====
+
+  /**
+   * 銷售發票 (Sales Invoices)
+   */
+  async getSalesInvoices(startDate, endDate, options = {}) {
+    try {
+      const filters = [];
+      if (startDate) filters.push(`postingDate ge ${startDate}`);
+      if (endDate) filters.push(`postingDate le ${endDate}`);
+
+      return await this.requestAll(
+        this.companyUrl('salesInvoices', options.companyId),
+        {
+          $filter: filters.length > 0 ? filters.join(' and ') : undefined,
+          $select: 'id,number,invoiceDate,postingDate,customerNumber,customerName,totalAmountExcludingTax,totalTaxAmount,totalAmountIncludingTax,salespersonCode,status',
+        }
+      );
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] salesInvoices API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 銷售發票含明細 (Sales Invoices with Lines via $expand)
+   * 用於品項分析，某些 BC 租戶不支援 $expand
+   */
+  async getSalesInvoicesWithLines(startDate, endDate, options = {}) {
+    try {
+      const filters = [];
+      if (startDate) filters.push(`postingDate ge ${startDate}`);
+      if (endDate) filters.push(`postingDate le ${endDate}`);
+
+      return await this.requestAll(
+        this.companyUrl('salesInvoices', options.companyId),
+        {
+          $filter: filters.length > 0 ? filters.join(' and ') : undefined,
+          $select: 'id,number,postingDate,customerNumber,customerName,totalAmountExcludingTax,salespersonCode',
+          $expand: 'salesInvoiceLines($select=lineType,lineObjectNumber,description,quantity,unitPrice,netAmount)',
+        }
+      );
+    } catch (error) {
+      if (error.response?.status === 404 || error.response?.status === 400) {
+        console.log('[BCClient] salesInvoices with $expand not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 採購發票 (Purchase Invoices)
+   */
+  async getPurchaseInvoices(startDate, endDate, options = {}) {
+    try {
+      const filters = [];
+      if (startDate) filters.push(`invoiceDate ge ${startDate}`);
+      if (endDate) filters.push(`invoiceDate le ${endDate}`);
+
+      return await this.requestAll(
+        this.companyUrl('purchaseInvoices', options.companyId),
+        {
+          $filter: filters.length > 0 ? filters.join(' and ') : undefined,
+          $select: 'id,number,invoiceDate,vendorNumber,vendorName,totalAmountExcludingTax,purchaser',
+        }
+      );
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] purchaseInvoices API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 未結採購訂單 (Purchase Orders — Open status)
+   */
+  async getPurchaseOrders(options = {}) {
+    try {
+      return await this.requestAll(
+        this.companyUrl('purchaseOrders', options.companyId),
+        {
+          $select: 'id,number,orderDate,vendorNumber,vendorName,status,totalAmountExcludingTax',
+          $filter: "status eq 'Open'",
+        }
+      );
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] purchaseOrders API not available');
         return null;
       }
       throw error;

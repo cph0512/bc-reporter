@@ -88,9 +88,15 @@
     .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
   }
 
+  /* Dashboard filter bar */
+  .dash-filters { display: flex; gap: 12px; padding: 12px 24px; background: #fafafa; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; align-items: flex-end; }
+  .dash-filters label { font-size: 12px; color: #666; display: block; margin-bottom: 2px; }
+  .dash-filters select, .dash-filters input { padding: 5px 10px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 13px; }
+  .dash-filters .btn { margin-bottom: 0; }
+
   /* Print styles for PDF export */
   @media print {
-    .header, .controls, .export-bar, .summary-grid, .btn, .card-header, .tab-bar, #dashboardView { display: none !important; }
+    .header, .controls, .export-bar, .summary-grid, .btn, .card-header, .tab-bar, #dashboardView, #salesDashboardView, #purchasingDashboardView, .dash-filters { display: none !important; }
     body { background: white; }
     .content { padding: 0; max-width: 100%; }
     .card { box-shadow: none; border: none; }
@@ -122,8 +128,12 @@
 </div>
 
 <div class="tab-bar">
-  <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">儀表板</button>
-  <button class="tab" data-tab="reports" onclick="switchTab('reports')">報表</button>
+  <div id="tabButtons">
+    <button class="tab active" data-tab="dashboard">儀表板</button>
+    <button class="tab" data-tab="sales-dashboard">銷售儀表板</button>
+    <button class="tab" data-tab="purchasing-dashboard">採購儀表板</button>
+    <button class="tab" data-tab="reports">報表</button>
+  </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;" id="tabBarRight">
     <div id="companyGroup" style="display:flex;align-items:center;gap:6px;">
       <label style="font-size:12px;color:#666;">公司</label>
@@ -140,6 +150,33 @@
 </div>
 
 <div id="dashboardView">
+  <div class="dash-filters">
+    <div><label>起始日期</label><input type="date" id="finStartDate"></div>
+    <div><label>結束日期</label><input type="date" id="finEndDate"></div>
+    <button class="btn btn-primary btn-sm" onclick="loadDashboard()">查詢</button>
+  </div>
+  <div class="dashboard-content">
+    <div class="loading">載入中...</div>
+  </div>
+</div>
+
+<div id="salesDashboardView" style="display:none">
+  <div class="dash-filters">
+    <div><label>起始日期</label><input type="date" id="salesStartDate"></div>
+    <div><label>結束日期</label><input type="date" id="salesEndDate"></div>
+    <button class="btn btn-primary btn-sm" onclick="loadSalesDashboard()">查詢</button>
+  </div>
+  <div class="dashboard-content">
+    <div class="loading">載入中...</div>
+  </div>
+</div>
+
+<div id="purchasingDashboardView" style="display:none">
+  <div class="dash-filters">
+    <div><label>起始日期</label><input type="date" id="purchStartDate"></div>
+    <div><label>結束日期</label><input type="date" id="purchEndDate"></div>
+    <button class="btn btn-primary btn-sm" onclick="loadPurchasingDashboard()">查詢</button>
+  </div>
   <div class="dashboard-content">
     <div class="loading">載入中...</div>
   </div>
@@ -227,6 +264,9 @@
 //  Auth check
 // ==========================================
 let companiesList = [];
+let userDashboards = []; // empty = all dashboards
+let userRole = 'user';
+
 (async () => {
   try {
     const res = await fetch('/auth/me');
@@ -235,6 +275,9 @@ let companiesList = [];
     document.getElementById('userDisplay').textContent = user.displayName || user.username;
     if (user.role === 'admin') document.getElementById('adminLink').style.display = 'inline-flex';
 
+    userRole = user.role;
+    userDashboards = user.role === 'admin' ? [] : (user.dashboards || []);
+
     // Load companies
     const cRes = await fetch('/api/companies');
     if (cRes.ok) {
@@ -242,24 +285,88 @@ let companiesList = [];
       const sel = document.getElementById('companySelect');
       sel.innerHTML = companiesList.map(c => `<option value="${c.id}" data-name="${c.name}" data-name-en="${c.nameEn}">${c.name}</option>`).join('');
       if (companiesList.length <= 1) document.getElementById('companyGroup').style.display = 'none';
-      // Auto-load dashboard
-      loadDashboard();
+
+      // Render tabs based on permissions + init dashboard dates
+      renderTabs();
+      initDashFilterDates();
+      // Auto-load first available dashboard
+      loadCurrentDashboard();
     }
   } catch { window.location.href = '/login'; }
 })();
 
-// Reload dashboard on company change
+function canAccessDashboard(perm) {
+  if (userRole === 'admin') return true;
+  if (!userDashboards || userDashboards.length === 0) return true;
+  return userDashboards.includes(perm);
+}
+
+function renderTabs() {
+  const l = L();
+  const allTabs = [
+    { id: 'dashboard', label: l.dFinancialTab, perm: 'financial' },
+    { id: 'sales-dashboard', label: l.dSalesTab, perm: 'sales' },
+    { id: 'purchasing-dashboard', label: l.dPurchasingTab, perm: 'purchasing' },
+    { id: 'reports', label: l.dReports, perm: null },
+  ];
+  const visibleTabs = allTabs.filter(t => t.perm === null || canAccessDashboard(t.perm));
+  const container = document.getElementById('tabButtons');
+  container.innerHTML = visibleTabs.map(t =>
+    `<button class="tab${t.id === currentTab ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`
+  ).join('');
+  bindTabClicks();
+}
+
+function bindTabClicks() {
+  document.querySelectorAll('#tabButtons button.tab').forEach(btn => {
+    btn.addEventListener('click', function() { switchTab(this.dataset.tab); });
+    btn.addEventListener('mousedown', function() { switchTab(this.dataset.tab); });
+    btn.addEventListener('pointerdown', function() { switchTab(this.dataset.tab); });
+  });
+}
+bindTabClicks(); // bind initial static buttons
+
+function initDashFilterDates() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() === 0 ? 12 : now.getMonth();
+  const yy = now.getMonth() === 0 ? y - 1 : y;
+  const start = `${yy}-01-01`;
+  const lastDay = new Date(yy, m, 0).getDate();
+  const end = `${yy}-${String(m).padStart(2, '0')}-${lastDay}`;
+  // Financial filter dates
+  const fd = document.getElementById('finStartDate');
+  const fe = document.getElementById('finEndDate');
+  if (fd) fd.value = start;
+  if (fe) fe.value = end;
+  // Sales filter dates
+  const sd = document.getElementById('salesStartDate');
+  const se = document.getElementById('salesEndDate');
+  if (sd) sd.value = start;
+  if (se) se.value = end;
+  // Purchasing filter dates
+  const pd = document.getElementById('purchStartDate');
+  const pe = document.getElementById('purchEndDate');
+  if (pd) pd.value = start;
+  if (pe) pe.value = end;
+}
+
+// Reload current dashboard on company change
 document.getElementById('companySelect').addEventListener('change', () => {
-  if (currentTab === 'dashboard') loadDashboard();
+  loadCurrentDashboard();
 });
 
-// Update tab labels + reload dashboard on language change
+// Update tab labels + reload current dashboard on language change
 document.getElementById('lang').addEventListener('change', () => {
-  const l = L();
-  document.querySelector('.tab[data-tab="dashboard"]').textContent = l.dTab;
-  document.querySelector('.tab[data-tab="reports"]').textContent = l.dReports;
-  if (currentTab === 'dashboard') loadDashboard();
+  renderTabs();
+  loadCurrentDashboard();
 });
+
+function loadCurrentDashboard() {
+  if (currentTab === 'dashboard') loadDashboard();
+  else if (currentTab === 'sales-dashboard') loadSalesDashboard();
+  else if (currentTab === 'purchasing-dashboard') loadPurchasingDashboard();
+}
 
 async function doLogout() {
   await fetch('/auth/logout', { method: 'POST' });
@@ -398,13 +505,24 @@ const LABELS = {
     sLiabEquity: '負債+權益',
     sMargin: '利潤率',
 
-    // Dashboard
-    dTab: '儀表板', dReports: '報表',
+    // Dashboard tabs
+    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dReports: '報表',
+    // Financial Dashboard
     dRevenue: '營業收入', dNetProfit: '稅後淨利', dNetProfitMargin: '淨利率',
     dTotalAssets: '總資產', dDSO: '應收帳款天數 (DSO)', dDIO: '存貨週轉天數 (DIO)', dDPO: '應付帳款天數 (DPO)',
     dROA: '資產報酬率 (ROA)', dTop5Customers: '前五大客戶', dTop5Vendors: '前五大供應商',
     dNPMTrend: '淨利率趨勢', dAssetTurnover: '資產週轉率趨勢',
     dLoading: '載入儀表板中...', dNoData: '無資料',
+    // Sales Dashboard
+    sTotalSales: '銷售額 (LCY)', sInvoiceCount: '發票數量', sAvgInvoice: '平均發票金額',
+    sTopCustomerSales: '最大客戶銷售額', sSalesByMonth: '月銷售額',
+    sTop5CustomersSales: '前五大客戶（銷售額）', sSalesBySalesperson: '業務員銷售額', sTopItems: '熱銷品項',
+    // Purchasing Dashboard
+    pTotalPurchases: '採購總額 (LCY)', pPrevYearPurchases: '去年同期採購額',
+    pOutstandingOrders: '未結訂單數', pOutstandingAmount: '未結訂單金額',
+    pPurchasesByMonth: '月採購額', pTop5Vendors: '前五大供應商（採購額）', pByPurchaser: '採購人員',
+    // Filter labels
+    fStartDate: '起始日期', fEndDate: '結束日期', fQuery: '查詢',
 
     // Period helpers
     periodRange: (s, e) => `${s} ~ ${e}`,
@@ -499,13 +617,24 @@ const LABELS = {
     sLiabEquity: 'Liab + Equity',
     sMargin: 'Margin',
 
-    // Dashboard
-    dTab: 'Dashboard', dReports: 'Reports',
+    // Dashboard tabs
+    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dReports: 'Reports',
+    // Financial Dashboard
     dRevenue: 'Revenue', dNetProfit: 'Net Profit', dNetProfitMargin: 'Net Profit Margin',
     dTotalAssets: 'Total Assets', dDSO: 'Days Sales Outstanding (DSO)', dDIO: 'Days Inventory Outstanding (DIO)', dDPO: 'Days Payable Outstanding (DPO)',
     dROA: 'Return on Assets (ROA)', dTop5Customers: 'Top 5 Customers', dTop5Vendors: 'Top 5 Vendors',
     dNPMTrend: 'Net Profit Margin Trend', dAssetTurnover: 'Asset Turnover Trend',
     dLoading: 'Loading dashboard...', dNoData: 'No Data',
+    // Sales Dashboard
+    sTotalSales: 'Sales (LCY)', sInvoiceCount: 'Invoice Count', sAvgInvoice: 'Avg Invoice Amount',
+    sTopCustomerSales: 'Top Customer Sales', sSalesByMonth: 'Sales by Month',
+    sTop5CustomersSales: 'Top 5 Customers', sSalesBySalesperson: 'Sales by Salesperson', sTopItems: 'Top Items',
+    // Purchasing Dashboard
+    pTotalPurchases: 'Purchases (LCY)', pPrevYearPurchases: 'Purchases PY',
+    pOutstandingOrders: 'Outstanding Orders', pOutstandingAmount: 'Outstanding Amount',
+    pPurchasesByMonth: 'Purchases by Month', pTop5Vendors: 'Top 5 Vendors', pByPurchaser: 'By Purchaser',
+    // Filter labels
+    fStartDate: 'Start Date', fEndDate: 'End Date', fQuery: 'Query',
 
     periodRange: (s, e) => `${s} ~ ${e}`,
     asOf: (d) => `As of ${d}`,
@@ -1039,27 +1168,51 @@ function renderBSSimple(data, compare) {
 }
 
 // ==========================================
-//  Dashboard
+//  Dashboards (Financial / Sales / Purchasing)
 // ==========================================
 let currentTab = 'dashboard';
 let dashCharts = [];
+let salesDashCharts = [];
+let purchDashCharts = [];
 
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  document.getElementById('dashboardView').style.display = tab === 'dashboard' ? '' : 'none';
-  document.getElementById('reportsView').style.display = tab === 'reports' ? '' : 'none';
-  if (tab === 'dashboard') loadDashboard();
+  document.getElementById('dashboardView').style.display = 'none';
+  document.getElementById('salesDashboardView').style.display = 'none';
+  document.getElementById('purchasingDashboardView').style.display = 'none';
+  document.getElementById('reportsView').style.display = 'none';
+
+  if (tab === 'dashboard') {
+    document.getElementById('dashboardView').style.display = '';
+    loadDashboard();
+  } else if (tab === 'sales-dashboard') {
+    document.getElementById('salesDashboardView').style.display = '';
+    loadSalesDashboard();
+  } else if (tab === 'purchasing-dashboard') {
+    document.getElementById('purchasingDashboardView').style.display = '';
+    loadPurchasingDashboard();
+  } else if (tab === 'reports') {
+    document.getElementById('reportsView').style.display = '';
+  }
 }
 
+// ==========================================
+//  Financial Dashboard
+// ==========================================
 async function loadDashboard() {
   const companyId = getCompanyId();
   if (!companyId) return;
   const container = document.querySelector('#dashboardView .dashboard-content');
   container.innerHTML = `<div class="loading">${L().dLoading}</div>`;
   try {
-    const res = await fetch(`/api/dashboard?companyId=${companyId}`);
+    let url = `/api/dashboard?companyId=${companyId}`;
+    const sd = document.getElementById('finStartDate')?.value;
+    const ed = document.getElementById('finEndDate')?.value;
+    if (sd && ed) url += `&startDate=${sd}&endDate=${ed}`;
+    const res = await fetch(url);
     if (res.status === 401) { window.location.href = '/login'; return; }
+    if (res.status === 403) { container.innerHTML = '<div class="error">無權限</div>'; return; }
     if (!res.ok) throw new Error((await res.json()).error || res.statusText);
     const data = await res.json();
     renderDashboard(data, container);
@@ -1072,6 +1225,7 @@ function fmtKpi(n, type) {
   if (n == null) return null;
   if (type === 'pct') return (n * 100).toFixed(1) + '%';
   if (type === 'days') return n.toFixed(1);
+  if (type === 'int') return n.toLocaleString();
   return fmtShort(n);
 }
 
@@ -1110,79 +1264,261 @@ function renderDashboard(data, container) {
   </div>`;
 
   container.innerHTML = kpis + charts;
-  renderCharts(data.charts);
+  renderFinancialCharts(data.charts);
 }
 
-function renderCharts(charts) {
+function renderFinancialCharts(charts) {
   dashCharts.forEach(c => c.destroy());
   dashCharts = [];
   const barColor = '#1a1a2e';
   const doughnutColors = ['#1a1a2e', '#2d4a7a', '#3a7ca5', '#5cb3a0', '#8cd17d'];
 
-  // ROA by Month (bar)
   if (charts.roaByMonth?.length) {
     dashCharts.push(new Chart(document.getElementById('chartROA'), {
       type: 'bar',
-      data: {
-        labels: charts.roaByMonth.map(d => d.label),
-        datasets: [{ data: charts.roaByMonth.map(d => d.value != null ? +(d.value * 100).toFixed(2) : null), backgroundColor: barColor, borderRadius: 4 }]
-      },
+      data: { labels: charts.roaByMonth.map(d => d.label), datasets: [{ data: charts.roaByMonth.map(d => d.value != null ? +(d.value * 100).toFixed(2) : null), backgroundColor: barColor, borderRadius: 4 }] },
       options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
     }));
   }
 
-  // Top 5 Customers (doughnut)
   const custEl = document.getElementById('chartCustomers');
   if (charts.top5Customers?.length && custEl) {
     dashCharts.push(new Chart(custEl, {
       type: 'doughnut',
-      data: {
-        labels: charts.top5Customers.map(d => d.name),
-        datasets: [{ data: charts.top5Customers.map(d => Math.abs(d.value)), backgroundColor: doughnutColors }]
-      },
+      data: { labels: charts.top5Customers.map(d => d.name), datasets: [{ data: charts.top5Customers.map(d => Math.abs(d.value)), backgroundColor: doughnutColors }] },
       options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
     }));
   } else if (custEl) {
     custEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
   }
 
-  // Top 5 Vendors (horizontal bar)
   const vendEl = document.getElementById('chartVendors');
   if (charts.top5Vendors?.length && vendEl) {
     dashCharts.push(new Chart(vendEl, {
       type: 'bar',
-      data: {
-        labels: charts.top5Vendors.map(d => d.name),
-        datasets: [{ data: charts.top5Vendors.map(d => Math.abs(d.value)), backgroundColor: '#3a7ca5', borderRadius: 4 }]
-      },
+      data: { labels: charts.top5Vendors.map(d => d.name), datasets: [{ data: charts.top5Vendors.map(d => Math.abs(d.value)), backgroundColor: '#3a7ca5', borderRadius: 4 }] },
       options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => fmtShort(v) } } } }
     }));
   } else if (vendEl) {
     vendEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
   }
 
-  // Net Profit Margin Trend (line)
   if (charts.netProfitMarginByMonth?.length) {
     dashCharts.push(new Chart(document.getElementById('chartNPM'), {
       type: 'line',
-      data: {
-        labels: charts.netProfitMarginByMonth.map(d => d.label),
-        datasets: [{ data: charts.netProfitMarginByMonth.map(d => d.value != null ? +(d.value * 100).toFixed(2) : null), borderColor: '#2d4a7a', backgroundColor: 'rgba(45,74,122,0.1)', fill: true, tension: 0.3, pointRadius: 3 }]
-      },
+      data: { labels: charts.netProfitMarginByMonth.map(d => d.label), datasets: [{ data: charts.netProfitMarginByMonth.map(d => d.value != null ? +(d.value * 100).toFixed(2) : null), borderColor: '#2d4a7a', backgroundColor: 'rgba(45,74,122,0.1)', fill: true, tension: 0.3, pointRadius: 3 }] },
       options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
     }));
   }
 
-  // Asset Turnover Trend (line)
   if (charts.assetTurnoverByMonth?.length) {
     dashCharts.push(new Chart(document.getElementById('chartAT'), {
       type: 'line',
-      data: {
-        labels: charts.assetTurnoverByMonth.map(d => d.label),
-        datasets: [{ data: charts.assetTurnoverByMonth.map(d => d.value != null ? +d.value.toFixed(3) : null), borderColor: '#5cb3a0', backgroundColor: 'rgba(92,179,160,0.1)', fill: true, tension: 0.3, pointRadius: 3 }]
-      },
+      data: { labels: charts.assetTurnoverByMonth.map(d => d.label), datasets: [{ data: charts.assetTurnoverByMonth.map(d => d.value != null ? +d.value.toFixed(3) : null), borderColor: '#5cb3a0', backgroundColor: 'rgba(92,179,160,0.1)', fill: true, tension: 0.3, pointRadius: 3 }] },
       options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => v.toFixed(2) + 'x' } } } }
     }));
+  }
+}
+
+// ==========================================
+//  Sales Dashboard
+// ==========================================
+async function loadSalesDashboard() {
+  const companyId = getCompanyId();
+  if (!companyId) return;
+  const container = document.querySelector('#salesDashboardView .dashboard-content');
+  container.innerHTML = `<div class="loading">${L().dLoading}</div>`;
+  try {
+    const startDate = document.getElementById('salesStartDate').value;
+    const endDate = document.getElementById('salesEndDate').value;
+    let url = `/api/sales-dashboard?companyId=${companyId}`;
+    if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
+    const res = await fetch(url);
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (res.status === 403) { container.innerHTML = '<div class="error">無權限</div>'; return; }
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    const data = await res.json();
+    if (data.error) { container.innerHTML = `<div class="error">${data.error}</div>`; return; }
+    renderSalesDashboard(data, container);
+  } catch (e) {
+    container.innerHTML = `<div class="error">Sales Dashboard 載入失敗：${e.message}</div>`;
+  }
+}
+
+function renderSalesDashboard(data, container) {
+  const l = L();
+  const k = data.kpis;
+  const periodStr = `${data.period.startDate} ~ ${data.period.endDate}`;
+
+  const kpis = `<div class="kpi-grid">
+    ${kpiCard(l.sTotalSales, fmtKpi(k.totalSales), periodStr, k.totalSales == null)}
+    ${kpiCard(l.sInvoiceCount, fmtKpi(k.invoiceCount, 'int'), '', k.invoiceCount == null)}
+    ${kpiCard(l.sAvgInvoice, fmtKpi(k.avgInvoiceAmount), '', k.avgInvoiceAmount == null)}
+    ${kpiCard(l.sTopCustomerSales, fmtKpi(k.topCustomerSales), k.topCustomerName || '', k.topCustomerSales == null)}
+  </div>`;
+
+  const charts = `
+  <div class="chart-row-2">
+    <div class="chart-card"><h3>${l.sSalesByMonth}</h3><canvas id="chartSalesMonth"></canvas></div>
+    <div class="chart-card"><h3>${l.sTop5CustomersSales}</h3><canvas id="chartSalesCust"></canvas></div>
+  </div>
+  <div class="chart-row-2">
+    <div class="chart-card"><h3>${l.sSalesBySalesperson}</h3><canvas id="chartSalesPerson"></canvas></div>
+    <div class="chart-card"><h3>${l.sTopItems}</h3><canvas id="chartTopItems"></canvas></div>
+  </div>`;
+
+  container.innerHTML = kpis + charts;
+  renderSalesCharts(data.charts);
+}
+
+function renderSalesCharts(charts) {
+  salesDashCharts.forEach(c => c.destroy());
+  salesDashCharts = [];
+  const barColor = '#1565c0';
+  const hBarColor = '#2d4a7a';
+  const doughnutColors = ['#1a1a2e', '#2d4a7a', '#3a7ca5', '#5cb3a0', '#8cd17d', '#b6d957', '#ffc857', '#e9724c', '#c5283d', '#481d24'];
+
+  // Sales by Month (bar)
+  const monthEl = document.getElementById('chartSalesMonth');
+  if (charts.salesByMonth?.length && monthEl) {
+    salesDashCharts.push(new Chart(monthEl, {
+      type: 'bar',
+      data: { labels: charts.salesByMonth.map(d => d.label), datasets: [{ data: charts.salesByMonth.map(d => d.value), backgroundColor: barColor, borderRadius: 4 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtShort(v) } } } }
+    }));
+  }
+
+  // Top 5 Customers (horizontal bar)
+  const custEl = document.getElementById('chartSalesCust');
+  if (charts.top5Customers?.length && custEl) {
+    salesDashCharts.push(new Chart(custEl, {
+      type: 'bar',
+      data: { labels: charts.top5Customers.map(d => d.name), datasets: [{ data: charts.top5Customers.map(d => d.value), backgroundColor: hBarColor, borderRadius: 4 }] },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => fmtShort(v) } } } }
+    }));
+  } else if (custEl) {
+    custEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
+  }
+
+  // Sales by Salesperson (bar)
+  const spEl = document.getElementById('chartSalesPerson');
+  if (charts.salesBySalesperson?.length && spEl) {
+    salesDashCharts.push(new Chart(spEl, {
+      type: 'bar',
+      data: { labels: charts.salesBySalesperson.map(d => d.name), datasets: [{ data: charts.salesBySalesperson.map(d => d.value), backgroundColor: '#3a7ca5', borderRadius: 4 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtShort(v) } } } }
+    }));
+  } else if (spEl) {
+    spEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
+  }
+
+  // Top Items (doughnut)
+  const itemEl = document.getElementById('chartTopItems');
+  if (charts.topItems?.length && itemEl) {
+    salesDashCharts.push(new Chart(itemEl, {
+      type: 'doughnut',
+      data: { labels: charts.topItems.map(d => d.name), datasets: [{ data: charts.topItems.map(d => d.value), backgroundColor: doughnutColors }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+    }));
+  } else if (itemEl) {
+    itemEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
+  }
+}
+
+// ==========================================
+//  Purchasing Dashboard
+// ==========================================
+async function loadPurchasingDashboard() {
+  const companyId = getCompanyId();
+  if (!companyId) return;
+  const container = document.querySelector('#purchasingDashboardView .dashboard-content');
+  container.innerHTML = `<div class="loading">${L().dLoading}</div>`;
+  try {
+    const startDate = document.getElementById('purchStartDate').value;
+    const endDate = document.getElementById('purchEndDate').value;
+    let url = `/api/purchasing-dashboard?companyId=${companyId}`;
+    if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
+    const res = await fetch(url);
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (res.status === 403) { container.innerHTML = '<div class="error">無權限</div>'; return; }
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    const data = await res.json();
+    if (data.error) { container.innerHTML = `<div class="error">${data.error}</div>`; return; }
+    renderPurchasingDashboard(data, container);
+  } catch (e) {
+    container.innerHTML = `<div class="error">Purchasing Dashboard 載入失敗：${e.message}</div>`;
+  }
+}
+
+function renderPurchasingDashboard(data, container) {
+  const l = L();
+  const k = data.kpis;
+  const periodStr = `${data.period.startDate} ~ ${data.period.endDate}`;
+
+  const kpis = `<div class="kpi-grid">
+    ${kpiCard(l.pTotalPurchases, fmtKpi(k.totalPurchases), periodStr, k.totalPurchases == null)}
+    ${kpiCard(l.pPrevYearPurchases, fmtKpi(k.purchasesPreviousYear), '', k.purchasesPreviousYear == null)}
+    ${kpiCard(l.pOutstandingOrders, fmtKpi(k.outstandingOrdersCount, 'int'), '', k.outstandingOrdersCount == null)}
+    ${kpiCard(l.pOutstandingAmount, fmtKpi(k.outstandingAmount), '', k.outstandingAmount == null)}
+  </div>`;
+
+  const charts = `
+  <div class="chart-row-2">
+    <div class="chart-card"><h3>${l.pPurchasesByMonth}</h3><canvas id="chartPurchMonth"></canvas></div>
+    <div class="chart-card"><h3>${l.pTop5Vendors}</h3><canvas id="chartPurchVendors"></canvas></div>
+  </div>
+  <div class="chart-row-2">
+    <div class="chart-card"><h3>${l.pByPurchaser}</h3><canvas id="chartByPurchaser"></canvas></div>
+    <div class="chart-card" style="display:flex;align-items:center;justify-content:center;min-height:200px;">
+      <div style="color:#999;text-align:center;">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px;">${l.dNoData}</div>
+        <div style="font-size:12px;">品項類別/據點分析將在後續版本提供</div>
+      </div>
+    </div>
+  </div>`;
+
+  container.innerHTML = kpis + charts;
+  renderPurchasingCharts(data.charts);
+}
+
+function renderPurchasingCharts(charts) {
+  purchDashCharts.forEach(c => c.destroy());
+  purchDashCharts = [];
+  const barColor = '#e65100';
+  const hBarColor = '#c62828';
+
+  // Purchases by Month (bar)
+  const monthEl = document.getElementById('chartPurchMonth');
+  if (charts.purchasesByMonth?.length && monthEl) {
+    purchDashCharts.push(new Chart(monthEl, {
+      type: 'bar',
+      data: { labels: charts.purchasesByMonth.map(d => d.label), datasets: [{ data: charts.purchasesByMonth.map(d => d.value), backgroundColor: barColor, borderRadius: 4 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtShort(v) } } } }
+    }));
+  }
+
+  // Top 5 Vendors (horizontal bar)
+  const vendEl = document.getElementById('chartPurchVendors');
+  if (charts.top5Vendors?.length && vendEl) {
+    purchDashCharts.push(new Chart(vendEl, {
+      type: 'bar',
+      data: { labels: charts.top5Vendors.map(d => d.name), datasets: [{ data: charts.top5Vendors.map(d => d.value), backgroundColor: hBarColor, borderRadius: 4 }] },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => fmtShort(v) } } } }
+    }));
+  } else if (vendEl) {
+    vendEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
+  }
+
+  // By Purchaser (bar)
+  const purchEl = document.getElementById('chartByPurchaser');
+  if (charts.byPurchaser?.length && purchEl) {
+    purchDashCharts.push(new Chart(purchEl, {
+      type: 'bar',
+      data: { labels: charts.byPurchaser.map(d => d.name), datasets: [{ data: charts.byPurchaser.map(d => d.value), backgroundColor: '#5cb3a0', borderRadius: 4 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtShort(v) } } } }
+    }));
+  } else if (purchEl) {
+    purchEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
   }
 }
 

@@ -17,4 +17,20 @@ function requireAdmin(req, res, next) {
   return res.status(403).json({ error: 'Admin access required' });
 }
 
-module.exports = { requireAuth, requireAdmin };
+/**
+ * Dashboard access guard (factory).
+ * Admins always pass. Users must have the dashboard in their `dashboards` array,
+ * or have an empty/missing array (which means "all dashboards").
+ */
+function requireDashboard(dashboardName) {
+  return (req, res, next) => {
+    const user = req.session?.user;
+    if (!user) return res.status(401).json({ error: 'Not authenticated' });
+    if (user.role === 'admin') return next();
+    if (!user.dashboards || user.dashboards.length === 0) return next();
+    if (user.dashboards.includes(dashboardName)) return next();
+    return res.status(403).json({ error: 'Dashboard access denied' });
+  };
+}
+
+module.exports = { requireAuth, requireAdmin, requireDashboard };

@@ -77,6 +77,7 @@
             <th>顯示名稱</th>
             <th>角色</th>
             <th>公司權限</th>
+            <th>儀表板權限</th>
             <th>建立時間</th>
             <th>操作</th>
           </tr>
@@ -111,6 +112,20 @@
     <div class="form-group">
       <label>公司權限（不勾 = 全部）</label>
       <div id="mCompanies" style="max-height:120px;overflow-y:auto;border:1px solid #d0d0d0;border-radius:6px;padding:8px;"></div>
+    </div>
+    <div class="form-group">
+      <label>儀表板權限（不勾 = 全部）</label>
+      <div id="mDashboards" style="border:1px solid #d0d0d0;border-radius:6px;padding:8px;">
+        <label style="display:block;font-size:12px;margin-bottom:4px;cursor:pointer;">
+          <input type="checkbox" value="financial" style="margin-right:6px;">財務儀表板 Financial
+        </label>
+        <label style="display:block;font-size:12px;margin-bottom:4px;cursor:pointer;">
+          <input type="checkbox" value="sales" style="margin-right:6px;">銷售儀表板 Sales
+        </label>
+        <label style="display:block;font-size:12px;margin-bottom:0;cursor:pointer;">
+          <input type="checkbox" value="purchasing" style="margin-right:6px;">採購儀表板 Purchasing
+        </label>
+      </div>
     </div>
     <div class="form-group" id="pwGroup">
       <label id="pwLabel">密碼</label>
@@ -156,19 +171,23 @@ async function loadUsers() {
   if (!usersData.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
+  const dashLabels = { financial: '財務', sales: '銷售', purchasing: '採購' };
   tbody.innerHTML = usersData.map(u => {
     const comps = u.companies && u.companies.length
       ? u.companies.map(cid => { const c = allCompanies.find(x => x.id === cid); return c ? esc(c.name) : esc(cid); }).join(', ')
       : '<span style="color:#999;">全部</span>';
-    const compJson = esc(JSON.stringify(u.companies || []));
+    const dashes = u.dashboards && u.dashboards.length
+      ? u.dashboards.map(d => dashLabels[d] || d).join(', ')
+      : '<span style="color:#999;">全部</span>';
     return `<tr>
       <td><strong>${esc(u.username)}</strong></td>
       <td>${esc(u.displayName)}</td>
       <td><span class="role-badge role-${u.role}">${u.role === 'admin' ? '管理員' : '使用者'}</span></td>
       <td style="font-size:12px;">${comps}</td>
+      <td style="font-size:12px;">${dashes}</td>
       <td>${new Date(u.createdAt).toLocaleDateString('zh-TW')}</td>
       <td class="actions">
-        <button class="btn btn-sm btn-edit" onclick='openEdit(${JSON.stringify(u.id)},${JSON.stringify(u.username)},${JSON.stringify(u.displayName)},${JSON.stringify(u.role)},${JSON.stringify(u.companies||[])})'>編輯</button>
+        <button class="btn btn-sm btn-edit" onclick='openEdit(${JSON.stringify(u.id)},${JSON.stringify(u.username)},${JSON.stringify(u.displayName)},${JSON.stringify(u.role)},${JSON.stringify(u.companies||[])},${JSON.stringify(u.dashboards||[])})'>編輯</button>
         ${u.id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}','${esc(u.username)}')">刪除</button>` : ''}
       </td>
     </tr>`;
@@ -192,6 +211,16 @@ function getSelectedCompanies() {
   return Array.from(document.querySelectorAll('#mCompanies input[type=checkbox]:checked')).map(cb => cb.value);
 }
 
+function renderDashboardCheckboxes(selected = []) {
+  document.querySelectorAll('#mDashboards input[type=checkbox]').forEach(cb => {
+    cb.checked = selected.includes(cb.value);
+  });
+}
+
+function getSelectedDashboards() {
+  return Array.from(document.querySelectorAll('#mDashboards input[type=checkbox]:checked')).map(cb => cb.value);
+}
+
 function openCreate() {
   editingId = null;
   document.getElementById('modalTitle').textContent = '新增帳號';
@@ -203,10 +232,11 @@ function openCreate() {
   document.getElementById('pwLabel').textContent = '密碼';
   document.getElementById('modalError').style.display = 'none';
   renderCompanyCheckboxes([]);
+  renderDashboardCheckboxes([]);
   document.getElementById('modal').classList.add('show');
 }
 
-function openEdit(id, username, displayName, role, companies) {
+function openEdit(id, username, displayName, role, companies, dashboards) {
   editingId = id;
   document.getElementById('modalTitle').textContent = '編輯帳號';
   document.getElementById('mUsername').value = username;
@@ -217,6 +247,7 @@ function openEdit(id, username, displayName, role, companies) {
   document.getElementById('pwLabel').textContent = '新密碼（留空不更改）';
   document.getElementById('modalError').style.display = 'none';
   renderCompanyCheckboxes(companies || []);
+  renderDashboardCheckboxes(dashboards || []);
   document.getElementById('modal').classList.add('show');
 }
 
@@ -234,6 +265,7 @@ async function saveUser() {
   const password = document.getElementById('mPassword').value;
 
   const companies = getSelectedCompanies();
+  const dashboards = getSelectedDashboards();
 
   if (!editingId) {
     // Create
@@ -242,7 +274,7 @@ async function saveUser() {
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, role, displayName: displayName || username, companies }),
+        body: JSON.stringify({ username, password, role, displayName: displayName || username, companies, dashboards }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -251,7 +283,7 @@ async function saveUser() {
     } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
   } else {
     // Update
-    const body = { displayName, role, companies };
+    const body = { displayName, role, companies, dashboards };
     if (password) body.password = password;
     try {
       const res = await fetch(`/api/admin/users/${editingId}`, {

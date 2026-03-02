@@ -28,15 +28,26 @@ class DashboardService {
 
   async getDashboardData(opts = {}) {
     const cid = opts.companyId || 'default';
-    const now = new Date();
-    const targetMonth = now.getMonth() === 0 ? 12 : now.getMonth();
-    const targetYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
 
-    const cacheKey = `dashboard:${cid}:${targetYear}:${targetMonth}`;
+    // Determine period from opts or default to last closed month
+    let periodStart, periodEnd, targetYear, targetMonth;
+
+    if (opts.startDate && opts.endDate) {
+      periodStart = opts.startDate;
+      periodEnd = opts.endDate;
+      const d = new Date(opts.endDate);
+      targetYear = d.getFullYear();
+      targetMonth = d.getMonth() + 1;
+    } else {
+      const now = new Date();
+      targetMonth = now.getMonth() === 0 ? 12 : now.getMonth();
+      targetYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      ({ start: periodStart, end: periodEnd } = BCClient.getMonthRange(targetYear, targetMonth));
+    }
+
+    const cacheKey = `dashboard:${cid}:${periodStart}:${periodEnd}`;
     const cached = this.getCached(cacheKey);
     if (cached) return cached;
-
-    const { start: periodStart, end: periodEnd } = BCClient.getMonthRange(targetYear, targetMonth);
 
     // Fetch current period data + customers/vendors in parallel
     const [is, bs, customers, vendors] = await Promise.all([

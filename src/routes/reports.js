@@ -129,18 +129,60 @@ module.exports = function(reportEngine) {
     return null;
   }
 
-  // ===== Dashboard =====
+  // ===== Dashboard Access Middleware =====
+  const { requireDashboard } = require('../middleware/auth');
+
+  // ===== Financial Dashboard =====
 
   const DashboardService = require('../services/dashboardService');
   const dashService = new DashboardService(reportEngine);
 
-  router.get('/dashboard', async (req, res) => {
+  router.get('/dashboard', requireDashboard('financial'), async (req, res) => {
     try {
       const co = companyOpts(req);
+      if (req.query.startDate) co.startDate = req.query.startDate;
+      if (req.query.endDate) co.endDate = req.query.endDate;
       const data = await dashService.getDashboardData(co);
       res.json(data);
     } catch (error) {
       console.error('[API] Dashboard error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ===== Sales Dashboard =====
+
+  const SalesDashboardService = require('../services/salesDashboardService');
+  const salesDashService = new SalesDashboardService(reportEngine);
+
+  router.get('/sales-dashboard', requireDashboard('sales'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      // Support date filter params
+      if (req.query.startDate) co.startDate = req.query.startDate;
+      if (req.query.endDate) co.endDate = req.query.endDate;
+      const data = await salesDashService.getSalesDashboardData(co);
+      res.json(data);
+    } catch (error) {
+      console.error('[API] Sales Dashboard error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ===== Purchasing Dashboard =====
+
+  const PurchasingDashboardService = require('../services/purchasingDashboardService');
+  const purchDashService = new PurchasingDashboardService(reportEngine);
+
+  router.get('/purchasing-dashboard', requireDashboard('purchasing'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      if (req.query.startDate) co.startDate = req.query.startDate;
+      if (req.query.endDate) co.endDate = req.query.endDate;
+      const data = await purchDashService.getPurchasingDashboardData(co);
+      res.json(data);
+    } catch (error) {
+      console.error('[API] Purchasing Dashboard error:', error.message);
       res.status(500).json({ error: error.message });
     }
   });
