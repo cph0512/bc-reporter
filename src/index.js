@@ -58,7 +58,15 @@ app.use('/auth', authRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    bc: {
+      baseUrl: bcClient.baseUrl,
+      environment: bcClient.environment,
+      hasToken: !!bcClient.token,
+    },
+  });
 });
 
 // LINE Bot Webhook (signature-validated by LINE SDK)
