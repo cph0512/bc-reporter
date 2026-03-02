@@ -7,7 +7,7 @@ const router = express.Router();
 // ===== i18n Labels for Excel export =====
 const EXCEL_LABELS = {
   zh: {
-    company: '品辰科技物流股份有限公司',
+    company: 'BBTruck',
     currency: '金額單位：新台幣元（NTD）',
     is: '損益表',
     bs: '資產負債表',
@@ -55,7 +55,7 @@ const EXCEL_LABELS = {
     totalLiabEquity: '負債及股東權益合計',
   },
   en: {
-    company: 'Pin Chen Technology Logistics Co., Ltd.',
+    company: 'BBTruck',
     currency: 'Amounts in New Taiwan Dollars (NTD)',
     is: 'Income Statement',
     bs: 'Balance Sheet',
