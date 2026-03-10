@@ -88,6 +88,13 @@
     .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
   }
 
+  /* Pipeline status badges */
+  .pl-badge { font-size: 11px; padding: 2px 10px; border-radius: 10px; font-weight: 500; cursor: pointer; display: inline-block; }
+  .pl-badge-初步接觸 { background: #e3f2fd; color: #1565c0; }
+  .pl-badge-進行中 { background: #fff3e0; color: #e65100; }
+  .pl-badge-報價 { background: #f3e5f5; color: #7b1fa2; }
+  .pl-badge-已完成 { background: #e8f5e9; color: #2e7d32; }
+
   /* Dashboard filter bar */
   .dash-filters { display: flex; gap: 12px; padding: 12px 24px; background: #fafafa; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; align-items: flex-end; }
   .dash-filters label { font-size: 12px; color: #666; display: block; margin-bottom: 2px; }
@@ -96,7 +103,7 @@
 
   /* Print styles for PDF export */
   @media print {
-    .header, .controls, .export-bar, .summary-grid, .btn, .card-header, .tab-bar, #dashboardView, #salesDashboardView, #purchasingDashboardView, .dash-filters { display: none !important; }
+    .header, .controls, .export-bar, .summary-grid, .btn, .card-header, .tab-bar, #dashboardView, #salesDashboardView, #purchasingDashboardView, #pipelineDashboardView, .dash-filters { display: none !important; }
     body { background: white; }
     .content { padding: 0; max-width: 100%; }
     .card { box-shadow: none; border: none; }
@@ -179,6 +186,94 @@
   </div>
   <div class="dashboard-content">
     <div class="loading">載入中...</div>
+  </div>
+</div>
+
+<div id="pipelineDashboardView" style="display:none">
+  <div class="dash-filters">
+    <div>
+      <label>業務人員</label>
+      <select id="plFilterSP" onchange="loadPipelineDashboard()"><option value="">全部</option></select>
+    </div>
+    <div>
+      <label>狀態</label>
+      <select id="plFilterStatus" onchange="loadPipelineLeads()">
+        <option value="">全部</option>
+        <option value="初步接觸">初步接觸</option>
+        <option value="進行中">進行中</option>
+        <option value="報價">報價</option>
+        <option value="已完成">已完成</option>
+      </select>
+    </div>
+    <div>
+      <label>類別</label>
+      <select id="plFilterCat" onchange="loadPipelineLeads()">
+        <option value="">全部</option>
+        <option value="合作廠商">合作廠商</option>
+        <option value="倉儲客戶">倉儲客戶</option>
+        <option value="車機廠商">車機廠商</option>
+        <option value="客戶">客戶</option>
+        <option value="車隊+客戶">車隊+客戶</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="loadPipelineDashboard()">查詢</button>
+    <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()">+ 新增商機</button>
+  </div>
+  <div class="dashboard-content" id="plDashContent">
+    <div class="loading">載入中...</div>
+  </div>
+  <div style="padding:0 24px 24px;max-width:1400px;margin:0 auto;">
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;">
+        <h2 id="plLeadListTitle">商機列表</h2>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <label style="font-size:12px;color:#666;">週次</label>
+          <select id="plWeekSelect" onchange="loadPipelineLeads()" style="padding:5px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
+        </div>
+      </div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>公司/客戶</th>
+              <th>業務人員</th>
+              <th>狀態</th>
+              <th>類別</th>
+              <th style="text-align:right;">預估金額</th>
+              <th>備註</th>
+              <th>本週回顧</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="plLeadsTable"></tbody>
+        </table>
+        <div id="plLeadsEmpty" class="empty-msg" style="display:none;">尚無商機資料</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lead Modal -->
+<div id="leadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:10px;padding:28px 24px;width:100%;max-width:460px;box-shadow:0 8px 30px rgba(0,0,0,0.2);">
+    <h3 id="leadModalTitle" style="font-size:16px;margin-bottom:18px;">新增商機</h3>
+    <div id="leadModalError" style="color:#c62828;font-size:12px;margin-bottom:10px;display:none;"></div>
+    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">公司/客戶名稱 *</label><input type="text" id="leadCompanyName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">業務人員</label><input type="text" id="leadSalesperson" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">狀態</label>
+      <select id="leadStatus" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <option value="初步接觸">初步接觸</option><option value="進行中">進行中</option><option value="報價">報價</option><option value="已完成">已完成</option>
+      </select></div>
+    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">類別</label>
+      <select id="leadCategory" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <option value="客戶">客戶</option><option value="合作廠商">合作廠商</option><option value="倉儲客戶">倉儲客戶</option><option value="車機廠商">車機廠商</option><option value="車隊+客戶">車隊+客戶</option>
+      </select></div>
+    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">預估金額 (選填)</label><input type="number" id="leadEstValue" placeholder="" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">備註</label><textarea id="leadNotes" rows="2" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;resize:vertical;"></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeLeadModal()">取消</button>
+      <button class="btn btn-sm btn-primary" onclick="saveLead()">儲存</button>
+    </div>
   </div>
 </div>
 
@@ -307,6 +402,7 @@ function renderTabs() {
     { id: 'dashboard', label: l.dFinancialTab, perm: 'financial' },
     { id: 'sales-dashboard', label: l.dSalesTab, perm: 'sales' },
     { id: 'purchasing-dashboard', label: l.dPurchasingTab, perm: 'purchasing' },
+    { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline' },
     { id: 'reports', label: l.dReports, perm: null },
   ];
   const visibleTabs = allTabs.filter(t => t.perm === null || canAccessDashboard(t.perm));
@@ -366,6 +462,7 @@ function loadCurrentDashboard() {
   if (currentTab === 'dashboard') loadDashboard();
   else if (currentTab === 'sales-dashboard') loadSalesDashboard();
   else if (currentTab === 'purchasing-dashboard') loadPurchasingDashboard();
+  else if (currentTab === 'pipeline-dashboard') loadPipelineDashboard();
 }
 
 async function doLogout() {
@@ -506,7 +603,7 @@ const LABELS = {
     sMargin: '利潤率',
 
     // Dashboard tabs
-    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dReports: '報表',
+    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dPipelineTab: '業務管線', dReports: '報表',
     // Financial Dashboard
     dRevenue: '營業收入', dNetProfit: '稅後淨利', dNetProfitMargin: '淨利率',
     dTotalAssets: '總資產', dDSO: '應收帳款天數 (DSO)', dDIO: '存貨週轉天數 (DIO)', dDPO: '應付帳款天數 (DPO)',
@@ -521,6 +618,15 @@ const LABELS = {
     pTotalPurchases: '採購總額 (LCY)', pPrevYearPurchases: '去年同期採購額',
     pOutstandingOrders: '未結訂單數', pOutstandingAmount: '未結訂單金額',
     pPurchasesByMonth: '月採購額', pTop5Vendors: '前五大供應商（採購額）', pByPurchaser: '採購人員',
+    // Pipeline Dashboard
+    plTotalLeads: '商機總數', plCompleted: '已完成', plTotalValue: '預估總額',
+    plConversionRate: '轉換率', plFunnel: '銷售漏斗', plBySalesperson: '依業務人員',
+    plByCategory: '依類別', plValueByStatus: '預估金額依狀態',
+    plLeadList: '商機列表', plWeekLabel: '週次', plWeeklyReview: '本週回顧',
+    plCompanyName: '公司/客戶', plSalesperson: '業務人員', plStatus: '狀態',
+    plCategory: '類別', plEstValue: '預估金額', plNotes: '備註', plActions: '操作',
+    plAddLead: '新增商機', plEditLead: '編輯商機', plAllFilter: '全部',
+    plSave: '儲存', plCancel: '取消', plDelete: '刪除', plEdit: '編輯',
     // Filter labels
     fStartDate: '起始日期', fEndDate: '結束日期', fQuery: '查詢',
 
@@ -618,7 +724,7 @@ const LABELS = {
     sMargin: 'Margin',
 
     // Dashboard tabs
-    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dReports: 'Reports',
+    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dPipelineTab: 'Pipeline', dReports: 'Reports',
     // Financial Dashboard
     dRevenue: 'Revenue', dNetProfit: 'Net Profit', dNetProfitMargin: 'Net Profit Margin',
     dTotalAssets: 'Total Assets', dDSO: 'Days Sales Outstanding (DSO)', dDIO: 'Days Inventory Outstanding (DIO)', dDPO: 'Days Payable Outstanding (DPO)',
@@ -633,6 +739,15 @@ const LABELS = {
     pTotalPurchases: 'Purchases (LCY)', pPrevYearPurchases: 'Purchases PY',
     pOutstandingOrders: 'Outstanding Orders', pOutstandingAmount: 'Outstanding Amount',
     pPurchasesByMonth: 'Purchases by Month', pTop5Vendors: 'Top 5 Vendors', pByPurchaser: 'By Purchaser',
+    // Pipeline Dashboard
+    plTotalLeads: 'Total Leads', plCompleted: 'Completed', plTotalValue: 'Est. Total Value',
+    plConversionRate: 'Conversion Rate', plFunnel: 'Sales Funnel', plBySalesperson: 'By Salesperson',
+    plByCategory: 'By Category', plValueByStatus: 'Value by Status',
+    plLeadList: 'Lead List', plWeekLabel: 'Week', plWeeklyReview: 'Weekly Review',
+    plCompanyName: 'Company', plSalesperson: 'Salesperson', plStatus: 'Status',
+    plCategory: 'Category', plEstValue: 'Est. Value', plNotes: 'Notes', plActions: 'Actions',
+    plAddLead: 'Add Lead', plEditLead: 'Edit Lead', plAllFilter: 'All',
+    plSave: 'Save', plCancel: 'Cancel', plDelete: 'Delete', plEdit: 'Edit',
     // Filter labels
     fStartDate: 'Start Date', fEndDate: 'End Date', fQuery: 'Query',
 
@@ -1181,6 +1296,7 @@ function switchTab(tab) {
   document.getElementById('dashboardView').style.display = 'none';
   document.getElementById('salesDashboardView').style.display = 'none';
   document.getElementById('purchasingDashboardView').style.display = 'none';
+  document.getElementById('pipelineDashboardView').style.display = 'none';
   document.getElementById('reportsView').style.display = 'none';
 
   if (tab === 'dashboard') {
@@ -1192,6 +1308,9 @@ function switchTab(tab) {
   } else if (tab === 'purchasing-dashboard') {
     document.getElementById('purchasingDashboardView').style.display = '';
     loadPurchasingDashboard();
+  } else if (tab === 'pipeline-dashboard') {
+    document.getElementById('pipelineDashboardView').style.display = '';
+    loadPipelineDashboard();
   } else if (tab === 'reports') {
     document.getElementById('reportsView').style.display = '';
   }
@@ -1528,6 +1647,330 @@ function renderPurchasingCharts(charts) {
   } else if (purchEl) {
     purchEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">N/A</div>';
   }
+}
+
+// ==========================================
+//  Pipeline Dashboard
+// ==========================================
+let pipelineCharts = [];
+let editingLeadId = null;
+let plLeadsCache = [];
+let plActivitiesCache = [];
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function getCurrentWeekLabel() {
+  const now = new Date();
+  const y = now.getFullYear() - 1911; // Taiwan year
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}/${m}/${d}`;
+}
+
+async function loadPipelineDashboard() {
+  const container = document.getElementById('plDashContent');
+  container.innerHTML = `<div class="loading">${L().dLoading}</div>`;
+  try {
+    const sp = document.getElementById('plFilterSP').value;
+    let url = '/api/pipeline/dashboard';
+    if (sp) url += `?salesperson=${encodeURIComponent(sp)}`;
+    const res = await fetch(url);
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (res.status === 403) { container.innerHTML = '<div class="error">無權限</div>'; return; }
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    const data = await res.json();
+    renderPipelineDashboard(data, container);
+  } catch (e) {
+    container.innerHTML = `<div class="error">Pipeline 載入失敗：${e.message}</div>`;
+  }
+  loadPipelineLeads();
+}
+
+function renderPipelineDashboard(data, container) {
+  const l = L();
+  const k = data.kpis;
+
+  const kpis = `<div class="kpi-grid">
+    ${kpiCard(l.plTotalLeads, k.totalLeads, '', false)}
+    ${kpiCard(l.plCompleted, k.completedCount, '', false)}
+    ${kpiCard(l.plTotalValue, k.totalValue > 0 ? fmtKpi(k.totalValue) : '—', '', false)}
+    ${kpiCard(l.plConversionRate, fmtKpi(k.conversionRate, 'pct'), '', false)}
+  </div>`;
+
+  const charts = `
+  <div class="chart-row-2">
+    <div class="chart-card"><h3>${l.plFunnel}</h3><canvas id="chartPlFunnel"></canvas></div>
+    <div class="chart-card"><h3>${l.plBySalesperson}</h3><canvas id="chartPlBySP"></canvas></div>
+  </div>
+  <div class="chart-row-2">
+    <div class="chart-card"><h3>${l.plByCategory}</h3><canvas id="chartPlByCat"></canvas></div>
+    <div class="chart-card"><h3>${l.plValueByStatus}</h3><canvas id="chartPlValByStatus"></canvas></div>
+  </div>`;
+
+  container.innerHTML = kpis + charts;
+  renderPipelineCharts(data.charts);
+}
+
+function renderPipelineCharts(charts) {
+  pipelineCharts.forEach(c => c.destroy());
+  pipelineCharts = [];
+
+  const funnelColors = ['#e3f2fd', '#fff3e0', '#f3e5f5', '#e8f5e9'];
+  const funnelBorders = ['#1565c0', '#e65100', '#7b1fa2', '#2e7d32'];
+  const catColors = ['#1a1a2e', '#2d4a7a', '#3a7ca5', '#5cb3a0', '#8cd17d', '#e65100', '#c62828'];
+  const spColors = ['#1a1a2e', '#3a7ca5', '#5cb3a0', '#e65100', '#7b1fa2', '#c62828'];
+
+  // Funnel (horizontal bar)
+  const funnelEl = document.getElementById('chartPlFunnel');
+  if (charts.funnel?.length && funnelEl) {
+    pipelineCharts.push(new Chart(funnelEl, {
+      type: 'bar',
+      data: { labels: charts.funnel.map(d => d.name), datasets: [{ data: charts.funnel.map(d => d.value), backgroundColor: funnelColors, borderColor: funnelBorders, borderWidth: 1, borderRadius: 4 }] },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    }));
+  }
+
+  // By Salesperson (bar)
+  const spEl = document.getElementById('chartPlBySP');
+  if (charts.leadsBySalesperson?.length && spEl) {
+    pipelineCharts.push(new Chart(spEl, {
+      type: 'bar',
+      data: { labels: charts.leadsBySalesperson.map(d => d.name), datasets: [{ data: charts.leadsBySalesperson.map(d => d.value), backgroundColor: spColors.slice(0, charts.leadsBySalesperson.length), borderRadius: 4 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    }));
+  }
+
+  // By Category (doughnut)
+  const catEl = document.getElementById('chartPlByCat');
+  if (charts.leadsByCategory?.length && catEl) {
+    pipelineCharts.push(new Chart(catEl, {
+      type: 'doughnut',
+      data: { labels: charts.leadsByCategory.map(d => d.name), datasets: [{ data: charts.leadsByCategory.map(d => d.value), backgroundColor: catColors.slice(0, charts.leadsByCategory.length) }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+    }));
+  }
+
+  // Value by Status (bar)
+  const valEl = document.getElementById('chartPlValByStatus');
+  if (charts.pipelineValueByStatus?.length && valEl) {
+    const hasVal = charts.pipelineValueByStatus.some(d => d.value > 0);
+    if (hasVal) {
+      pipelineCharts.push(new Chart(valEl, {
+        type: 'bar',
+        data: { labels: charts.pipelineValueByStatus.map(d => d.name), datasets: [{ data: charts.pipelineValueByStatus.map(d => d.value), backgroundColor: funnelBorders, borderRadius: 4 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtShort(v) } } } }
+      }));
+    } else {
+      valEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">尚無預估金額資料</div>';
+    }
+  }
+}
+
+async function loadPipelineLeads() {
+  try {
+    const sp = document.getElementById('plFilterSP').value;
+    const status = document.getElementById('plFilterStatus').value;
+    const cat = document.getElementById('plFilterCat').value;
+    let url = '/api/pipeline/leads?';
+    if (sp) url += `salesperson=${encodeURIComponent(sp)}&`;
+    if (status) url += `status=${encodeURIComponent(status)}&`;
+    if (cat) url += `category=${encodeURIComponent(cat)}&`;
+
+    const [leadsRes, actRes] = await Promise.all([
+      fetch(url),
+      fetch('/api/pipeline/activities'),
+    ]);
+    if (!leadsRes.ok || !actRes.ok) return;
+    plLeadsCache = await leadsRes.json();
+    plActivitiesCache = await actRes.json();
+
+    // Populate salesperson filter
+    populatePlSPFilter(plLeadsCache);
+    // Populate week selector
+    populatePlWeekSelect();
+    // Render table
+    renderPipelineTable();
+  } catch (e) { console.error('loadPipelineLeads error:', e); }
+}
+
+function populatePlSPFilter(leads) {
+  const sel = document.getElementById('plFilterSP');
+  const current = sel.value;
+  // Get all unique salesperson names from ALL leads (not just filtered)
+  const allLeads = plLeadsCache;
+  const salespeople = [...new Set(allLeads.map(l => l.salesperson).filter(Boolean))].sort();
+  const l = L();
+  sel.innerHTML = `<option value="">${l.plAllFilter}</option>` +
+    salespeople.map(s => `<option value="${escHtml(s)}"${s === current ? ' selected' : ''}>${escHtml(s)}</option>`).join('');
+}
+
+function populatePlWeekSelect() {
+  const sel = document.getElementById('plWeekSelect');
+  const current = sel.value;
+  const thisWeek = getCurrentWeekLabel();
+  // Get unique weeks from activities
+  const weeks = [...new Set(plActivitiesCache.map(a => a.weekLabel))].sort().reverse();
+  if (!weeks.includes(thisWeek)) weeks.unshift(thisWeek);
+  else { weeks.splice(weeks.indexOf(thisWeek), 1); weeks.unshift(thisWeek); }
+  sel.innerHTML = weeks.map((w, i) =>
+    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(w)}${w === thisWeek ? ' (本週)' : ''}</option>`
+  ).join('');
+}
+
+function renderPipelineTable() {
+  const tbody = document.getElementById('plLeadsTable');
+  const empty = document.getElementById('plLeadsEmpty');
+  const leads = plLeadsCache;
+  const weekLabel = document.getElementById('plWeekSelect').value || getCurrentWeekLabel();
+
+  if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = leads.map(lead => {
+    const activity = plActivitiesCache.find(a => a.leadId === lead.id && a.weekLabel === weekLabel);
+    const reviewText = activity ? escHtml(activity.content) : '';
+    const reviewId = activity ? activity.id : '';
+    return `<tr>
+      <td><strong>${escHtml(lead.companyName)}</strong></td>
+      <td>${escHtml(lead.salesperson)}</td>
+      <td><span class="pl-badge pl-badge-${lead.status}" onclick="quickStatusToggle('${lead.id}')" title="點擊切換狀態">${lead.status}</span></td>
+      <td>${escHtml(lead.category)}</td>
+      <td class="amount">${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</td>
+      <td style="font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(lead.notes)}">${escHtml(lead.notes)}</td>
+      <td style="min-width:180px;">
+        <div class="pl-review-cell" data-lead-id="${lead.id}" data-week="${escHtml(weekLabel)}" data-act-id="${reviewId}">
+          ${reviewText
+            ? `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:24px;padding:4px;border-radius:4px;background:#f8f9fa;" title="點擊編輯">${reviewText}</div>`
+            : `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:24px;padding:4px;border-radius:4px;background:#f8f9fa;color:#999;" title="點擊新增週回顧">+</div>`
+          }
+        </div>
+      </td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-sm btn-edit" onclick="openEditLead('${lead.id}')">編輯</button>
+        <button class="btn btn-sm" style="background:#ffebee;color:#c62828;" onclick="deleteLead('${lead.id}','${escHtml(lead.companyName)}')">刪除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Inline weekly review editing
+function startEditReview(el) {
+  const cell = el.closest('.pl-review-cell');
+  const leadId = cell.dataset.leadId;
+  const week = cell.dataset.week;
+  const actId = cell.dataset.actId;
+  const currentText = actId ? (plActivitiesCache.find(a => a.id === actId)?.content || '') : '';
+
+  cell.innerHTML = `<textarea rows="3" style="width:100%;font-size:12px;padding:6px;border:1px solid #1a1a2e;border-radius:4px;resize:vertical;">${escHtml(currentText)}</textarea>
+    <div style="margin-top:4px;display:flex;gap:4px;">
+      <button class="btn btn-sm btn-primary" onclick="saveReview('${leadId}','${escHtml(week)}','${actId}',this)">存</button>
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="loadPipelineLeads()">取消</button>
+    </div>`;
+  cell.querySelector('textarea').focus();
+}
+
+async function saveReview(leadId, weekLabel, actId, btn) {
+  const textarea = btn.closest('.pl-review-cell').querySelector('textarea');
+  const content = textarea.value.trim();
+  try {
+    if (actId) {
+      // Update existing
+      await fetch(`/api/pipeline/activities/${actId}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+    } else {
+      // Create new
+      await fetch('/api/pipeline/activities', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId, weekLabel, content }),
+      });
+    }
+    loadPipelineLeads();
+  } catch (e) { alert(e.message); }
+}
+
+// Quick status toggle
+async function quickStatusToggle(id) {
+  const statuses = ['初步接觸', '進行中', '報價', '已完成'];
+  const lead = plLeadsCache.find(l => l.id === id);
+  if (!lead) return;
+  const idx = statuses.indexOf(lead.status);
+  const next = statuses[(idx + 1) % statuses.length];
+  if (!confirm(`將「${lead.companyName}」狀態從「${lead.status}」改為「${next}」？`)) return;
+  try {
+    await fetch(`/api/pipeline/leads/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: next }),
+    });
+    loadPipelineDashboard();
+  } catch (e) { alert(e.message); }
+}
+
+// Lead modal CRUD
+function openCreateLead() {
+  editingLeadId = null;
+  document.getElementById('leadModalTitle').textContent = L().plAddLead;
+  document.getElementById('leadCompanyName').value = '';
+  document.getElementById('leadSalesperson').value = '';
+  document.getElementById('leadStatus').value = '初步接觸';
+  document.getElementById('leadCategory').value = '客戶';
+  document.getElementById('leadEstValue').value = '';
+  document.getElementById('leadNotes').value = '';
+  document.getElementById('leadModalError').style.display = 'none';
+  document.getElementById('leadModal').style.display = 'flex';
+}
+
+function openEditLead(id) {
+  const lead = plLeadsCache.find(l => l.id === id);
+  if (!lead) return;
+  editingLeadId = id;
+  document.getElementById('leadModalTitle').textContent = L().plEditLead;
+  document.getElementById('leadCompanyName').value = lead.companyName;
+  document.getElementById('leadSalesperson').value = lead.salesperson || '';
+  document.getElementById('leadStatus').value = lead.status;
+  document.getElementById('leadCategory').value = lead.category || '客戶';
+  document.getElementById('leadEstValue').value = lead.estimatedValue || '';
+  document.getElementById('leadNotes').value = lead.notes || '';
+  document.getElementById('leadModalError').style.display = 'none';
+  document.getElementById('leadModal').style.display = 'flex';
+}
+
+function closeLeadModal() { document.getElementById('leadModal').style.display = 'none'; }
+
+async function saveLead() {
+  const errEl = document.getElementById('leadModalError');
+  errEl.style.display = 'none';
+  const companyName = document.getElementById('leadCompanyName').value.trim();
+  if (!companyName) { errEl.textContent = '公司/客戶名稱為必填'; errEl.style.display = 'block'; return; }
+  const body = {
+    companyName,
+    salesperson: document.getElementById('leadSalesperson').value.trim(),
+    status: document.getElementById('leadStatus').value,
+    category: document.getElementById('leadCategory').value,
+    estimatedValue: document.getElementById('leadEstValue').value ? Number(document.getElementById('leadEstValue').value) : null,
+    notes: document.getElementById('leadNotes').value.trim(),
+  };
+  try {
+    const url = editingLeadId ? `/api/pipeline/leads/${editingLeadId}` : '/api/pipeline/leads';
+    const method = editingLeadId ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    closeLeadModal();
+    loadPipelineDashboard();
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+}
+
+async function deleteLead(id, name) {
+  if (!confirm(`確定要刪除商機「${name}」嗎？`)) return;
+  try {
+    const res = await fetch(`/api/pipeline/leads/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error((await res.json()).error);
+    loadPipelineDashboard();
+  } catch (e) { alert(e.message); }
 }
 
 // Init

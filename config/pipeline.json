@@ -1,0 +1,173 @@
+{
+  "leads": [
+    {
+      "id": "lead_1",
+      "companyName": "LALA",
+      "salesperson": "Jerry",
+      "status": "初步接觸",
+      "category": "車隊",
+      "notes": "1/19拜訪, 請其申請看看有無階梯式報價可提供, LALA有買50輛車會看有時適合的來合作",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.375Z",
+      "updatedAt": "2026-03-10T08:51:19.375Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_2",
+      "companyName": "普利司通",
+      "salesperson": "Jerry",
+      "status": "進行中",
+      "category": "客戶",
+      "notes": "高雄帳務混亂暫時已解決, 高雄春節前支援1車(2/2), 嘉義帳務持續未付款跟催中",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.417Z",
+      "updatedAt": "2026-03-10T08:51:19.417Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_3",
+      "companyName": "祥億",
+      "salesperson": "Jerry",
+      "status": "進行中",
+      "category": "車隊+客戶",
+      "notes": "總務主管會陪同拜訪雲安",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.444Z",
+      "updatedAt": "2026-03-10T08:51:19.444Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_4",
+      "companyName": "UBER",
+      "salesperson": "Jerry",
+      "status": "進行中",
+      "category": "車隊+客戶",
+      "notes": "系統端可能合作, 週2-4 14:00拜訪確定需求細節",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.471Z",
+      "updatedAt": "2026-03-10T08:51:19.471Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_5",
+      "companyName": "雲安",
+      "salesperson": "Jerry",
+      "status": "初步接觸",
+      "category": "系統商+潛在合作對象",
+      "notes": "車機硬體場廠商(MIT), 唯一可以紀錄行車視野+數位大餅的廠商, 除祥億以外後續有其他合作機會",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.530Z",
+      "updatedAt": "2026-03-10T08:51:19.530Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_6",
+      "companyName": "西卡",
+      "salesperson": "Jerry",
+      "status": "報價",
+      "category": "客戶",
+      "notes": "人力協助承攬或派遣, 西卡已上星等待確認, WMS部分已切入看看有無機會合作, 目前西卡尚未使用WMS系統",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.577Z",
+      "updatedAt": "2026-03-10T08:51:19.577Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_7",
+      "companyName": "聯釣光電",
+      "salesperson": "Jeff",
+      "status": "初步接觸",
+      "category": "客戶",
+      "notes": "客戶指定貨廠商, 主要出貨到廈門跟武漢, 目前都還是以FOB為主",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.636Z",
+      "updatedAt": "2026-03-10T08:51:19.636Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_8",
+      "companyName": "緯固工業",
+      "salesperson": "Jeff",
+      "status": "進行中",
+      "category": "合作廠商",
+      "notes": "做防蝕塗料的, 大部分是case by case詢價, 主要以新加坡、歐美地區為主",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.681Z",
+      "updatedAt": "2026-03-10T08:51:19.681Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_9",
+      "companyName": "慧榮科技",
+      "salesperson": "Jeff",
+      "status": "初步接觸",
+      "category": "客戶",
+      "notes": "客戶介紹廠商, 是一間IC設計公司, 自行付運費的大部分是出到東南亞, 走FEDEX/DHL為主",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.789Z",
+      "updatedAt": "2026-03-10T08:51:19.789Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_10",
+      "companyName": "安勤科技",
+      "salesperson": "Jeff",
+      "status": "報價",
+      "category": "客戶",
+      "notes": "已提供優惠報價參考, 約定週三拜訪主管討論",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.913Z",
+      "updatedAt": "2026-03-10T08:51:19.913Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_11",
+      "companyName": "霈鑫",
+      "salesperson": "Jeff",
+      "status": "報價",
+      "category": "客戶",
+      "notes": "已提供優惠報價參考, 約定週四拜訪主管討論",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:19.992Z",
+      "updatedAt": "2026-03-10T08:51:19.992Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_12",
+      "companyName": "OPPO",
+      "salesperson": "Jeff",
+      "status": "報價",
+      "category": "客戶",
+      "notes": "已再次更新報價給經理, 但還是差了一點, 請另外再提供尼泊爾跟突尼西亞的報價參考",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:20.156Z",
+      "updatedAt": "2026-03-10T08:51:20.156Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_13",
+      "companyName": "川揚電子",
+      "salesperson": "Jeff",
+      "status": "報價",
+      "category": "客戶",
+      "notes": "上週出貨102公斤, 比較過我的報價跟快遞差不多, 說下次出貨超過100公斤的時候會跟我說",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:20.263Z",
+      "updatedAt": "2026-03-10T08:51:20.263Z",
+      "createdBy": "u_1"
+    },
+    {
+      "id": "lead_14",
+      "companyName": "釣寶電子",
+      "salesperson": "Jeff",
+      "status": "進行中",
+      "category": "客戶",
+      "notes": "已升初物流的報關工普般設, 到時候我再跟負責的窗口小姐拿標單即可",
+      "estimatedValue": null,
+      "createdAt": "2026-03-10T08:51:20.323Z",
+      "updatedAt": "2026-03-10T08:51:20.323Z",
+      "createdBy": "u_1"
+    }
+  ],
+  "activities": []
+}

@@ -122,8 +122,11 @@
         <label style="display:block;font-size:12px;margin-bottom:4px;cursor:pointer;">
           <input type="checkbox" value="sales" style="margin-right:6px;">銷售儀表板 Sales
         </label>
-        <label style="display:block;font-size:12px;margin-bottom:0;cursor:pointer;">
+        <label style="display:block;font-size:12px;margin-bottom:4px;cursor:pointer;">
           <input type="checkbox" value="purchasing" style="margin-right:6px;">採購儀表板 Purchasing
+        </label>
+        <label style="display:block;font-size:12px;margin-bottom:0;cursor:pointer;">
+          <input type="checkbox" value="pipeline" style="margin-right:6px;">業務管線 Pipeline
         </label>
       </div>
     </div>
@@ -171,7 +174,7 @@ async function loadUsers() {
   if (!usersData.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  const dashLabels = { financial: '財務', sales: '銷售', purchasing: '採購' };
+  const dashLabels = { financial: '財務', sales: '銷售', purchasing: '採購', pipeline: '業務管線' };
   tbody.innerHTML = usersData.map(u => {
     const comps = u.companies && u.companies.length
       ? u.companies.map(cid => { const c = allCompanies.find(x => x.id === cid); return c ? esc(c.name) : esc(cid); }).join(', ')

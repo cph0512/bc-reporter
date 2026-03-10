@@ -14,6 +14,7 @@ const createReportRoutes = require('./routes/reports');
 const docsRoutes = require('./routes/docs');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const pipelineRoutes = require('./routes/pipeline');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 const companyAccess = require('./middleware/companyAccess');
 const companyStore = require('./services/companyStore');
@@ -92,6 +93,7 @@ app.get('/api/companies', requireAuth, (req, res) => {
   res.json(companies);
 });
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
+app.use('/api/pipeline', requireAuth, pipelineRoutes);
 app.use('/api', requireAuth, companyAccess, createReportRoutes(reportEngine));
 app.use('/docs', requireAuth, docsRoutes);
 
