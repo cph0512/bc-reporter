@@ -128,7 +128,7 @@ const leads = [];
 const leadIdMap = {}; // key -> id mapping
 
 for (const [key, lead] of Object.entries(mergedLeads)) {
-  const id = nextId++;
+  const id = `lead_${nextId++}`;
   leadIdMap[key] = id;
 
   // Sort status history by week
@@ -153,6 +153,7 @@ for (const [key, lead] of Object.entries(mergedLeads)) {
 // ============================================================
 let actNextId = 1;
 const activities = [];
+const seenActKeys = new Set(); // deduplicate
 
 for (const act of rawData.activities) {
   const canonical = canonicalize(act.leadKey.split('-').slice(1).join('-'));
@@ -172,8 +173,13 @@ for (const act of rawData.activities) {
   const content = parts.join('\n');
   if (!content.trim()) continue;
 
+  // Deduplicate by leadId + weekLabel
+  const actKey = `${leadId}-${act.weekLabel}`;
+  if (seenActKeys.has(actKey)) continue;
+  seenActKeys.add(actKey);
+
   activities.push({
-    id: actNextId++,
+    id: `act_${actNextId++}`,
     leadId,
     weekLabel: act.weekLabel,
     content,

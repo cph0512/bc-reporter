@@ -1,7 +1,7 @@
 {
   "leads": [
     {
-      "id": 1,
+      "id": "lead_1",
       "companyName": "普利司通",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -13,7 +13,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 2,
+      "id": "lead_2",
       "companyName": "三代電子",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -25,7 +25,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 3,
+      "id": "lead_3",
       "companyName": "OPPO",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -37,7 +37,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 4,
+      "id": "lead_4",
       "companyName": "西卡",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -49,7 +49,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 5,
+      "id": "lead_5",
       "companyName": "三龍",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -61,7 +61,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 6,
+      "id": "lead_6",
       "companyName": "迅通",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -73,7 +73,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 7,
+      "id": "lead_7",
       "companyName": "百辰",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -85,7 +85,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 8,
+      "id": "lead_8",
       "companyName": "永航",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -97,7 +97,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 9,
+      "id": "lead_9",
       "companyName": "廣德",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -109,7 +109,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 10,
+      "id": "lead_10",
       "companyName": "祥億",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -121,7 +121,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 11,
+      "id": "lead_11",
       "companyName": "義隆",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -133,7 +133,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 12,
+      "id": "lead_12",
       "companyName": "榮復",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -145,7 +145,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 13,
+      "id": "lead_13",
       "companyName": "葳京",
       "salesperson": "Jeff",
       "status": "已完成",
@@ -157,7 +157,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 14,
+      "id": "lead_14",
       "companyName": "晨昕",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -169,7 +169,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 15,
+      "id": "lead_15",
       "companyName": "路路通",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -181,7 +181,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 16,
+      "id": "lead_16",
       "companyName": "慶豐富",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -193,7 +193,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 17,
+      "id": "lead_17",
       "companyName": "鉅航",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -205,7 +205,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 18,
+      "id": "lead_18",
       "companyName": "今展",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -217,7 +217,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 19,
+      "id": "lead_19",
       "companyName": "珺崴",
       "salesperson": "Jeff",
       "status": "已完成",
@@ -229,7 +229,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 20,
+      "id": "lead_20",
       "companyName": "慶豐富",
       "salesperson": "Jerry",
       "status": "初步接觸",
@@ -241,7 +241,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 21,
+      "id": "lead_21",
       "companyName": "藍旅",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -253,7 +253,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 22,
+      "id": "lead_22",
       "companyName": "銀禾",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -265,7 +265,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 23,
+      "id": "lead_23",
       "companyName": "數匯",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -277,7 +277,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 24,
+      "id": "lead_24",
       "companyName": "鴻達",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -289,7 +289,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 25,
+      "id": "lead_25",
       "companyName": "資策會",
       "salesperson": "Jerry",
       "status": "初步接觸",
@@ -301,7 +301,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 26,
+      "id": "lead_26",
       "companyName": "勁昇光電",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -313,7 +313,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 27,
+      "id": "lead_27",
       "companyName": "妍婈",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -325,7 +325,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 28,
+      "id": "lead_28",
       "companyName": "雅云",
       "salesperson": "Jeff",
       "status": "已完成",
@@ -337,7 +337,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 29,
+      "id": "lead_29",
       "companyName": "明基材料",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -349,7 +349,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 30,
+      "id": "lead_30",
       "companyName": "華星光通",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -361,7 +361,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 31,
+      "id": "lead_31",
       "companyName": "昱捷",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -373,7 +373,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 32,
+      "id": "lead_32",
       "companyName": "UBER",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -385,7 +385,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 33,
+      "id": "lead_33",
       "companyName": "廣隆",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -397,7 +397,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 34,
+      "id": "lead_34",
       "companyName": "和程",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -409,7 +409,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 35,
+      "id": "lead_35",
       "companyName": "興陸",
       "salesperson": "Jerry",
       "status": "初步接觸",
@@ -421,7 +421,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 36,
+      "id": "lead_36",
       "companyName": "晨昕科技",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -433,7 +433,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 37,
+      "id": "lead_37",
       "companyName": "海韻電子",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -445,7 +445,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 38,
+      "id": "lead_38",
       "companyName": "千瀧興業",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -457,7 +457,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 39,
+      "id": "lead_39",
       "companyName": "DHL",
       "salesperson": "Jerry",
       "status": "初步接觸",
@@ -469,7 +469,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 40,
+      "id": "lead_40",
       "companyName": "日翊",
       "salesperson": "Jerry",
       "status": "初步接觸",
@@ -481,7 +481,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 41,
+      "id": "lead_41",
       "companyName": "金國光學",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -493,7 +493,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 42,
+      "id": "lead_42",
       "companyName": "昇岳科技",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -505,7 +505,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 43,
+      "id": "lead_43",
       "companyName": "奕融",
       "salesperson": "Jeff",
       "status": "已完成",
@@ -517,7 +517,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 44,
+      "id": "lead_44",
       "companyName": "密望實",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -529,7 +529,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 45,
+      "id": "lead_45",
       "companyName": "日日通",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -541,7 +541,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 46,
+      "id": "lead_46",
       "companyName": "樵屋",
       "salesperson": "Jeff",
       "status": "已完成",
@@ -553,7 +553,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 47,
+      "id": "lead_47",
       "companyName": "金車",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -565,7 +565,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 48,
+      "id": "lead_48",
       "companyName": "其立",
       "salesperson": "Jeff",
       "status": "報價",
@@ -577,7 +577,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 49,
+      "id": "lead_49",
       "companyName": "輔信科技",
       "salesperson": "Jeff",
       "status": "報價",
@@ -589,7 +589,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 50,
+      "id": "lead_50",
       "companyName": "睿成科技",
       "salesperson": "Jeff",
       "status": "已完成",
@@ -601,7 +601,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 51,
+      "id": "lead_51",
       "companyName": "港岱",
       "salesperson": "Jeff",
       "status": "報價",
@@ -613,7 +613,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 52,
+      "id": "lead_52",
       "companyName": "佶盟科技",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -625,7 +625,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 53,
+      "id": "lead_53",
       "companyName": "吉裕電子",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -637,7 +637,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 54,
+      "id": "lead_54",
       "companyName": "川揚電子",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -649,7 +649,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 55,
+      "id": "lead_55",
       "companyName": "輔信",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -661,7 +661,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 56,
+      "id": "lead_56",
       "companyName": "嵘華欣",
       "salesperson": "Jerry",
       "status": "報價",
@@ -673,7 +673,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 57,
+      "id": "lead_57",
       "companyName": "三豐醫材",
       "salesperson": "Jeff",
       "status": "已完成",
@@ -685,7 +685,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 58,
+      "id": "lead_58",
       "companyName": "安利得科技",
       "salesperson": "Jeff",
       "status": "已完成",
@@ -697,7 +697,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 59,
+      "id": "lead_59",
       "companyName": "瑞朋科技",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -709,7 +709,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 60,
+      "id": "lead_60",
       "companyName": "亞驪企業",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -721,7 +721,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 61,
+      "id": "lead_61",
       "companyName": "登盛企業",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -733,7 +733,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 62,
+      "id": "lead_62",
       "companyName": "鈞寶電子",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -745,7 +745,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 63,
+      "id": "lead_63",
       "companyName": "日商大成",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -757,7 +757,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 64,
+      "id": "lead_64",
       "companyName": "亞博視科技",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -769,7 +769,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 65,
+      "id": "lead_65",
       "companyName": "友昌實業",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -781,7 +781,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 66,
+      "id": "lead_66",
       "companyName": "LALA",
       "salesperson": "Jerry",
       "status": "初步接觸",
@@ -793,7 +793,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 67,
+      "id": "lead_67",
       "companyName": "速全",
       "salesperson": "Jerry",
       "status": "已完成",
@@ -805,7 +805,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 68,
+      "id": "lead_68",
       "companyName": "斯柏瑞科技",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -817,7 +817,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 69,
+      "id": "lead_69",
       "companyName": "阿源肥皂",
       "salesperson": "Jerry",
       "status": "初步接觸",
@@ -829,7 +829,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 70,
+      "id": "lead_70",
       "companyName": "安勤科技",
       "salesperson": "Jeff",
       "status": "報價",
@@ -841,7 +841,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 71,
+      "id": "lead_71",
       "companyName": "雲安",
       "salesperson": "Jerry",
       "status": "初步接觸",
@@ -853,7 +853,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 72,
+      "id": "lead_72",
       "companyName": "飛波電子",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -865,7 +865,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 73,
+      "id": "lead_73",
       "companyName": "臺鑫",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -877,7 +877,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 74,
+      "id": "lead_74",
       "companyName": "佳格",
       "salesperson": "Jerry",
       "status": "初步接觸",
@@ -889,7 +889,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 75,
+      "id": "lead_75",
       "companyName": "聯釣光電",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -901,7 +901,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 76,
+      "id": "lead_76",
       "companyName": "緯固工業",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -913,7 +913,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 77,
+      "id": "lead_77",
       "companyName": "慧榮科技",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -925,7 +925,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 78,
+      "id": "lead_78",
       "companyName": "百辰光電",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -937,7 +937,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 79,
+      "id": "lead_79",
       "companyName": "欣技",
       "salesperson": "Jerry",
       "status": "初步接觸",
@@ -949,7 +949,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 80,
+      "id": "lead_80",
       "companyName": "鑫邦國際科技",
       "salesperson": "Jeff",
       "status": "初步接觸",
@@ -961,7 +961,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 81,
+      "id": "lead_81",
       "companyName": "集邦科技",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -973,7 +973,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 82,
+      "id": "lead_82",
       "companyName": "旌凱",
       "salesperson": "Jeff",
       "status": "進行中",
@@ -985,7 +985,7 @@
       "createdBy": "Jeff"
     },
     {
-      "id": 83,
+      "id": "lead_83",
       "companyName": "樂點",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -997,7 +997,7 @@
       "createdBy": "Jerry"
     },
     {
-      "id": 84,
+      "id": "lead_84",
       "companyName": "蒔器",
       "salesperson": "Jerry",
       "status": "進行中",
@@ -1011,1640 +1011,1632 @@
   ],
   "activities": [
     {
-      "id": 1,
-      "leadId": 1,
+      "id": "act_1",
+      "leadId": "lead_1",
       "weekLabel": "114/10/21",
       "content": "【狀態】進行中\n【備註】經銷商與好市多，好市多部分因車輛調度問題有可能更換廠商，處理中，價格系統部分要調整",
       "createdAt": "2025-10-21T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 2,
-      "leadId": 2,
+      "id": "act_2",
+      "leadId": "lead_2",
       "weekLabel": "114/10/21",
       "content": "【狀態】進行中\n【備註】持續香港倉儲暫存進出貨，再爭取11月中空運三角的出貨(韓國to香港)\n【週回顧】我目前提供的報價還是偏高，持續跟進",
       "createdAt": "2025-10-21T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 3,
-      "leadId": 3,
+      "id": "act_3",
+      "leadId": "lead_3",
       "weekLabel": "114/10/21",
       "content": "【狀態】進行中\n【備註】香港倉儲進出持續合作，再與上級主管討論空運三角的報價(大陸to摩洛哥&大陸to俄羅斯)\n【週回顧】與主管約11/11中午吃飯聊聊",
       "createdAt": "2025-10-21T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 4,
-      "leadId": 4,
+      "id": "act_4",
+      "leadId": "lead_4",
       "weekLabel": "114/10/21",
       "content": "【狀態】進行中\n【備註】對公司部分尚未有新進度，彰化地區水泥載運部分有找到新廠商，與對方接洽中",
       "createdAt": "2025-10-21T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 5,
-      "leadId": 5,
+      "id": "act_5",
+      "leadId": "lead_5",
       "weekLabel": "114/10/21",
       "content": "【狀態】進行中\n【備註】朋友介紹的廠商，主要是海運從韓國出口到大陸，每個月固定出貨2~4票，已經先把提供報價參考\n【週回顧】報價跟原廠商差不多，持續跟進",
       "createdAt": "2025-10-21T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 6,
-      "leadId": 6,
+      "id": "act_6",
+      "leadId": "lead_6",
       "weekLabel": "114/10/21",
       "content": "【狀態】進行中\n【備註】條件已跟跟鄒哥提出等他確認，若OK 將於明年1月開始",
       "createdAt": "2025-10-21T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 7,
-      "leadId": 7,
+      "id": "act_7",
+      "leadId": "lead_7",
       "weekLabel": "114/10/21",
       "content": "【狀態】進行中\n【備註】之前配合的廠商，主要是從台灣空運出口到上海，不過價錢很低，要再跟朋友那邊討論\n【週回顧】價格很低，再討論跟進",
       "createdAt": "2025-10-21T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 8,
-      "leadId": 8,
+      "id": "act_8",
+      "leadId": "lead_8",
       "weekLabel": "114/10/21",
       "content": "【狀態】進行中\n【備註】週三跟JACKY過去拜訪",
       "createdAt": "2025-10-21T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 9,
-      "leadId": 9,
+      "id": "act_9",
+      "leadId": "lead_9",
       "weekLabel": "114/10/21",
       "content": "【狀態】進行中\n【備註】此為之前認識的船務，屬於case by case的出貨型態，預計11月底有一批海運貨要從上海進口，先提供報價跟進\n【週回顧】還未到出貨時程，持續跟進",
       "createdAt": "2025-10-21T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 10,
-      "leadId": 10,
+      "id": "act_10",
+      "leadId": "lead_10",
       "weekLabel": "114/10/21",
       "content": "【狀態】進行中\n【備註】目前忙雙11跟周年慶，外包部分資料有確認會提供給我們",
       "createdAt": "2025-10-21T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 11,
-      "leadId": 11,
+      "id": "act_11",
+      "leadId": "lead_11",
       "weekLabel": "114/10/28",
       "content": "【狀態】進行中\n【備註】之前配合的廠商，之前認識的窗口要離職，帶我認識新的小姐，並提供報價參考",
       "createdAt": "2025-10-28T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 12,
-      "leadId": 12,
+      "id": "act_12",
+      "leadId": "lead_12",
       "weekLabel": "114/10/28",
       "content": "【狀態】進行中\n【備註】朋友介紹廠商，詢問香港倉儲以及空運出口，有固定配合很久的貨代，要再看看價格再考慮",
       "createdAt": "2025-10-28T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 13,
-      "leadId": 13,
+      "id": "act_13",
+      "leadId": "lead_13",
       "weekLabel": "114/10/28",
       "content": "【狀態】進行中\n【備註】之前合作的客戶，但現在出貨較少，已提供報價，如有需求會再跟我聯繫",
       "createdAt": "2025-10-28T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 14,
-      "leadId": 14,
+      "id": "act_14",
+      "leadId": "lead_14",
       "weekLabel": "114/10/28",
       "content": "【狀態】進行中\n【備註】客戶介紹的廠商，主要空運出口到上海 香港 越南，每週出3~4票，但是價格很低...再詢問看看",
       "createdAt": "2025-10-28T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 15,
-      "leadId": 15,
+      "id": "act_15",
+      "leadId": "lead_15",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】車隊\n【週回顧】1.普利司通送好市多還是有需克服的問題,但應成本先暫時維持現狀\nA.配送成本高\nB.符合車高之車型裝載過低,改3.5T不符目前業務規模\n2.專車需要加裝尾門,以提出請其評估\n3.普利司通嘉義往台南部分規劃隔日用零擔(貨運)方式配送",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 16,
-      "leadId": 16,
+      "id": "act_16",
+      "leadId": "lead_16",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】Jerry認識的客戶，已經發mail給相關窗口，等待回覆持續跟進",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 17,
-      "leadId": 1,
+      "id": "act_17",
+      "leadId": "lead_1",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】1.中區以南帳務預先整理\n5.有嘉義配送需求,準備提案,預定時間12月前\n2.11/21嘉義上線前教育訓練-至台中\n3.系統路線成本與價格已於11/12設定完成\n4.中南部帳務整理\n5.高雄可能會開放周六配送,確認中(預計為隔週休)",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 18,
-      "leadId": 3,
+      "id": "act_18",
+      "leadId": "lead_3",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】已經與主管談過，目前報價偏高，已經請朋友那邊再幫忙詢問更好價格",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 19,
-      "leadId": 17,
+      "id": "act_19",
+      "leadId": "lead_17",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】車隊\n【週回顧】1.系統上線前溝通\n2.確認合作第一次匯款已收到(9月)\n3.系統設定資料確認\n4.普利司通嘉義部分規劃隔日用零擔(貨運)方式配送",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 20,
-      "leadId": 18,
+      "id": "act_20",
+      "leadId": "lead_18",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】之前配合的廠商，主要空運出口到上海跟香港，每週出1.2票，每次約50~100公斤。價格也是很低，再請朋友跟航司議價",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 21,
-      "leadId": 10,
+      "id": "act_21",
+      "leadId": "lead_10",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1.內部溝通線上派車作業與流程\n2.約本週四11/20過去確認流程及需求",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 22,
-      "leadId": 19,
+      "id": "act_22",
+      "leadId": "lead_19",
       "weekLabel": "114/11/18",
       "content": "【狀態】已完成\n【備註】此為微星供應商，主要是做香港當地倉儲，已報價開始出貨",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 23,
-      "leadId": 20,
+      "id": "act_23",
+      "leadId": "lead_20",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】準客戶\n【週回顧】彰化有塊地可能符合普利司通倉庫需求\n正在請他提供相關資料",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 24,
-      "leadId": 21,
+      "id": "act_24",
+      "leadId": "lead_21",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】準客戶\n【週回顧】11/20(四) 下午14:00訪倉",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 25,
-      "leadId": 22,
+      "id": "act_25",
+      "leadId": "lead_22",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】已正式開始服務",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 26,
-      "leadId": 23,
+      "id": "act_26",
+      "leadId": "lead_23",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】合作夥伴\n【週回顧】1.Janet於11/6退出合作群組,更改窗口\n2.有拿到一個標案需要倉儲合作,已提供報價單,成交率高",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 27,
-      "leadId": 24,
+      "id": "act_27",
+      "leadId": "lead_24",
       "weekLabel": "114/11/18",
       "content": "【狀態】進行中\n【備註】合作夥伴\n【週回顧】普利司通台中司機工時過長快脫落,週五會跟普利司通溝通安排的部分能否調整",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 28,
-      "leadId": 25,
+      "id": "act_28",
+      "leadId": "lead_25",
       "weekLabel": "114/11/18",
       "content": "【狀態】未開始\n【備註】未定\n【週回顧】資策會,中小企業AI方案需求確認\n11/19(三) 13:30 來訪\n會用泰欣談,有成就包給品辰當廠商\n品辰僑外資不符補助申請資格",
       "createdAt": "2025-11-18T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 29,
-      "leadId": 15,
+      "id": "act_29",
+      "leadId": "lead_15",
       "weekLabel": "114/11/11",
       "content": "【狀態】進行中\n【備註】1.合約已送回\n2.反饋現場有聽到普利司通似乎在跟司機討論優退事宜,故明年度有機會再增加路線",
       "createdAt": "2025-11-11T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 30,
-      "leadId": 26,
+      "id": "act_30",
+      "leadId": "lead_26",
       "weekLabel": "114/11/11",
       "content": "【狀態】進行中\n【備註】此為之前配合廠商，有一票機台要出貨到深圳，已提供海運to door報價，跟進中",
       "createdAt": "2025-11-11T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 31,
-      "leadId": 27,
+      "id": "act_31",
+      "leadId": "lead_27",
       "weekLabel": "114/11/11",
       "content": "【狀態】進行中\n【備註】客戶介紹廠商，主要是做美容保養商品，12月有一票海運櫃子要出口到馬來西亞，先已提供報價參考，不過還有一些台灣端的細節要再確認倉庫是否可操作",
       "createdAt": "2025-11-11T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 32,
-      "leadId": 28,
+      "id": "act_32",
+      "leadId": "lead_28",
       "weekLabel": "114/11/11",
       "content": "【狀態】已完成\n【備註】之前配合的廠商，現在轉型做香港倉儲，已提供報價並開始出貨",
       "createdAt": "2025-11-11T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 33,
-      "leadId": 1,
+      "id": "act_33",
+      "leadId": "lead_1",
       "weekLabel": "114/11/11",
       "content": "【狀態】進行中\n【備註】嘉義TMS暫定11/26上\n中午以南帳務前段轉移已確認",
       "createdAt": "2025-11-11T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 34,
-      "leadId": 10,
+      "id": "act_34",
+      "leadId": "lead_10",
       "weekLabel": "114/11/25",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1. 系統可先做,產單讓祥億下載使用,後續祥億再回拋資料\n2.資訊外包部分會約時間洽談\n3.公司還是有想賣,細節面報\n4.帳務整理",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 35,
-      "leadId": 29,
+      "id": "act_35",
+      "leadId": "lead_29",
       "weekLabel": "114/11/25",
       "content": "【狀態】進行中\n【備註】11/27要去公司討論標單事宜",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 36,
-      "leadId": 21,
+      "id": "act_36",
+      "leadId": "lead_21",
       "weekLabel": "114/11/25",
       "content": "【狀態】進行中\n【備註】倉儲業務\n【週回顧】1.目前需求量約50板,每日約200單\n2.總量約500板,有爭取合作,條件為全部過來給予倉租折扣\n3.若有合作後面可以爭取進口以及供應鏈整合的業務",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 37,
-      "leadId": 30,
+      "id": "act_37",
+      "leadId": "lead_30",
       "weekLabel": "114/11/25",
       "content": "【狀態】進行中\n【備註】預計12月中有機台要從大陸運進來，週五要到工廠察看，並確認規格尺寸後報價",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 38,
-      "leadId": 31,
+      "id": "act_38",
+      "leadId": "lead_31",
       "weekLabel": "114/11/25",
       "content": "【狀態】進行中\n【備註】之前配合過廠商，目前還是跟台空在合作，先提供我朋友那邊的報價參考，下週會在過去一趟討論細節",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 39,
-      "leadId": 32,
+      "id": "act_39",
+      "leadId": "lead_32",
       "weekLabel": "114/11/25",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】預定下週與運務主管會面,時間11/27(四)16:15 台北市信義區松高路一號22樓\n1.公司未來發展(含轉運及快遞合作)\n2.UBER可能資訊需求",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 40,
-      "leadId": 16,
+      "id": "act_40",
+      "leadId": "lead_16",
       "weekLabel": "114/11/25",
       "content": "【狀態】進行中\n【備註】有在MAIL給Nhan，持續跟進後續狀況",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 41,
-      "leadId": 23,
+      "id": "act_41",
+      "leadId": "lead_23",
       "weekLabel": "114/11/25",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】悠遊卡商城倉儲應該有拿到\n準備簽約中\n已加入專案大群組",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 42,
-      "leadId": 13,
+      "id": "act_42",
+      "leadId": "lead_13",
       "weekLabel": "114/11/25",
       "content": "【狀態】已完成\n【備註】OPPO供應商，協助操作香港倉儲進出作業",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 43,
-      "leadId": 1,
+      "id": "act_43",
+      "leadId": "lead_1",
       "weekLabel": "114/11/25",
       "content": "【狀態】進行中\n【備註】嘉義系統準備上線\n【週回顧】1.11/21教育訓練\n2.現場反應問題,安卓系統APP要拍照後才能簽名,IOSAPP可以直接簽名,有沒有可能統一作業方式,建議的運作方式是應該可以讓客戶選擇是否需要這兩種功能.\n3.路線可不可以綁車輛,目前若發生單一路線沒有貨,所有車續會跑掉(往前遞補),據了解之前不能做的原因似乎為初始規劃條件未提出此需求故公司表示要收費,千涵說此功能已經有做但尚未啟用",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 44,
-      "leadId": 33,
+      "id": "act_44",
+      "leadId": "lead_33",
       "weekLabel": "114/11/25",
       "content": "【狀態】進行中\n【備註】之前認識的船務到新公司，也是在幫客戶安排進出口的航運，也都是配合同行在報價，有給我幾個案子在請我報價參考看看",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 45,
-      "leadId": 34,
+      "id": "act_45",
+      "leadId": "lead_34",
       "weekLabel": "114/11/25",
       "content": "【狀態】未開始\n【備註】車隊\n【週回顧】接洽中看有無機會合作(奐均介紹)",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 46,
-      "leadId": 35,
+      "id": "act_46",
+      "leadId": "lead_35",
       "weekLabel": "114/11/25",
       "content": "【狀態】未開始\n【備註】車隊\n【週回顧】有找祥億合作宅配,但無系統.找機會介入",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 47,
-      "leadId": 10,
+      "id": "act_47",
+      "leadId": "lead_10",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1. 11/2(二)上午拜訪討論資訊人力外包作業事宜\n2.帳務整理",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 48,
-      "leadId": 29,
+      "id": "act_48",
+      "leadId": "lead_29",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】1. 順利取得明年第一季度海空運標單\n2. 先行提供上海(100噸)、廣州(20噸)、廈門(20噸)這三點的空運報價",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 49,
-      "leadId": 21,
+      "id": "act_49",
+      "leadId": "lead_21",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】倉儲業務\n【週回顧】尚未確認是否成約，因價格不打算提供折扣",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 50,
-      "leadId": 16,
+      "id": "act_50",
+      "leadId": "lead_16",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】1. 已經先提供越南到美國的報價，台灣的部分會在後補",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 51,
-      "leadId": 3,
+      "id": "act_51",
+      "leadId": "lead_3",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】1. 先提供香港回台以及出口摩洛哥的空運報價\n2. 第一版價格偏高，請朋友再幫忙詢問其他代理價格\n3. 海運的部分要求要協助裝櫃及加強固定，也是要再確認操作費用\n4. 之後可能會有移倉的需求，如果有不錯的倉儲可以幫忙注意",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 52,
-      "leadId": 32,
+      "id": "act_52",
+      "leadId": "lead_32",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】雙方應該會合作\n1.我方提供UBER宅配轉運作業運輸\n2.UBER可成為我方運力,配合有需求的業務\n3.群組已開,會先接API",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 53,
-      "leadId": 36,
+      "id": "act_53",
+      "leadId": "lead_36",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】1. 空運報價偏低(PVG:5++ / HKG:0++ / 越南:5++)\n2. 有跟航司再要看看價格，本週會再追蹤",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 54,
-      "leadId": 23,
+      "id": "act_54",
+      "leadId": "lead_23",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】準備簽約\n已加入專案大群組",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 55,
-      "leadId": 37,
+      "id": "act_55",
+      "leadId": "lead_37",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】1. 客戶介紹的廠商，主要是做電源供應器\n2. 所提供的深圳to馬尼拉海運報價偏高，本週會再更詢問價格更新追蹤",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 56,
-      "leadId": 1,
+      "id": "act_56",
+      "leadId": "lead_1",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】嘉義系統準備上線\n【週回顧】1.高雄可能再增一線\n2.中南部帳務手動部分應無問題可順利執行\n3.系統部分要確認差異\n4.高雄送台南車型的問題需解決",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 57,
-      "leadId": 38,
+      "id": "act_57",
+      "leadId": "lead_38",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【備註】1. 朋友介紹的廠商，是做紡織布料的進出口貿易\n2. 主要是從越南峴港海運出口到台灣、澳洲、德國\n3. 已將第一版報價提供過去，本週會再追蹤確認",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 58,
-      "leadId": 6,
+      "id": "act_58",
+      "leadId": "lead_6",
       "weekLabel": "114/12/02",
       "content": "【狀態】進行中\n【週回顧】追蹤合作方式是否有意願",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 59,
-      "leadId": 4,
+      "id": "act_59",
+      "leadId": "lead_4",
       "weekLabel": "114/12/02",
       "content": "【狀態】未開始\n【週回顧】1.人力協助承攬或派遣\n2.彰化水泥配送再次報價",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 60,
-      "leadId": 39,
+      "id": "act_60",
+      "leadId": "lead_39",
       "weekLabel": "114/12/02",
       "content": "【狀態】未開始\n【週回顧】缺車,會看看有無合作機會",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 61,
-      "leadId": 40,
+      "id": "act_61",
+      "leadId": "lead_40",
       "weekLabel": "114/12/02",
       "content": "【狀態】未開始\n【週回顧】有當日配需求,了解中",
       "createdAt": "2025-12-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 62,
-      "leadId": 10,
+      "id": "act_62",
+      "leadId": "lead_10",
       "weekLabel": "114/12/09",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1. 12/5(二)上午拜訪討論資訊人力外包執行方案\nA. BBT我們可以開始調整系統\nB.安邦可準備拜訪來確認他的規格書\nC.有請祥億老闆先找兩家客戶溝通看看,嘗試用我們系統派單以方便我們調整\n初步選擇可能是雅詩蘭黛跟SK2\n2.帳務整理已完成(對真站部分)",
       "createdAt": "2025-12-09T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 63,
-      "leadId": 16,
+      "id": "act_63",
+      "leadId": "lead_16",
       "weekLabel": "114/12/09",
       "content": "【狀態】進行中\n【備註】1. 朋友那邊可以調降USD 300，會再更新報價給他們，希望可以爭取試走的機會",
       "createdAt": "2025-12-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 64,
-      "leadId": 23,
+      "id": "act_64",
+      "leadId": "lead_23",
       "weekLabel": "114/12/09",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】合約討論中",
       "createdAt": "2025-12-09T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 65,
-      "leadId": 29,
+      "id": "act_65",
+      "leadId": "lead_29",
       "weekLabel": "114/12/09",
       "content": "【狀態】進行中\n【備註】1. 先提供廈門的報價，等待回覆\n2. 上海的部分還要再跟朋友精算，看最低能用多少承接",
       "createdAt": "2025-12-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 66,
-      "leadId": 1,
+      "id": "act_66",
+      "leadId": "lead_1",
       "weekLabel": "114/12/09",
       "content": "【狀態】進行中\n【備註】高雄增線\n租賃合作\n【週回顧】1.高雄再增一線,確認上線時間(最新訊息是有可能增到2線)\n2.系統部分按鍵重疊(安卓)已通知安邦處理\n4.高雄送台南車型的問題需解決\n短期跟普利司通租賃,長期已請路路通打造升降車廂\n因普利司通高雄需求,好市多配送會更改作業條件(不是變更現有報價而是調整價格使用的情境)\n5.嘉義部分報價單提出(新需求部分)\n6.預定明年春節後.\n板進板出各型貨車需求.\n觀音調節倉(預定),到桃中彰嘉高各站\n預估每日約50板進出\n專車請文冠報,棧板請祥億先報\n大車TMS上線",
       "createdAt": "2025-12-09T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 67,
-      "leadId": 3,
+      "id": "act_67",
+      "leadId": "lead_3",
       "weekLabel": "114/12/09",
       "content": "【狀態】進行中\n【備註】1. 更新後的摩洛哥空運報價還是偏高，要再跟代理討論如何調整\n2. 香港回台的海運報價也偏貴，還在等另外兩個代理的價格\n3. 香港回台空運價格也是偏貴，一樣再詢問其他代理是否能提供更好的價格",
       "createdAt": "2025-12-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 68,
-      "leadId": 32,
+      "id": "act_68",
+      "leadId": "lead_32",
       "weekLabel": "114/12/09",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1.報價已提供正在議價\n2.預計本月份會提出轉運需求(明年度)",
       "createdAt": "2025-12-09T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 69,
-      "leadId": 41,
+      "id": "act_69",
+      "leadId": "lead_41",
       "weekLabel": "114/12/09",
       "content": "【狀態】進行中\n【備註】1. 此為客戶介紹的廠商，主要是做光學鏡頭的產品\n2. 都是走空運出口到泰國、越南、上海、香港，不過大部分是客戶指定為主，偶爾會有一些自有貨就會詢問報價\n3. 預計1月中有一批貨要詢價，到時候會再跟我詢問報價",
       "createdAt": "2025-12-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 70,
-      "leadId": 4,
+      "id": "act_70",
+      "leadId": "lead_4",
       "weekLabel": "114/12/09",
       "content": "【狀態】未開始\n【週回顧】1.人力協助承攬或派遣\n人力放彰化,目前口頭報給西卡約150萬/年\n誠達報價120萬/年\n2.彰化水泥配送再次報價\n價格確認中,預計明年4月中開始",
       "createdAt": "2025-12-09T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 71,
-      "leadId": 42,
+      "id": "act_71",
+      "leadId": "lead_42",
       "weekLabel": "114/12/09",
       "content": "【狀態】進行中\n【備註】1. 此為之前配合過的廠商，公司是做電子零組件\n2. 主要是走空運出口到上海跟香港，貨量不大，每個月出1.2票，大概100公斤上下\n3. 之前認識的窗口已經離職，已拜訪新的小姐並且提供報價，後續跟進",
       "createdAt": "2025-12-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 72,
-      "leadId": 34,
+      "id": "act_72",
+      "leadId": "lead_34",
       "weekLabel": "114/12/16",
       "content": "【狀態】未開始\n【備註】爭取合作\n【週回顧】先從爭取專車開始在看有無業務可交叉合作\n多為華儲至新竹",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 73,
-      "leadId": 29,
+      "id": "act_73",
+      "leadId": "lead_29",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】1. 已經提供第一版報價，下週會跟我說結果",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 74,
-      "leadId": 10,
+      "id": "act_74",
+      "leadId": "lead_10",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1. 12/15(一)下午與安邦過去確認系統端作業,評估後續合作方式\n2. 普利司通明年度的棧板配送,有請祥億報價,但祥億車輛無尾門,所以也正在確認普利司通各站有無堆高機",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 75,
-      "leadId": 3,
+      "id": "act_75",
+      "leadId": "lead_3",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】1. 更新報價後跟目前配合得差不多，如果後續價格沒變動，預計1月可以讓我試走",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 76,
-      "leadId": 1,
+      "id": "act_76",
+      "leadId": "lead_1",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】高雄增線\n租賃合作\n【週回顧】1.高雄再增一線,確認上線時間(最新訊息是有可能增到2線)\n2.雲林要找車,嘉義端配送\n3.嘉義被客訴,因輪胎排放問題不佳,普利司通要求嘉義跟高雄要去做店訪,預定本週四週五下去(分別跑嘉義,高雄台南)\n初步了解是剛上線時發生的狀況,不是大問題,加盟主要是在抱怨普利司通人力政策",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 77,
-      "leadId": 42,
+      "id": "act_77",
+      "leadId": "lead_42",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】1. 由小姐引薦與主管訪談，表示目前公司貨量已不如以往，也已經跟現在的貨代配合一段時間了，除非價格有很大的落差才會考慮更換\n2. 目前的報價稍高，有時候會走D TERM，提供我送貨地址再更新報價看看",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 78,
-      "leadId": 6,
+      "id": "act_78",
+      "leadId": "lead_6",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】策略合作\n【週回顧】1.同意合作但目前部分營收毛利不足\n雙方會先預定以新客戶以及可轉讓的客戶為準\n準備顧問合約\n2.匯款作業已告知",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 79,
-      "leadId": 43,
+      "id": "act_79",
+      "leadId": "lead_43",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】1. 此為之前認識的廠商，主要是做電子零組件\n2. 已提供香港倉儲作業的報價，預計下週開始合作",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 80,
-      "leadId": 32,
+      "id": "act_80",
+      "leadId": "lead_32",
       "weekLabel": "114/12/16",
       "content": "【狀態】未開始\n【備註】車隊+客戶\n【週回顧】12/16週二上午會過來拿合約並確認合作重點",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 81,
-      "leadId": 12,
+      "id": "act_81",
+      "leadId": "lead_12",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】1. 此為之前認識廠商，主要是從台灣出口到香港以及香港&台灣倉儲作業\n2. 目前窗口是新來的，先提供需求報價，持續追蹤",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 82,
-      "leadId": 4,
+      "id": "act_82",
+      "leadId": "lead_4",
       "weekLabel": "114/12/16",
       "content": "【狀態】未開始\n【週回顧】1.人力協助承攬或派遣\n人力放彰化,目前口頭報給西卡約150萬/年,等西卡回覆中\n誠達報價120萬/年\n2.彰化水泥配送再次報價,彰化各車型配送報價\n鴻達已報價",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 83,
-      "leadId": 44,
+      "id": "act_83",
+      "leadId": "lead_44",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】1. 之前配合過的廠商，主要是台灣出口到上海\n2. 目前是跟鴻霖還有萬達配合，第一次報價偏高，要在重新詢問後持續追蹤",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 84,
-      "leadId": 23,
+      "id": "act_84",
+      "leadId": "lead_23",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】本週無新進度",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 85,
-      "leadId": 45,
+      "id": "act_85",
+      "leadId": "lead_45",
       "weekLabel": "114/12/16",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】預計台南線酬勞由2,700調升至3,000，因現有酬勞無法支撐服務，高雄至台南里程數約為高雄線之3倍",
       "createdAt": "2025-12-16T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 86,
-      "leadId": 1,
+      "id": "act_86",
+      "leadId": "lead_1",
       "weekLabel": "114/12/23",
       "content": "【狀態】進行中\n【備註】高雄增線\n租賃合作\n【週回顧】1.店訪行程\n11/18 嘉義  同德,正裕,所陞\n講的都是BS的問題\n11/19 高雄 好市多 大順店\n            台南 好市多 台南店,豐昇\n2.高雄預計再增一線,等車好就可上線\n之後可能再增一線",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 87,
-      "leadId": 29,
+      "id": "act_87",
+      "leadId": "lead_29",
       "weekLabel": "114/12/23",
       "content": "【狀態】進行中\n【備註】1. 第一版價格偏高，有其他廠商提供低於3塊的報價，這部份要再跟朋友討論是否跟進",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 88,
-      "leadId": 21,
+      "id": "act_88",
+      "leadId": "lead_21",
       "weekLabel": "114/12/23",
       "content": "【狀態】已終止\n【備註】終止洽談\n【週回顧】出貨找經銷商處理,暫時無須變更倉儲",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 89,
-      "leadId": 42,
+      "id": "act_89",
+      "leadId": "lead_42",
       "weekLabel": "114/12/23",
       "content": "【狀態】進行中\n【備註】1. 更新報價後價格接近，但有聽說1月份價格還會再下修一些，所以等到1月再看那時候的報價，如果還是有競爭力就有機會合作",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 90,
-      "leadId": 6,
+      "id": "act_90",
+      "leadId": "lead_6",
       "weekLabel": "114/12/23",
       "content": "【狀態】進行中\n【備註】策略合作\n【週回顧】1.同意合作但目前部分營收毛利不足\n雙方會先預定以新客戶以及可轉讓的客戶為準\n準備顧問合約\n2.匯款已回部分,尚餘20萬",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 91,
-      "leadId": 31,
+      "id": "act_91",
+      "leadId": "lead_31",
       "weekLabel": "114/12/23",
       "content": "【狀態】進行中\n【備註】1. 客戶介紹的廠商，是做電子零件\n2. 主要是從台灣空運出口到上海&香港，目前是配合萬達，每週出貨2~3次，但是重量沒有很大\n3. 已提供報價再追蹤",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 92,
-      "leadId": 32,
+      "id": "act_92",
+      "leadId": "lead_32",
       "weekLabel": "114/12/23",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1. 12/16已回收合約用印,尚未收到用印後合約\n2. 等待通知確認其明年度需求",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 93,
-      "leadId": 46,
+      "id": "act_93",
+      "leadId": "lead_46",
       "weekLabel": "114/12/23",
       "content": "【狀態】已完成\n【備註】之前就有在配合的廠商，合作香港倉儲作業",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 94,
-      "leadId": 15,
+      "id": "act_94",
+      "leadId": "lead_15",
       "weekLabel": "114/12/23",
       "content": "【狀態】進行中\n【備註】策略合作\n【週回顧】預計會與迅通同方式合作，普利司通高雄線路超過5線後應會全數轉與我們合作(退出新航)",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 95,
-      "leadId": 43,
+      "id": "act_95",
+      "leadId": "lead_43",
       "weekLabel": "114/12/23",
       "content": "【狀態】已完成\n【備註】合作香港倉儲作業",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 96,
-      "leadId": 47,
+      "id": "act_96",
+      "leadId": "lead_47",
       "weekLabel": "114/12/23",
       "content": "【狀態】進行中\n【備註】倉儲客戶\n【週回顧】有新活動委託,作業細節確認中",
       "createdAt": "2025-12-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 97,
-      "leadId": 1,
+      "id": "act_97",
+      "leadId": "lead_1",
       "weekLabel": "114/12/30",
       "content": "【狀態】進行中\n【備註】高雄增線\n租賃合作\n【週回顧】1.嘉義車隊11月份財務未對帳,已處理\n2.12月份帳務處理(12/26)\n3.高雄新路線準備上,時間為12/31\n新車上線後好市多台南線超過80條就會加1車收費\n4.嘉義系統導入費用已簽回並轉財務請款\n5.高雄預計再增一線,也就是未來會有3條線,另高雄有反應送高雄普利司通成本問題\n6.系統對帳問題會想辦法解決,預計直接找ROGER討論",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 98,
-      "leadId": 29,
+      "id": "act_98",
+      "leadId": "lead_29",
       "weekLabel": "114/12/30",
       "content": "【狀態】終止\n【備註】1. 這次標案跟不上，價格偏低..\n2. 後續如有其他案外出貨，會再找我報價\n3. 持續跟進爭取下一季度投標",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 99,
-      "leadId": 8,
+      "id": "act_99",
+      "leadId": "lead_8",
       "weekLabel": "114/12/30",
       "content": "【狀態】進行中\n【備註】併購\n【週回顧】1.等Jakey資料出來就可約雙方正式談價\n2.人力部分外務大多是承攬,無勞健保問題\n3.換股部分家人想法比較保守,有提出一些建議請他思考\n4.業務部份他們目前有多接,我這也有鎖定幾家他目前的客戶之後可以協力去開發(例如鐵山文件)",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 100,
-      "leadId": 48,
+      "id": "act_100",
+      "leadId": "lead_48",
       "weekLabel": "114/12/30",
       "content": "【狀態】報價\n【備註】1. 客戶介紹廠商，主要台灣空運出口到上海\n2. 已經跟萬達配合多年，所提供的價格跟服務也都很好\n3. 第一版報價高出許多，除非有更優惠的價格吸引力才會考慮合作",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 101,
-      "leadId": 47,
+      "id": "act_101",
+      "leadId": "lead_47",
       "weekLabel": "114/12/30",
       "content": "【狀態】終止\n【備註】倉儲客戶\n【週回顧】因客戶製造商將協助出貨\n故本專案終止",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 102,
-      "leadId": 49,
+      "id": "act_102",
+      "leadId": "lead_49",
       "weekLabel": "114/12/30",
       "content": "【狀態】報價\n【備註】1. 此微電腦周邊設邊大廠，主要是從大陸海空運出口到美國\n2. 這次請我先提供鹽田to洛杉磯的報價\n3. 由於是含有鋰電池產品，要再請航司及船公司確認承攬條件及價格",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 103,
-      "leadId": 32,
+      "id": "act_103",
+      "leadId": "lead_32",
       "weekLabel": "114/12/30",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】請uber提供運力資料中\n串接已完成",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 104,
-      "leadId": 50,
+      "id": "act_104",
+      "leadId": "lead_50",
       "weekLabel": "114/12/30",
       "content": "【狀態】已完成\n【備註】1. 此為OPPO供應商，已談妥香港倉儲作業",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 105,
-      "leadId": 4,
+      "id": "act_105",
+      "leadId": "lead_4",
       "weekLabel": "114/12/30",
       "content": "【狀態】初步接觸\n【週回顧】1.人力協助承攬或派遣部分\n西卡尚未回覆,追蹤中",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 106,
-      "leadId": 51,
+      "id": "act_106",
+      "leadId": "lead_51",
       "weekLabel": "114/12/30",
       "content": "【狀態】報價\n【備註】1. 此為客戶介紹廠商，主要是做紡織布料\n2. 大部分為海運客戶指定貨，碰到急料才會安排走空運\n3. 預計1月中會有一批貨要從廈門出到荷蘭(CFS)，請我先提供報價參考",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 107,
-      "leadId": 20,
+      "id": "act_107",
+      "leadId": "lead_20",
       "weekLabel": "114/12/30",
       "content": "【狀態】初步接觸\n【週回顧】已請朋友確認\n我們的報價是否有機會拿到量\n還是只是拿我們的價格去壓其他廠商的價",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 108,
-      "leadId": 23,
+      "id": "act_108",
+      "leadId": "lead_23",
       "weekLabel": "114/12/30",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】追蹤上線時間,悠遊卡公司回覆近期將確認\n預計下週1/7會進行會議,執行群組已加入佳綾\n另有與佳綾討論,永越毛利大約只有8%,一般客戶約30%,故約找個永越30%左右營收的即可補足毛利差",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 109,
-      "leadId": 6,
+      "id": "act_109",
+      "leadId": "lead_6",
       "weekLabel": "114/12/30",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】1.帳務溝通完畢\n2.確認顧問契約後準備簽約",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 110,
-      "leadId": 15,
+      "id": "act_110",
+      "leadId": "lead_15",
       "weekLabel": "114/12/30",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】台南高雄第2條線準備上線(12/31),已開始預備第3條線\n雲林-嘉義路線準備中",
       "createdAt": "2025-12-30T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 111,
-      "leadId": 1,
+      "id": "act_111",
+      "leadId": "lead_1",
       "weekLabel": "115/01/05",
       "content": "【狀態】進行中\n【備註】增線,支援車輛\n【週回顧】1.高雄於1/2新增1線,目前共2線.第3線準備中\n2.高雄部分近期會支援基本路線外的車輛協助配送\n3.高雄路線APP使用需教學,路線由高雄建檔",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 112,
-      "leadId": 52,
+      "id": "act_112",
+      "leadId": "lead_52",
       "weekLabel": "115/01/05",
       "content": "【狀態】初步接觸\n【備註】1. 客戶介紹廠商，是以空運出口香港線為主\n2. 與目前貨代配合很久，且我提供的報價也偏高\n3. 再更新給主管約訪",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 113,
-      "leadId": 10,
+      "id": "act_113",
+      "leadId": "lead_10",
       "weekLabel": "115/01/05",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1.資訊合作確認模式\n2.FILA專案有可能加入,利用我們系統做簽收\n3.華岡成立海快配送的部分,將確認需求看看有無切入合作空間",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 114,
-      "leadId": 53,
+      "id": "act_114",
+      "leadId": "lead_53",
       "weekLabel": "115/01/05",
       "content": "【狀態】進行中\n【備註】1. 之前認識的窗口離職，目前為蔡小姐\n2. 主要出貨是空運上海跟香港\n3. 現在還是跟台空在配合，但不是很滿意現在業務的服務\n4. 請我先提供報價參考，價格有跟上再考慮",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 115,
-      "leadId": 34,
+      "id": "act_115",
+      "leadId": "lead_34",
       "weekLabel": "115/01/05",
       "content": "【狀態】報價\n【備註】尚未有合作\n【週回顧】專車報價,未爭取到業務",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 116,
-      "leadId": 54,
+      "id": "act_116",
+      "leadId": "lead_54",
       "weekLabel": "115/01/05",
       "content": "【狀態】初步接觸\n【備註】1. 公司大部分都是走快遞到香港，重量約在70kg左右\n2. 跟她分析這樣的重量可以走空運，價格不會差太多，時效還會比較快\n3. 每週出貨1.2次，提貨時間都壓在17:00，敢當天晚班機\n4. 已提供報價參考比較，持續追蹤爭取",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 117,
-      "leadId": 23,
+      "id": "act_117",
+      "leadId": "lead_23",
       "weekLabel": "115/01/05",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】1/7(三)悠遊卡公司會議",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 118,
-      "leadId": 55,
+      "id": "act_118",
+      "leadId": "lead_55",
       "weekLabel": "115/01/05",
       "content": "【狀態】報價\n【備註】1. 重新提供最新的MSDS與航司確認價格",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 119,
-      "leadId": 15,
+      "id": "act_119",
+      "leadId": "lead_15",
       "weekLabel": "115/01/05",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】高雄預備第3條線\n雲林-嘉義路線準備中(等普利司通通知)\n規劃未來合作模式比照迅通",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 120,
-      "leadId": 51,
+      "id": "act_120",
+      "leadId": "lead_51",
       "weekLabel": "115/01/05",
       "content": "【狀態】報價\n【備註】1. 所提供的報價還可以，等業務端確認貿易條件後會通知出貨",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 121,
-      "leadId": 56,
+      "id": "act_121",
+      "leadId": "lead_56",
       "weekLabel": "115/01/05",
       "content": "【狀態】報價\n【備註】尚未有合作\n【週回顧】專車及棧板報價,未爭取到業務",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 122,
-      "leadId": 57,
+      "id": "act_122",
+      "leadId": "lead_57",
       "weekLabel": "115/01/05",
       "content": "【狀態】已完成\n【備註】1. 此為客戶介紹廠商，主要需求是香港倉儲服務，已提供報價並同意合作",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 123,
-      "leadId": 6,
+      "id": "act_123",
+      "leadId": "lead_6",
       "weekLabel": "115/01/05",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】1.帳務溝通完畢\n2.確認顧問契約後準備簽約\n3.與迅通鄒哥跟路路通定哥會約時間見面討論後續用bbt品牌運作的合作方式\n目前期望是鄒哥負責業務,定哥負責調度\n服務區域是雲林到屏東(雲嘉南高屏)\n中彰投 > 鴻達",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 124,
-      "leadId": 58,
+      "id": "act_124",
+      "leadId": "lead_58",
       "weekLabel": "115/01/05",
       "content": "【狀態】已完成\n【備註】1. 此為OPPO供應商，報價完成並開始配合香港倉儲服務",
       "createdAt": "2026-01-05T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 125,
-      "leadId": 1,
-      "weekLabel": "115/01/05",
-      "content": "【狀態】進行中\n【備註】客戶\n【週回顧】上週二桃園客訴會注意有沒有後續衍伸問題",
-      "createdAt": "2026-01-05T00:00:00.000Z",
-      "createdBy": "Jerry"
-    },
-    {
-      "id": 126,
-      "leadId": 23,
+      "id": "act_125",
+      "leadId": "lead_23",
       "weekLabel": "115/01/12",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】1/7(三)悠遊卡公司會議\n預定開站時間3/2\n雙週上新品\n3/4 先試營運\n開幕慶\n3/18 新品\n\n貨約提早一週出\n3/2開站\n正常應週二(2/24)出倉\n週三(2/25)收到 \n會提早一天到貨(2/24)方便我們驗收\n初期最少300品\n\n串接分2階段\n一階段撈單後提供資料\n串接2階段以後再討論",
       "createdAt": "2026-01-12T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 127,
-      "leadId": 59,
+      "id": "act_126",
+      "leadId": "lead_59",
       "weekLabel": "115/01/12",
       "content": "【狀態】初步接觸\n【備註】1. 客戶介紹廠商，主要是協助客戶採購IT以及3C相關國際產品\n2. 沒有固定的航線，就是看客戶此次購買的地區\n3. 下個月有需求空運海運到SFO&OAK，請我先提供報價參考",
       "createdAt": "2026-01-12T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 128,
-      "leadId": 15,
+      "id": "act_127",
+      "leadId": "lead_15",
       "weekLabel": "115/01/12",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】高雄預備第3條線 - 有跟普利司通討論是否可跟他們租車上直接上線\n雲林-嘉義路線準備中(等普利司通通知)\n1/14拜訪宇與迅通討論今年度合作方式",
       "createdAt": "2026-01-12T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 129,
-      "leadId": 60,
+      "id": "act_128",
+      "leadId": "lead_60",
       "weekLabel": "115/01/12",
       "content": "【狀態】初步接觸\n【備註】1. 客戶介紹廠商，是一間電腦連接器以及無線網路天線製造商\n2. 主要是空運出口到上海&香港(DDU)，每週約2~3票，每次重量50K~200K左右，已經跟萬泰配合超過10年的時間\n3. 對於目前的價格跟服務都還滿意，我所提供的報價也偏貴，要有一段落差才會考慮",
       "createdAt": "2026-01-12T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 130,
-      "leadId": 6,
+      "id": "act_129",
+      "leadId": "lead_6",
       "weekLabel": "115/01/12",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】帳務已確認\n1/14拜訪討論今年度合作方式",
       "createdAt": "2026-01-12T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 131,
-      "leadId": 61,
+      "id": "act_130",
+      "leadId": "lead_61",
       "weekLabel": "115/01/12",
       "content": "【狀態】初步接觸\n【備註】1. 之前認識的船務小姐剛到職，公司都是從國外進口原料，此次先請我提供LAX空運回台的報價參考",
       "createdAt": "2026-01-12T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 132,
-      "leadId": 10,
+      "id": "act_131",
+      "leadId": "lead_10",
       "weekLabel": "115/01/12",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1.FILA業務-訂單先進我們系統再到祥億系統,應會以論件計酬方式計價\n2.有貨櫃管理需求,目前超過160個櫃子\n3.車機廠商可串接,讓我們取得資料,之後可進行分析合作專車業務以及協助做貨櫃管理\n4.車機廠商雲安,位於台中,會安排過去拜訪\n5.主動發現帳務有點問題(沒給我們明細),會協助財務確認",
       "createdAt": "2026-01-12T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 133,
-      "leadId": 3,
+      "id": "act_132",
+      "leadId": "lead_3",
       "weekLabel": "115/01/12",
       "content": "【狀態】報價\n【備註】1. 更新目前摩洛哥以及俄羅斯的空運價格\n2. 報價還是稍高，要再與代理討論爭取",
       "createdAt": "2026-01-12T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 134,
-      "leadId": 54,
+      "id": "act_133",
+      "leadId": "lead_54",
       "weekLabel": "115/01/12",
       "content": "【狀態】報價\n【備註】1. 現階段我的報價還是比快遞貴，主要是差在GATE CHARGE，除非出貨重量超過100KG才會比較接近\n2. 重新調整價格，並與代理協調入閘費的收取",
       "createdAt": "2026-01-12T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 135,
-      "leadId": 23,
+      "id": "act_134",
+      "leadId": "lead_23",
       "weekLabel": "115/01/19",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】倉庫作業會議時間尚未確認\n數匯仍在與悠遊卡公司確認行銷相關作業",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 136,
-      "leadId": 62,
+      "id": "act_135",
+      "leadId": "lead_62",
       "weekLabel": "115/01/19",
       "content": "【狀態】初步接觸\n【備註】1. 此為之前在台空的客戶，報價是空海運季標的方式，都是出口到大陸地區，其中以海運為主\n2. 現階段還是跟台空配合居多，請窗口先提供我標單參考，另外爭取其他案外報價",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 137,
-      "leadId": 15,
+      "id": "act_136",
+      "leadId": "lead_15",
       "weekLabel": "115/01/19",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】應會簽顧問合約\n會研究進行南科配送相關業務可行性",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 138,
-      "leadId": 63,
+      "id": "act_137",
+      "leadId": "lead_63",
       "weekLabel": "115/01/19",
       "content": "【狀態】初步接觸\n【備註】1. 此為客戶介紹廠商，主要是海運出口到日本OSAKA\n2. 已經跟目前的報關行配合多年，也都是由他們來安排貨代\n3. 請我先提供整櫃的報價參考再追蹤",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 139,
-      "leadId": 6,
+      "id": "act_138",
+      "leadId": "lead_6",
       "weekLabel": "115/01/19",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】應會簽顧問合約",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 140,
-      "leadId": 64,
+      "id": "act_139",
+      "leadId": "lead_64",
       "weekLabel": "115/01/19",
       "content": "【狀態】初步接觸\n【備註】1. 此為客戶介紹廠商，公司是做網路監視系統以及相關設備\n2. 主要以指定貨居多，目前業務有在談新的案case，請我先提供KUL、YVR、WAW這三個地方的空運報價參考",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 141,
-      "leadId": 10,
+      "id": "act_140",
+      "leadId": "lead_10",
       "weekLabel": "115/01/19",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1.雲安窗口已確認，尚未確認拜訪時間\n2.會討論普利司通三重配送可行性",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 142,
-      "leadId": 65,
+      "id": "act_141",
+      "leadId": "lead_65",
       "weekLabel": "115/01/19",
       "content": "【狀態】初步接觸\n【備註】1. 客戶介紹廠商，公司是做燈具、燈飾類的產品，總公司位在香港，貨物都是直接從香港出口到德國，但費用是台灣這邊支付\n2. 每個月出貨2~4票，每次重量約100~200KG，先提供HKG-FRA & HKG-DUS的價格，會將報價單傳給總公司，後續追蹤",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 143,
-      "leadId": 1,
+      "id": "act_142",
+      "leadId": "lead_1",
       "weekLabel": "115/01/19",
       "content": "【狀態】進行中\n【備註】高雄增線\n租賃合作\n【週回顧】三重前進倉有提出需求，正在確認可行性中\nUBER由於無大車(三重多為17吋以上車胎)，可行性已排除",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 144,
-      "leadId": 32,
+      "id": "act_143",
+      "leadId": "lead_32",
       "weekLabel": "115/01/19",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】有宅配合作需求：1.75噸車配送想進行內部提案\n會再約訪確認需求細節",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 145,
-      "leadId": 4,
+      "id": "act_144",
+      "leadId": "lead_4",
       "weekLabel": "115/01/19",
       "content": "【狀態】報價\n【備註】客戶\n【週回顧】1.人力協助承攬或派遣\n人力放彰化,目前口頭報給西卡約150萬/年,等西卡回覆中\n誠達報價120萬/年\n預計本週出報價單\n最快春節後上線",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 146,
-      "leadId": 66,
+      "id": "act_145",
+      "leadId": "lead_66",
       "weekLabel": "115/01/19",
       "content": "【狀態】初步接觸\n【備註】車隊\n【週回顧】已確認窗口並連繫上，已知LALA尚未正式拜訪普利司通\n是否有報價以及價格仍須確認(窗口非同一人)\n會安排時間過去拜訪",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 147,
-      "leadId": 67,
+      "id": "act_146",
+      "leadId": "lead_67",
       "weekLabel": "115/01/26",
       "content": "【狀態】已完成\n【備註】合作廠商\n【週回顧】人力派遣公司\n倉庫1/22,1/23有拆櫃需求\n已介紹並安排業務合作",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 148,
-      "leadId": 68,
+      "id": "act_147",
+      "leadId": "lead_68",
       "weekLabel": "115/01/26",
       "content": "【狀態】初步接觸\n【備註】1. 此為客戶介紹廠商，主要是走快遞居多\n2. 每個禮拜約2~4票，貨物品項以五金類的東西為主\n3. 偶有會有較大貨的時候才會詢問空運報價，請我先提供到深圳以及廣東的價格參考",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 149,
-      "leadId": 69,
+      "id": "act_148",
+      "leadId": "lead_69",
       "weekLabel": "115/01/26",
       "content": "【狀態】初步接觸\n【備註】倉儲客戶\n【週回顧】1/23(五) 14:00拜訪,有流通加工需求\n1.阿源肥皂-流通加工需求,已提供基礎報價\n有壓印製造日期的需求,已確認倉庫可處理\n2.兒子自行創業,產品汽車座椅背墊,有機會從頭開始合作(等待副總安排約訪)",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 150,
-      "leadId": 70,
+      "id": "act_149",
+      "leadId": "lead_70",
       "weekLabel": "115/01/26",
       "content": "【狀態】初步接觸\n【備註】1. 此為客戶指定貨廠商，主要是生產工業用電腦相關設備，固定每周五出貨\n2. 會自行安排卡車送貨，都是晚上9點才會送到基機場進倉，平均重量介於300KG~500KG，一年當中大概有5~7次的重量會超過1000KG，都是CARTON貨\n3. 由於上海是自己的分公司，也有指定配合的報關行，雖然台灣這邊的貿易條件是CIF，但還是會請貨代提供上海機場當地的雜費報價，連同運費一起做費用上的考量。\n4. 目前合作廠商的後段價格為RMB 0.50/KG (ALL IN)，前段運費為含燃油NTD 20/KG左右\r\nCC FEE不收，HANDLING 300/票，如果可以提供更優惠的價格才會考慮合作。",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 151,
-      "leadId": 71,
+      "id": "act_150",
+      "leadId": "lead_71",
       "weekLabel": "115/01/26",
       "content": "【狀態】初步接觸\n【備註】車機廠商\n【週回顧】本週三1/28派訪,彰化\n1.祥億車機廠商\n2.目前了解主要客戶多為砂石車等重車,會看看有無合作機會",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 152,
-      "leadId": 72,
+      "id": "act_151",
+      "leadId": "lead_72",
       "weekLabel": "115/01/26",
       "content": "【狀態】初步接觸\n【備註】1. 此為客戶介紹廠商，公司主要是電子IC零組件代理商，都是空運出口到香港地區，不過現在貨量沒有以前那麼大，而且現在常常都是直接香港交貨，加上已經有2~3家貨代在配合，所以目前這方面的需求沒那麼大。\n2. 現在比較需要香港進口的快遞服務，因為常常會從那邊寄一些貨品回台販售及測試，只是量都不大，所以還不會走到CARGO\n3. 請我先提供快遞以及香港空運進口報關的價格參考，日後有需求會再跟我確認細節",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 153,
-      "leadId": 10,
+      "id": "act_152",
+      "leadId": "lead_10",
       "weekLabel": "115/01/26",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1.車機已取回\n2.總務主管會陪同拜訪雲安",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 154,
-      "leadId": 73,
+      "id": "act_153",
+      "leadId": "lead_73",
       "weekLabel": "115/01/26",
       "content": "【狀態】初步接觸\n【備註】1. 此為之前配合過的廠商，是做半導體以及電子零件\n2. 每個月出口香港&上海約10票左右，每次的重量都在100K以上，在遠雄有租倉庫，直接採用F類報單出口，目前還是跟萬泰合作，價格跟我在的時候差不多~\r\nMIN 800 ，FLAT 6/KG，報關費200，鍵輸費100\r\n3. 如果可以提供更優惠的價格才會考慮，另外也可以提供天津的報價給她參考",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 155,
-      "leadId": 66,
+      "id": "act_154",
+      "leadId": "lead_66",
       "weekLabel": "115/01/26",
       "content": "【狀態】初步接觸\n【備註】車隊\n【週回顧】本周四1/19拜訪",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 156,
-      "leadId": 62,
+      "id": "act_155",
+      "leadId": "lead_62",
       "weekLabel": "115/01/26",
       "content": "【狀態】進行中\n【備註】1. 已拜訪物流的最高主管處長，也同意下一季可以讓我投標，到時候我再跟負責的窗口小姐拿標單即可",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 157,
-      "leadId": 1,
+      "id": "act_156",
+      "leadId": "lead_1",
       "weekLabel": "115/01/26",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】1.台中帳務確認中\n2.高雄準備增線,最快2月初\n3.台中量大提出本週增一車支援,因鴻達人力調度問題故僅支援1天\n4.板貨部分文冠回填價格但報價單位有問題,已請他重填.將於整理後提出報價",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 158,
-      "leadId": 3,
+      "id": "act_157",
+      "leadId": "lead_3",
       "weekLabel": "115/01/26",
       "content": "【狀態】報價\n【備註】1. 已再次更新報價給經理，但還是差了一點...\n2. 請我另外再提供尼泊爾跟突尼西亞的報價參考",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 159,
-      "leadId": 4,
+      "id": "act_158",
+      "leadId": "lead_4",
       "weekLabel": "115/01/26",
       "content": "【狀態】報價\n【備註】客戶\n【週回顧】1.人力協助承攬或派遣\n西卡已上呈等待確認\n2.彰化其他車型報價,有可能要背堆高機,會跟鴻達合作\n3.若有機會車機會介紹雲安給他們\n4.WMS部分已切入看看有無機會合作,目前西卡尚未使用WMS系統",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 160,
-      "leadId": 54,
+      "id": "act_159",
+      "leadId": "lead_54",
       "weekLabel": "115/01/26",
       "content": "【狀態】報價\n【備註】1. 上週出貨102公斤，比較過我的報價跟快遞差不多，也很感謝我去跟代理爭取Gate Charge的部分，說下次出貨超過100公斤的時候會跟我說\n2. 另外請我再提供上海的報價給他參考，之後公司會出這條新航線",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 161,
-      "leadId": 74,
+      "id": "act_160",
+      "leadId": "lead_74",
       "weekLabel": "115/01/26",
       "content": "【狀態】初步接觸\n【週回顧】處長已換人,原處長KENNY離職換KEVEN\n已取得KEVEN的LINE,將擇時約訪",
       "createdAt": "2026-01-26T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 162,
-      "leadId": 66,
+      "id": "act_161",
+      "leadId": "lead_66",
       "weekLabel": "115/02/02",
       "content": "【狀態】初步接觸\n【備註】車隊\n【週回顧】1/19拜訪\n1.請其申請看看有無階梯式報價可提供\n2.LALA有買50輛車,會看有時適合的業務跟其合作",
       "createdAt": "2026-02-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 163,
-      "leadId": 75,
+      "id": "act_162",
+      "leadId": "lead_75",
       "weekLabel": "115/02/02",
       "content": "【狀態】初步接觸\n【備註】1. 此為客戶指定貨廠商，主要出貨到廈門跟武漢\n2. 目前都還是以FOB為主，退貨或是急貨才會是自行付運費\n3. 請我先提供這兩點的空運報價參考",
       "createdAt": "2026-02-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 164,
-      "leadId": 1,
+      "id": "act_163",
+      "leadId": "lead_1",
       "weekLabel": "115/02/02",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】1.高雄帳務混亂,暫時已解決\n2.高雄春節前支援1車(2/2)\n3.嘉義帳務持續未付款,跟催中(Roger,Carl)\n4.高雄第3線確定春節後上線",
       "createdAt": "2026-02-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 165,
-      "leadId": 76,
+      "id": "act_164",
+      "leadId": "lead_76",
       "weekLabel": "115/02/02",
       "content": "【狀態】進行中\n【備註】1. 此為之前配合過的廠商，是做防蝕塗料的\n2. 大部分是case by case詢價，主要以新加坡、歐美地區為主\n3. 預計年後有一批貨要出到新加坡，大約200公斤，請我提供DDU報價",
       "createdAt": "2026-02-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 166,
-      "leadId": 10,
+      "id": "act_165",
+      "leadId": "lead_10",
       "weekLabel": "115/02/02",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1.總務主管會陪同拜訪雲安",
       "createdAt": "2026-02-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 167,
-      "leadId": 77,
+      "id": "act_166",
+      "leadId": "lead_77",
       "weekLabel": "115/02/02",
       "content": "【狀態】初步接觸\n【備註】1. 此為客戶介紹廠商，是一間IC設計公司，是韓國海力士指定貨廠商\n2. 自行付運費的大部分是出到東南亞，不過以小貨居多(50KG左右)\n3. 都是走FEDEX、DHL為主，有比較大的貨量時，才會詢問我們CARGO業者報價\n4. 請我提供新加坡、越南的報價，後續有其他需求會再跟我說",
       "createdAt": "2026-02-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 168,
-      "leadId": 32,
+      "id": "act_167",
+      "leadId": "lead_32",
       "weekLabel": "115/02/02",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】系統端可能合作,週2-4 14:00拜訪\n確定需求細節",
       "createdAt": "2026-02-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 169,
-      "leadId": 70,
+      "id": "act_168",
+      "leadId": "lead_70",
       "weekLabel": "115/02/02",
       "content": "【狀態】報價\n【備註】1. 已提供優惠報價參考，約定週三拜訪主管討論",
       "createdAt": "2026-02-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 170,
-      "leadId": 71,
+      "id": "act_169",
+      "leadId": "lead_71",
       "weekLabel": "115/02/02",
       "content": "【狀態】初步接觸\n【備註】系統商+潛在合作對象\n【週回顧】國內前2大的車機硬體場廠商(MIT)\n也是唯一一家可以紀錄行車視野+數位大餅的廠商\n除祥億以外後續有其他合作機會",
       "createdAt": "2026-02-02T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 171,
-      "leadId": 73,
+      "id": "act_170",
+      "leadId": "lead_73",
       "weekLabel": "115/02/02",
       "content": "【狀態】報價\n【備註】1. 已提供優惠報價參考，約定週四拜訪主管討論",
       "createdAt": "2026-02-02T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 172,
-      "leadId": 66,
+      "id": "act_171",
+      "leadId": "lead_66",
       "weekLabel": "115/02/09",
       "content": "【狀態】初步接觸\n【備註】車隊\n【週回顧】階梯式報價已提供\n串接已完成\"",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 173,
-      "leadId": 29,
+      "id": "act_172",
+      "leadId": "lead_29",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】送桌曆&禮盒",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 174,
-      "leadId": 1,
+      "id": "act_173",
+      "leadId": "lead_1",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】1.嘉義帳務持續未付款,跟催中(Roger,Carl),目前推測應是內部程序問題造成\n2.高雄第3線確定春節後上線,目前預定2/26(四)\n3.春節前車趟支援",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 175,
-      "leadId": 3,
+      "id": "act_174",
+      "leadId": "lead_3",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】送桌曆&禮盒",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 176,
-      "leadId": 10,
+      "id": "act_175",
+      "leadId": "lead_10",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】1.FILA祥億目前已有在服務,需要線上簽收部分作業部分仍在祥億仍在與出貨端確認串接細節(貨主與倉儲也尚未完成串接)\n2.貨櫃管理需要納入雲安的GPS定位協助管理",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 177,
-      "leadId": 62,
+      "id": "act_176",
+      "leadId": "lead_62",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】送桌曆",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 178,
-      "leadId": 32,
+      "id": "act_177",
+      "leadId": "lead_32",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】uber資訊端業務需求會議已於2/4進行,於KAI評估後決定是否爭取該業務,若爭取預計5月需上線",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 179,
-      "leadId": 54,
+      "id": "act_178",
+      "leadId": "lead_54",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】送桌曆",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 180,
-      "leadId": 4,
+      "id": "act_179",
+      "leadId": "lead_4",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】1.司機部分預計春節後會確認上線時間\n2.彰化倉出貨部分會與鴻達導論完進行報價,若全拿整年度預計應超過800單\n3.合約我們擬定",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 181,
-      "leadId": 73,
+      "id": "act_180",
+      "leadId": "lead_73",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】送桌曆",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 182,
-      "leadId": 36,
+      "id": "act_181",
+      "leadId": "lead_36",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】送桌曆",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 183,
-      "leadId": 78,
+      "id": "act_182",
+      "leadId": "lead_78",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】送桌曆",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 184,
-      "leadId": 55,
+      "id": "act_183",
+      "leadId": "lead_55",
       "weekLabel": "115/02/09",
       "content": "【狀態】進行中\n【備註】送桌曆",
       "createdAt": "2026-02-09T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 185,
-      "leadId": 34,
+      "id": "act_184",
+      "leadId": "lead_34",
       "weekLabel": "115/02/23",
       "content": "【狀態】進行中\n【備註】普利司通司機靠行\n【週回顧】司機曾塘宸有債務問題",
       "createdAt": "2026-02-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 186,
-      "leadId": 1,
+      "id": "act_185",
+      "leadId": "lead_1",
       "weekLabel": "115/02/23",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】高雄第3線2/26(四)上線",
       "createdAt": "2026-02-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 187,
-      "leadId": 32,
+      "id": "act_186",
+      "leadId": "lead_32",
       "weekLabel": "115/02/23",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】3/2(一) 11:00 線上會議確認新增需求\n近期追蹤是否可取得相關業務",
       "createdAt": "2026-02-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 188,
-      "leadId": 4,
+      "id": "act_187",
+      "leadId": "lead_4",
       "weekLabel": "115/02/23",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】1.司機上線時間確認\n2.準備專車報價及提供合約",
       "createdAt": "2026-02-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 189,
-      "leadId": 23,
+      "id": "act_188",
+      "leadId": "lead_23",
       "weekLabel": "115/02/23",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】悠遊卡專案預計2/26會再確認上線時間\n目前推估應該延後至3月初,會先與數匯簽訂合約",
       "createdAt": "2026-02-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 190,
-      "leadId": 10,
+      "id": "act_189",
+      "leadId": "lead_10",
       "weekLabel": "115/02/23",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】貨櫃管理部分價格已談妥\n每月3萬元(需串雲安)\n上線測試沒問題後才開始收費(預計是上線1-2個月後)\n流程請安邦確認完跟祥億提報沒問題就可開工",
       "createdAt": "2026-02-23T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 191,
-      "leadId": 32,
+      "id": "act_190",
+      "leadId": "lead_32",
       "weekLabel": "115/03/03",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】期望周五以前提出報價\n\n目前廠商2擇1\n另一家應為三維人\n據說他們初次報價較我們低不少\n\n希望本週五可以提第二次報價\n\n提供讓我們做行銷來折抵費用的部分,Jasmine說會詢問內部\n\n其他需求\n\n1.開發部分\n價格,時間表\n\n2.維護部分\n(A) BUG部分,希望由我們提出事件分機以及處理時效\n(B) 每月人力部分希望可以提出有多少人力工時可以供他們提出新開發需求使用\n\n3.硬體採購部分\n我這有提出代採購的建議給他們\n(廠商報價後直接+特定%給他們,我舉的例是10%)\n他們有興趣\n希望是針對代採購的權利義務做說明\n例如那些部分對我們,些部分直接對廠商",
       "createdAt": "2026-03-03T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 192,
-      "leadId": 4,
+      "id": "act_191",
+      "leadId": "lead_4",
       "weekLabel": "115/03/03",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】報價單已提供,待回覆",
       "createdAt": "2026-03-03T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 193,
-      "leadId": 23,
+      "id": "act_192",
+      "leadId": "lead_23",
       "weekLabel": "115/03/03",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】合約已確認,預計3/3用印後寄出簽約",
       "createdAt": "2026-03-03T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 194,
-      "leadId": 1,
+      "id": "act_193",
+      "leadId": "lead_1",
       "weekLabel": "115/03/03",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】1.高雄第3線於2/26上線,2月運費收入已近30萬,3月可突破\n2.Roger來詢問串接lala讓他們客戶端付款的部分,已再次確告知lala目前未開放此功能給串接客戶",
       "createdAt": "2026-03-03T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 195,
-      "leadId": 79,
+      "id": "act_194",
+      "leadId": "lead_79",
       "weekLabel": "115/03/03",
       "content": "【狀態】未開始\n【備註】pda廠商\n【週回顧】3/4(三)下午2點來訪,uber pda採購",
       "createdAt": "2026-03-03T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 196,
-      "leadId": 32,
+      "id": "act_195",
+      "leadId": "lead_32",
       "weekLabel": "115/03/10",
       "content": "【狀態】進行中\n【備註】車隊+客戶\n【週回顧】報價單已提供,預估為本周五前回覆後續",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 197,
-      "leadId": 80,
+      "id": "act_196",
+      "leadId": "lead_80",
       "weekLabel": "115/03/10",
       "content": "【狀態】未開始\n【備註】1. 此為客戶介紹的廠商，主要業務為半導體與液晶顯示器\n2. 出口主要以新加坡為主，但由於貨物篇小偏輕，所以大部分都是\n使用FEDEX寄到客戶端\n3. 遇到較大貨量才會詢問CARGO，屆時有需要會再跟我主動詢問。nicole@zenithtech.com.tw",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 198,
-      "leadId": 4,
+      "id": "act_197",
+      "leadId": "lead_4",
       "weekLabel": "115/03/10",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】報價單已提供,這兩週都在進行SAP上線教育訓練\n待回覆",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 199,
-      "leadId": 81,
+      "id": "act_198",
+      "leadId": "lead_81",
       "weekLabel": "115/03/10",
       "content": "【狀態】進行中\n【備註】1. 此為陌生開發廠商，都是出口一些商業類的書籍雜誌，客戶主要在大陸以及東南亞\n2. 每次出貨的量不會很大，而且有些在大陸的客人沒有進出口合同，所以都是跟快遞業者合作居多，在操作流程上也比較方便\n3. 比較過我的報價還是快遞比較便宜，畢竟也是有比較大的折扣。請我另外再提供新加坡跟泰國的door to door的報價參考",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 200,
-      "leadId": 23,
+      "id": "act_199",
+      "leadId": "lead_23",
       "weekLabel": "115/03/10",
       "content": "【狀態】進行中\n【備註】戰略合作夥伴\n【週回顧】合約已寄出\n預定4月上線確認上線前會議時間當中",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 201,
-      "leadId": 82,
+      "id": "act_200",
+      "leadId": "lead_82",
       "weekLabel": "115/03/10",
       "content": "【狀態】進行中\n【備註】1. 這是朋友介紹的廠商，主要出口到印度喀拉蚩，大部分是走海運居多，已經跟沛榮配合多年\n2. 空運每個月大概1.2票，工廠會自行安排把貨從台南送上來，只需要我幫忙安排班機跟出口報關即可\n3. 3月底預計有一批貨大約150~200KG要出，請我先提供報價比較",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jeff"
     },
     {
-      "id": 202,
-      "leadId": 1,
+      "id": "act_201",
+      "leadId": "lead_1",
       "weekLabel": "115/03/10",
       "content": "【狀態】進行中\n【備註】客戶\n【週回顧】1.高雄調度協調",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 203,
-      "leadId": 79,
+      "id": "act_202",
+      "leadId": "lead_79",
       "weekLabel": "115/03/10",
       "content": "【狀態】未開始\n【備註】pda廠商\n【週回顧】除UBER案以外,之後視狀況會合作其他專案\n我們提供資訊服務並當經銷",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 204,
-      "leadId": 83,
+      "id": "act_203",
+      "leadId": "lead_83",
       "weekLabel": "115/03/10",
       "content": "【狀態】進行中\n【備註】倉儲運輸客戶\n【週回顧】1.直接對顏特助\n2.已提供部分資料\n3.內部討論後回覆,應該會再進行一次現場拜訪",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jerry"
     },
     {
-      "id": 205,
-      "leadId": 84,
+      "id": "act_204",
+      "leadId": "lead_84",
       "weekLabel": "115/03/10",
       "content": "【狀態】進行中\n【備註】倉儲客戶\n【週回顧】環保塑膠杯,專案性質,已寄合約與報價單",
       "createdAt": "2026-03-10T00:00:00.000Z",
