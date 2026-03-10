@@ -280,11 +280,9 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">狀態</label>
-        <select id="leadStatus" onchange="toggleCustomInput(this,'leadStatusCustom')" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
-        <input type="text" id="leadStatusCustom" placeholder="輸入新狀態" style="display:none;width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;margin-top:4px;"></div>
+        <select id="leadStatus" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select></div>
       <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">類別</label>
-        <select id="leadCategory" onchange="toggleCustomInput(this,'leadCategoryCustom')" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
-        <input type="text" id="leadCategoryCustom" placeholder="輸入新類別" style="display:none;width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;margin-top:4px;"></div>
+        <select id="leadCategory" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select></div>
     </div>
     <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">預估金額 (選填)</label><input type="number" id="leadEstValue" placeholder="" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
     <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">備註</label><textarea id="leadNotes" rows="2" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;resize:vertical;"></textarea></div>
@@ -1713,16 +1711,14 @@ async function loadPipelineConfig() {
     const res = await fetch('/api/pipeline/config');
     if (res.ok) plConfig = await res.json();
   } catch {}
-  // Populate modal status dropdown (with custom option)
+  // Populate modal status dropdown
   const sSel = document.getElementById('leadStatus');
-  sSel.innerHTML = plConfig.statuses.map(s => `<option value="${s}">${s}</option>`).join('') +
-    '<option value="__custom__">+ 自訂...</option>';
-  // Populate modal category dropdown (with custom option) - include all from config + unique from data
+  sSel.innerHTML = plConfig.statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+  // Populate modal category dropdown - include all from config + unique from data
   const allCats = new Set(plConfig.categories);
   plLeadsCache.forEach(l => { if (l.category) allCats.add(l.category); });
   const cSel = document.getElementById('leadCategory');
-  cSel.innerHTML = [...allCats].map(c => `<option value="${c}">${c}</option>`).join('') +
-    '<option value="__custom__">+ 自訂...</option>';
+  cSel.innerHTML = [...allCats].map(c => `<option value="${c}">${c}</option>`).join('');
   // Populate filter category dropdown
   const filterCatSel = document.getElementById('plFilterCat');
   const currentCat = filterCatSel.value;
@@ -1806,17 +1802,6 @@ async function savePipelineConfig() {
 
 function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function toggleCustomInput(sel, inputId) {
-  const inp = document.getElementById(inputId);
-  if (sel.value === '__custom__') {
-    inp.style.display = 'block';
-    inp.focus();
-  } else {
-    inp.style.display = 'none';
-    inp.value = '';
-  }
 }
 
 function getCurrentWeekLabel() {
@@ -2120,10 +2105,6 @@ function openCreateLead() {
   document.getElementById('leadCategory').value = '客戶';
   document.getElementById('leadEstValue').value = '';
   document.getElementById('leadNotes').value = '';
-  document.getElementById('leadStatusCustom').style.display = 'none';
-  document.getElementById('leadStatusCustom').value = '';
-  document.getElementById('leadCategoryCustom').style.display = 'none';
-  document.getElementById('leadCategoryCustom').value = '';
   document.getElementById('leadModalError').style.display = 'none';
   document.getElementById('leadModal').style.display = 'flex';
 }
@@ -2146,10 +2127,6 @@ function openEditLead(id) {
   catSel.value = lead.category || '客戶';
   document.getElementById('leadEstValue').value = lead.estimatedValue || '';
   document.getElementById('leadNotes').value = lead.notes || '';
-  document.getElementById('leadStatusCustom').style.display = 'none';
-  document.getElementById('leadStatusCustom').value = '';
-  document.getElementById('leadCategoryCustom').style.display = 'none';
-  document.getElementById('leadCategoryCustom').value = '';
   document.getElementById('leadModalError').style.display = 'none';
   document.getElementById('leadModal').style.display = 'flex';
 }
@@ -2166,12 +2143,8 @@ async function saveLead() {
     salesperson: document.getElementById('leadSalesperson').value.trim(),
     contactName: document.getElementById('leadContactName').value.trim(),
     contactEmail: document.getElementById('leadContactEmail').value.trim(),
-    status: document.getElementById('leadStatus').value === '__custom__'
-      ? document.getElementById('leadStatusCustom').value.trim()
-      : document.getElementById('leadStatus').value,
-    category: document.getElementById('leadCategory').value === '__custom__'
-      ? document.getElementById('leadCategoryCustom').value.trim()
-      : document.getElementById('leadCategory').value,
+    status: document.getElementById('leadStatus').value,
+    category: document.getElementById('leadCategory').value,
     estimatedValue: document.getElementById('leadEstValue').value ? Number(document.getElementById('leadEstValue').value) : null,
     notes: document.getElementById('leadNotes').value.trim(),
   };
