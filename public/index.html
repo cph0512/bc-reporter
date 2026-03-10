@@ -175,7 +175,7 @@
   </div>
 </div>
 
-<div id="dashboardView">
+<div id="dashboardView" style="display:none">
   <div class="dash-filters">
     <div><label>起始日期</label><input type="date" id="finStartDate"></div>
     <div><label>結束日期</label><input type="date" id="finEndDate"></div>
@@ -468,8 +468,8 @@ let userDisplayName = '';
       // Render tabs based on permissions + init dashboard dates
       renderTabs();
       initDashFilterDates();
-      // Auto-load first available dashboard
-      loadCurrentDashboard();
+      // Switch to default tab (hides other views + loads data)
+      switchTab(currentTab);
     }
   } catch { window.location.href = '/login'; }
 })();
