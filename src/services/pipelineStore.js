@@ -80,7 +80,7 @@ const pipelineStore = {
       id: nextLeadId(data.leads),
       companyName: companyName.trim(),
       salesperson: (salesperson || '').trim(),
-      status: STATUSES.includes(status) ? status : STATUSES[0],
+      status: (status || '').trim() || STATUSES[0],
       category: (category || '').trim(),
       notes: (notes || '').trim(),
       estimatedValue: estimatedValue != null ? Number(estimatedValue) : null,
@@ -103,7 +103,7 @@ const pipelineStore = {
     const lead = data.leads[idx];
     if (fields.companyName !== undefined) lead.companyName = fields.companyName.trim();
     if (fields.salesperson !== undefined) lead.salesperson = (fields.salesperson || '').trim();
-    if (fields.status !== undefined && STATUSES.includes(fields.status)) lead.status = fields.status;
+    if (fields.status !== undefined) lead.status = (fields.status || '').trim() || lead.status;
     if (fields.category !== undefined) lead.category = (fields.category || '').trim();
     if (fields.notes !== undefined) lead.notes = (fields.notes || '').trim();
     if (fields.estimatedValue !== undefined) {

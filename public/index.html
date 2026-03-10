@@ -112,6 +112,7 @@
   .pl-badge-進行中 { background: #fff3e0; color: #e65100; }
   .pl-badge-報價 { background: #f3e5f5; color: #7b1fa2; }
   .pl-badge-已完成 { background: #e8f5e9; color: #2e7d32; }
+  .pl-notes-cell.expanded { white-space: pre-wrap !important; max-height: none !important; overflow: visible !important; text-overflow: unset !important; }
 
   /* Dashboard filter bar */
   .dash-filters { display: flex; gap: 12px; padding: 12px 24px; background: #fafafa; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; align-items: flex-end; }
@@ -282,9 +283,11 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">狀態</label>
-        <select id="leadStatus" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select></div>
+        <select id="leadStatus" onchange="toggleCustomInput(this,'leadStatusCustom')" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
+        <input type="text" id="leadStatusCustom" placeholder="輸入新狀態" style="display:none;width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;margin-top:4px;"></div>
       <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">類別</label>
-        <select id="leadCategory" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select></div>
+        <select id="leadCategory" onchange="toggleCustomInput(this,'leadCategoryCustom')" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
+        <input type="text" id="leadCategoryCustom" placeholder="輸入新類別" style="display:none;width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;margin-top:4px;"></div>
     </div>
     <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">預估金額 (選填)</label><input type="number" id="leadEstValue" placeholder="" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
     <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">備註</label><textarea id="leadNotes" rows="2" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;resize:vertical;"></textarea></div>
@@ -379,13 +382,15 @@
 let companiesList = [];
 let userDashboards = []; // empty = all dashboards
 let userRole = 'user';
+let userDisplayName = '';
 
 (async () => {
   try {
     const res = await fetch('/auth/me');
     if (!res.ok) { window.location.href = '/login'; return; }
     const { user } = await res.json();
-    document.getElementById('userDisplay').textContent = user.displayName || user.username;
+    userDisplayName = user.displayName || user.username;
+    document.getElementById('userDisplay').textContent = userDisplayName;
     if (user.role === 'admin') document.getElementById('adminLink').style.display = 'inline-flex';
 
     userRole = user.role;
@@ -1683,14 +1688,16 @@ async function loadPipelineConfig() {
     const res = await fetch('/api/pipeline/config');
     if (res.ok) plConfig = await res.json();
   } catch {}
-  // Populate modal status dropdown
+  // Populate modal status dropdown (with custom option)
   const sSel = document.getElementById('leadStatus');
-  sSel.innerHTML = plConfig.statuses.map(s => `<option value="${s}">${s}</option>`).join('');
-  // Populate modal category dropdown - include all from config + unique from data
+  sSel.innerHTML = plConfig.statuses.map(s => `<option value="${s}">${s}</option>`).join('') +
+    '<option value="__custom__">+ 自訂...</option>';
+  // Populate modal category dropdown (with custom option) - include all from config + unique from data
   const allCats = new Set(plConfig.categories);
   plLeadsCache.forEach(l => { if (l.category) allCats.add(l.category); });
   const cSel = document.getElementById('leadCategory');
-  cSel.innerHTML = [...allCats].map(c => `<option value="${c}">${c}</option>`).join('');
+  cSel.innerHTML = [...allCats].map(c => `<option value="${c}">${c}</option>`).join('') +
+    '<option value="__custom__">+ 自訂...</option>';
   // Populate filter category dropdown
   const filterCatSel = document.getElementById('plFilterCat');
   const currentCat = filterCatSel.value;
@@ -1700,6 +1707,17 @@ async function loadPipelineConfig() {
 
 function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function toggleCustomInput(sel, inputId) {
+  const inp = document.getElementById(inputId);
+  if (sel.value === '__custom__') {
+    inp.style.display = 'block';
+    inp.focus();
+  } else {
+    inp.style.display = 'none';
+    inp.value = '';
+  }
 }
 
 function getCurrentWeekLabel() {
@@ -1906,14 +1924,21 @@ function renderPipelineTable() {
       <td><span class="pl-badge pl-badge-${lead.status}" onclick="quickStatusToggle('${lead.id}')" title="點擊切換狀態">${lead.status}</span></td>
       <td>${escHtml(lead.category)}</td>
       <td class="amount">${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</td>
-      <td style="font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(lead.notes)}">${escHtml(lead.notes)}</td>
+      <td style="font-size:12px;max-width:150px;">${lead.notes
+        ? `<div class="pl-notes-cell" onclick="this.classList.toggle('expanded')" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-height:1.5em;" title="點擊展開">${escHtml(lead.notes)}</div>`
+        : '—'}</td>
       <td style="min-width:180px;">
-        <div class="pl-review-cell" data-lead-id="${lead.id}" data-week="${escHtml(weekLabel)}" data-act-id="${reviewId}">
+        ${(() => {
+          const canEdit = userRole === 'admin' || lead.salesperson === userDisplayName;
+          return `<div class="pl-review-cell" data-lead-id="${lead.id}" data-week="${escHtml(weekLabel)}" data-act-id="${reviewId}">
           ${reviewText
-            ? `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:24px;padding:4px;border-radius:4px;background:#f8f9fa;" title="點擊編輯">${reviewText}</div>`
-            : `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:24px;padding:4px;border-radius:4px;background:#f8f9fa;color:#999;" title="點擊新增週回顧">+</div>`
+            ? `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;${canEdit ? 'cursor:pointer;' : ''}min-height:24px;padding:4px;border-radius:4px;background:#f8f9fa;" title="${canEdit ? '點擊編輯' : ''}">${reviewText}</div>`
+            : (canEdit
+              ? `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:24px;padding:4px;border-radius:4px;background:#f8f9fa;color:#999;" title="點擊新增週回顧">+</div>`
+              : `<div style="font-size:12px;min-height:24px;padding:4px;color:#ccc;">—</div>`)
           }
-        </div>
+        </div>`;
+        })()}
       </td>
       <td style="white-space:nowrap;">
         <button class="btn btn-sm btn-edit" onclick="openEditLead('${lead.id}')">編輯</button>
@@ -1927,6 +1952,13 @@ function renderPipelineTable() {
 function startEditReview(el) {
   const cell = el.closest('.pl-review-cell');
   const leadId = cell.dataset.leadId;
+  // Permission check: non-admin users can only edit their own leads' reviews
+  if (userRole !== 'admin') {
+    const lead = plLeadsCache.find(l => l.id === leadId);
+    if (lead && lead.salesperson !== userDisplayName) {
+      return; // silently ignore click on other people's reviews
+    }
+  }
   const week = cell.dataset.week;
   const actId = cell.dataset.actId;
   const currentText = actId ? (plActivitiesCache.find(a => a.id === actId)?.content || '') : '';
@@ -1989,6 +2021,10 @@ function openCreateLead() {
   document.getElementById('leadCategory').value = '客戶';
   document.getElementById('leadEstValue').value = '';
   document.getElementById('leadNotes').value = '';
+  document.getElementById('leadStatusCustom').style.display = 'none';
+  document.getElementById('leadStatusCustom').value = '';
+  document.getElementById('leadCategoryCustom').style.display = 'none';
+  document.getElementById('leadCategoryCustom').value = '';
   document.getElementById('leadModalError').style.display = 'none';
   document.getElementById('leadModal').style.display = 'flex';
 }
@@ -2011,6 +2047,10 @@ function openEditLead(id) {
   catSel.value = lead.category || '客戶';
   document.getElementById('leadEstValue').value = lead.estimatedValue || '';
   document.getElementById('leadNotes').value = lead.notes || '';
+  document.getElementById('leadStatusCustom').style.display = 'none';
+  document.getElementById('leadStatusCustom').value = '';
+  document.getElementById('leadCategoryCustom').style.display = 'none';
+  document.getElementById('leadCategoryCustom').value = '';
   document.getElementById('leadModalError').style.display = 'none';
   document.getElementById('leadModal').style.display = 'flex';
 }
@@ -2027,8 +2067,12 @@ async function saveLead() {
     salesperson: document.getElementById('leadSalesperson').value.trim(),
     contactName: document.getElementById('leadContactName').value.trim(),
     contactEmail: document.getElementById('leadContactEmail').value.trim(),
-    status: document.getElementById('leadStatus').value,
-    category: document.getElementById('leadCategory').value,
+    status: document.getElementById('leadStatus').value === '__custom__'
+      ? document.getElementById('leadStatusCustom').value.trim()
+      : document.getElementById('leadStatus').value,
+    category: document.getElementById('leadCategory').value === '__custom__'
+      ? document.getElementById('leadCategoryCustom').value.trim()
+      : document.getElementById('leadCategory').value,
     estimatedValue: document.getElementById('leadEstValue').value ? Number(document.getElementById('leadEstValue').value) : null,
     notes: document.getElementById('leadNotes').value.trim(),
   };
