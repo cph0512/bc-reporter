@@ -164,14 +164,9 @@ for (const act of rawData.activities) {
   const leadId = leadIdMap[key];
   if (!leadId) continue;
 
-  // Build content: combine status change info + notes + review
-  const parts = [];
-  if (act.status) parts.push(`【狀態】${act.status}`);
-  if (act.notes) parts.push(`【備註】${act.notes}`);
-  if (act.review) parts.push(`【週回顧】${act.review}`);
-
-  const content = parts.join('\n');
-  if (!content.trim()) continue;
+  // Build content: only include the weekly review text
+  const content = (act.review || '').trim();
+  if (!content) continue;
 
   // Deduplicate by leadId + weekLabel
   const actKey = `${leadId}-${act.weekLabel}`;
