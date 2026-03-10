@@ -218,10 +218,6 @@
       <label>狀態</label>
       <select id="plFilterStatus" onchange="renderPipelineTable()">
         <option value="">全部</option>
-        <option value="初步接觸">初步接觸</option>
-        <option value="進行中">進行中</option>
-        <option value="報價">報價</option>
-        <option value="已完成">已完成</option>
       </select>
     </div>
     <div>
@@ -232,6 +228,7 @@
     </div>
     <button class="btn btn-primary btn-sm" onclick="loadPipelineDashboard()">查詢</button>
     <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()">+ 新增商機</button>
+    <button class="btn btn-sm" id="plConfigBtn" style="display:none;background:#455a64;color:white;" onclick="openPipelineConfig()">⚙ 設定</button>
   </div>
   <div class="dashboard-content" id="plDashContent">
     <div class="loading">載入中...</div>
@@ -294,6 +291,34 @@
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
       <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeLeadModal()">取消</button>
       <button class="btn btn-sm btn-primary" onclick="saveLead()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pipeline Config Modal -->
+<div id="plConfigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:10px;padding:28px 24px;width:100%;max-width:500px;box-shadow:0 8px 30px rgba(0,0,0,0.2);max-height:80vh;overflow-y:auto;">
+    <h3 style="font-size:16px;margin-bottom:18px;">業務管線設定</h3>
+    <div class="form-group" style="margin-bottom:18px;">
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">狀態選項</label>
+      <div id="cfgStatusList"></div>
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <input type="text" id="cfgNewStatus" placeholder="新增狀態..." style="flex:1;padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <button class="btn btn-sm btn-primary" onclick="addConfigItem('status')">新增</button>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:18px;">
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">類別選項</label>
+      <div id="cfgCategoryList"></div>
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <input type="text" id="cfgNewCategory" placeholder="新增類別..." style="flex:1;padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <button class="btn btn-sm btn-primary" onclick="addConfigItem('category')">新增</button>
+      </div>
+    </div>
+    <div id="cfgError" style="color:#c62828;font-size:12px;margin-bottom:10px;display:none;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closePipelineConfig()">取消</button>
+      <button class="btn btn-sm btn-primary" onclick="savePipelineConfig()">儲存</button>
     </div>
   </div>
 </div>
@@ -1703,6 +1728,80 @@ async function loadPipelineConfig() {
   const currentCat = filterCatSel.value;
   filterCatSel.innerHTML = '<option value="">全部</option>' +
     [...allCats].map(c => `<option value="${escHtml(c)}"${c === currentCat ? ' selected' : ''}>${escHtml(c)}</option>`).join('');
+  // Show config button for admin
+  if (userRole === 'admin') document.getElementById('plConfigBtn').style.display = '';
+  // Populate filter status dropdown dynamically
+  const filterStatusSel = document.getElementById('plFilterStatus');
+  const currentStatus = filterStatusSel.value;
+  filterStatusSel.innerHTML = '<option value="">全部</option>' +
+    plConfig.statuses.map(s => `<option value="${escHtml(s)}"${s === currentStatus ? ' selected' : ''}>${escHtml(s)}</option>`).join('');
+}
+
+// ===== Pipeline Config Management =====
+let cfgStatuses = [];
+let cfgCategories = [];
+
+function openPipelineConfig() {
+  cfgStatuses = [...plConfig.statuses];
+  cfgCategories = [...plConfig.categories];
+  renderConfigLists();
+  document.getElementById('cfgError').style.display = 'none';
+  document.getElementById('plConfigModal').style.display = 'flex';
+}
+
+function closePipelineConfig() {
+  document.getElementById('plConfigModal').style.display = 'none';
+}
+
+function renderConfigLists() {
+  document.getElementById('cfgStatusList').innerHTML = cfgStatuses.map((s, i) =>
+    `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+      <input type="text" value="${escHtml(s)}" onchange="cfgStatuses[${i}]=this.value.trim()" style="flex:1;padding:5px 8px;border:1px solid #d0d0d0;border-radius:4px;font-size:13px;">
+      <button class="btn btn-sm" style="background:#ffebee;color:#c62828;padding:4px 8px;" onclick="cfgStatuses.splice(${i},1);renderConfigLists()">✕</button>
+    </div>`
+  ).join('');
+  document.getElementById('cfgCategoryList').innerHTML = cfgCategories.map((c, i) =>
+    `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+      <input type="text" value="${escHtml(c)}" onchange="cfgCategories[${i}]=this.value.trim()" style="flex:1;padding:5px 8px;border:1px solid #d0d0d0;border-radius:4px;font-size:13px;">
+      <button class="btn btn-sm" style="background:#ffebee;color:#c62828;padding:4px 8px;" onclick="cfgCategories.splice(${i},1);renderConfigLists()">✕</button>
+    </div>`
+  ).join('');
+}
+
+function addConfigItem(type) {
+  if (type === 'status') {
+    const inp = document.getElementById('cfgNewStatus');
+    const val = inp.value.trim();
+    if (val && !cfgStatuses.includes(val)) { cfgStatuses.push(val); renderConfigLists(); }
+    inp.value = '';
+  } else {
+    const inp = document.getElementById('cfgNewCategory');
+    const val = inp.value.trim();
+    if (val && !cfgCategories.includes(val)) { cfgCategories.push(val); renderConfigLists(); }
+    inp.value = '';
+  }
+}
+
+async function savePipelineConfig() {
+  const errEl = document.getElementById('cfgError');
+  errEl.style.display = 'none';
+  // Read current values from inputs
+  document.querySelectorAll('#cfgStatusList input').forEach((inp, i) => { cfgStatuses[i] = inp.value.trim(); });
+  document.querySelectorAll('#cfgCategoryList input').forEach((inp, i) => { cfgCategories[i] = inp.value.trim(); });
+  cfgStatuses = cfgStatuses.filter(Boolean);
+  cfgCategories = cfgCategories.filter(Boolean);
+  if (!cfgStatuses.length) { errEl.textContent = '至少需要一個狀態'; errEl.style.display = 'block'; return; }
+  if (!cfgCategories.length) { errEl.textContent = '至少需要一個類別'; errEl.style.display = 'block'; return; }
+  try {
+    const res = await fetch('/api/pipeline/config', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ statuses: cfgStatuses, categories: cfgCategories }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    closePipelineConfig();
+    loadPipelineConfig(); // refresh dropdowns
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
 }
 
 function escHtml(s) {

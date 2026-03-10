@@ -11,10 +11,20 @@ router.use(requireDashboard('pipeline'));
 
 // ===== Config =====
 router.get('/config', (req, res) => {
-  res.json({
-    statuses: pipelineStore.STATUSES,
-    categories: pipelineStore.CATEGORIES,
-  });
+  res.json(pipelineStore.getConfig());
+});
+
+// PUT /config — update statuses/categories (admin only)
+router.put('/config', (req, res) => {
+  try {
+    if (req.session?.user?.role !== 'admin') {
+      return res.status(403).json({ error: '僅管理員可修改設定' });
+    }
+    const config = pipelineStore.updateConfig(req.body);
+    res.json(config);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // ===== Leads CRUD =====

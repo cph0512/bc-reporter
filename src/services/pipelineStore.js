@@ -12,15 +12,20 @@ if (process.env.VERCEL && !fs.existsSync(PIPELINE_FILE) && fs.existsSync(PIPELIN
   fs.copyFileSync(PIPELINE_SRC, PIPELINE_FILE);
 }
 
-const STATUSES = ['初步接觸', '進行中', '報價', '已完成'];
-const CATEGORIES = ['客戶', '車隊', '車隊+客戶', '合作廠商', '倉儲客戶', '戰略合作夥伴', '系統商', '系統商+潛在合作對象'];
+const DEFAULT_STATUSES = ['初步接觸', '進行中', '報價', '已完成'];
+const DEFAULT_CATEGORIES = ['客戶', '車隊', '車隊+客戶', '合作廠商', '倉儲客戶', '戰略合作夥伴', '系統商', '系統商+潛在合作對象'];
 
 function readData() {
   try {
-    if (!fs.existsSync(PIPELINE_FILE)) return { leads: [], activities: [] };
+    if (!fs.existsSync(PIPELINE_FILE)) return { leads: [], activities: [], statuses: DEFAULT_STATUSES, categories: DEFAULT_CATEGORIES };
     const raw = JSON.parse(fs.readFileSync(PIPELINE_FILE, 'utf8'));
-    return { leads: raw.leads || [], activities: raw.activities || [] };
-  } catch { return { leads: [], activities: [] }; }
+    return {
+      leads: raw.leads || [],
+      activities: raw.activities || [],
+      statuses: raw.statuses || DEFAULT_STATUSES,
+      categories: raw.categories || DEFAULT_CATEGORIES,
+    };
+  } catch { return { leads: [], activities: [], statuses: DEFAULT_STATUSES, categories: DEFAULT_CATEGORIES }; }
 }
 
 function writeData(data) {
@@ -46,8 +51,30 @@ function nextActivityId(activities) {
 }
 
 const pipelineStore = {
-  STATUSES,
-  CATEGORIES,
+  // Dynamic getters — always read from file
+  get STATUSES() { return readData().statuses; },
+  get CATEGORIES() { return readData().categories; },
+
+  // ===== Config =====
+
+  getConfig() {
+    const data = readData();
+    return { statuses: data.statuses, categories: data.categories };
+  },
+
+  updateConfig({ statuses, categories }) {
+    const data = readData();
+    if (statuses !== undefined) {
+      if (!Array.isArray(statuses) || statuses.length === 0) throw new Error('至少需要一個狀態');
+      data.statuses = statuses.map(s => s.trim()).filter(Boolean);
+    }
+    if (categories !== undefined) {
+      if (!Array.isArray(categories) || categories.length === 0) throw new Error('至少需要一個類別');
+      data.categories = categories.map(c => c.trim()).filter(Boolean);
+    }
+    writeData(data);
+    return { statuses: data.statuses, categories: data.categories };
+  },
 
   // ===== Leads =====
 
@@ -80,7 +107,7 @@ const pipelineStore = {
       id: nextLeadId(data.leads),
       companyName: companyName.trim(),
       salesperson: (salesperson || '').trim(),
-      status: (status || '').trim() || STATUSES[0],
+      status: (status || '').trim() || data.statuses[0],
       category: (category || '').trim(),
       notes: (notes || '').trim(),
       estimatedValue: estimatedValue != null ? Number(estimatedValue) : null,
