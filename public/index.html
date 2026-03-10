@@ -218,6 +218,7 @@
       <div class="card-header" style="justify-content:space-between;">
         <h2>我的商機列表</h2>
         <div style="display:flex;align-items:center;gap:10px;">
+          <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()">+ 新增商機</button>
           <label style="font-size:12px;color:#666;">週次</label>
           <select id="myPlWeekSelect" onchange="renderMyPipelineTable()" style="padding:5px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
         </div>
@@ -228,6 +229,7 @@
             <tr>
               <th>公司/客戶</th>
               <th>窗口</th>
+              <th>建檔日期</th>
               <th>狀態</th>
               <th>類別</th>
               <th style="text-align:right;">預估金額</th>
@@ -1881,6 +1883,7 @@ function renderMyPipelineTable() {
     return `<tr>
       <td><strong>${escHtml(lead.companyName)}</strong></td>
       <td style="font-size:12px;">${contactDisplay}</td>
+      <td style="font-size:12px;white-space:nowrap;">${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</td>
       <td><span class="pl-badge pl-badge-${lead.status}" onclick="quickStatusToggle('${lead.id}')" title="點擊切換狀態">${lead.status}</span></td>
       <td>${escHtml(lead.category)}</td>
       <td class="amount">${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</td>
@@ -2292,7 +2295,8 @@ function openCreateLead() {
   editingLeadId = null;
   document.getElementById('leadModalTitle').textContent = L().plAddLead;
   document.getElementById('leadCompanyName').value = '';
-  document.getElementById('leadSalesperson').value = '';
+  // Auto-fill salesperson for personal view
+  document.getElementById('leadSalesperson').value = currentTab === 'my-pipeline' ? userDisplayName : '';
   document.getElementById('leadContactName').value = '';
   document.getElementById('leadContactEmail').value = '';
   document.getElementById('leadStatus').value = '初步接觸';
