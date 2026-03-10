@@ -255,6 +255,7 @@
             <tr>
               <th>公司/客戶</th>
               <th>業務人員</th>
+              <th>窗口</th>
               <th>狀態</th>
               <th>類別</th>
               <th style="text-align:right;">預估金額</th>
@@ -273,19 +274,23 @@
 
 <!-- Lead Modal -->
 <div id="leadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:10px;padding:28px 24px;width:100%;max-width:460px;box-shadow:0 8px 30px rgba(0,0,0,0.2);">
+  <div style="background:white;border-radius:10px;padding:28px 24px;width:100%;max-width:540px;box-shadow:0 8px 30px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto;margin:12px;">
     <h3 id="leadModalTitle" style="font-size:16px;margin-bottom:18px;">新增商機</h3>
     <div id="leadModalError" style="color:#c62828;font-size:12px;margin-bottom:10px;display:none;"></div>
-    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">公司/客戶名稱 *</label><input type="text" id="leadCompanyName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
-    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">業務人員</label><input type="text" id="leadSalesperson" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
-    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">狀態</label>
-      <select id="leadStatus" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
-        <option value="初步接觸">初步接觸</option><option value="進行中">進行中</option><option value="報價">報價</option><option value="已完成">已完成</option>
-      </select></div>
-    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">類別</label>
-      <select id="leadCategory" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
-        <option value="客戶">客戶</option><option value="合作廠商">合作廠商</option><option value="倉儲客戶">倉儲客戶</option><option value="車機廠商">車機廠商</option><option value="車隊+客戶">車隊+客戶</option>
-      </select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">公司/客戶名稱 *</label><input type="text" id="leadCompanyName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">業務人員</label><input type="text" id="leadSalesperson" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">窗口聯絡人</label><input type="text" id="leadContactName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">Email</label><input type="email" id="leadContactEmail" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">狀態</label>
+        <select id="leadStatus" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select></div>
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">類別</label>
+        <select id="leadCategory" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select></div>
+    </div>
     <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">預估金額 (選填)</label><input type="number" id="leadEstValue" placeholder="" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
     <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">備註</label><textarea id="leadNotes" rows="2" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;resize:vertical;"></textarea></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
@@ -643,6 +648,7 @@ const LABELS = {
     plLeadList: '商機列表', plWeekLabel: '週次', plWeeklyReview: '本週回顧',
     plCompanyName: '公司/客戶', plSalesperson: '業務人員', plStatus: '狀態',
     plCategory: '類別', plEstValue: '預估金額', plNotes: '備註', plActions: '操作',
+    plContactName: '窗口聯絡人', plContactEmail: 'Email',
     plAddLead: '新增商機', plEditLead: '編輯商機', plAllFilter: '全部',
     plSave: '儲存', plCancel: '取消', plDelete: '刪除', plEdit: '編輯',
     // Filter labels
@@ -764,6 +770,7 @@ const LABELS = {
     plLeadList: 'Lead List', plWeekLabel: 'Week', plWeeklyReview: 'Weekly Review',
     plCompanyName: 'Company', plSalesperson: 'Salesperson', plStatus: 'Status',
     plCategory: 'Category', plEstValue: 'Est. Value', plNotes: 'Notes', plActions: 'Actions',
+    plContactName: 'Contact', plContactEmail: 'Email',
     plAddLead: 'Add Lead', plEditLead: 'Edit Lead', plAllFilter: 'All',
     plSave: 'Save', plCancel: 'Cancel', plDelete: 'Delete', plEdit: 'Edit',
     // Filter labels
@@ -1674,6 +1681,22 @@ let pipelineCharts = [];
 let editingLeadId = null;
 let plLeadsCache = [];
 let plActivitiesCache = [];
+let plConfig = { statuses: ['初步接觸','進行中','報價','已完成'], categories: ['客戶'] };
+
+async function loadPipelineConfig() {
+  try {
+    const res = await fetch('/api/pipeline/config');
+    if (res.ok) plConfig = await res.json();
+  } catch {}
+  // Populate status dropdown
+  const sSel = document.getElementById('leadStatus');
+  sSel.innerHTML = plConfig.statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+  // Populate category dropdown - include all from config + unique from data
+  const allCats = new Set(plConfig.categories);
+  plLeadsCache.forEach(l => { if (l.category) allCats.add(l.category); });
+  const cSel = document.getElementById('leadCategory');
+  cSel.innerHTML = [...allCats].map(c => `<option value="${c}">${c}</option>`).join('');
+}
 
 function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -1703,7 +1726,8 @@ async function loadPipelineDashboard() {
   } catch (e) {
     container.innerHTML = `<div class="error">Pipeline 載入失敗：${e.message}</div>`;
   }
-  loadPipelineLeads();
+  await loadPipelineLeads();
+  loadPipelineConfig();
 }
 
 function renderPipelineDashboard(data, container) {
@@ -1850,9 +1874,15 @@ function renderPipelineTable() {
     const activity = plActivitiesCache.find(a => a.leadId === lead.id && a.weekLabel === weekLabel);
     const reviewText = activity ? escHtml(activity.content) : '';
     const reviewId = activity ? activity.id : '';
+    const contactDisplay = lead.contactName
+      ? (lead.contactEmail
+        ? `<span title="${escHtml(lead.contactEmail)}">${escHtml(lead.contactName)}</span>`
+        : escHtml(lead.contactName))
+      : (lead.contactEmail ? `<span style="font-size:11px;">${escHtml(lead.contactEmail)}</span>` : '—');
     return `<tr>
       <td><strong>${escHtml(lead.companyName)}</strong></td>
       <td>${escHtml(lead.salesperson)}</td>
+      <td style="font-size:12px;">${contactDisplay}</td>
       <td><span class="pl-badge pl-badge-${lead.status}" onclick="quickStatusToggle('${lead.id}')" title="點擊切換狀態">${lead.status}</span></td>
       <td>${escHtml(lead.category)}</td>
       <td class="amount">${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</td>
@@ -1933,6 +1963,8 @@ function openCreateLead() {
   document.getElementById('leadModalTitle').textContent = L().plAddLead;
   document.getElementById('leadCompanyName').value = '';
   document.getElementById('leadSalesperson').value = '';
+  document.getElementById('leadContactName').value = '';
+  document.getElementById('leadContactEmail').value = '';
   document.getElementById('leadStatus').value = '初步接觸';
   document.getElementById('leadCategory').value = '客戶';
   document.getElementById('leadEstValue').value = '';
@@ -1948,8 +1980,15 @@ function openEditLead(id) {
   document.getElementById('leadModalTitle').textContent = L().plEditLead;
   document.getElementById('leadCompanyName').value = lead.companyName;
   document.getElementById('leadSalesperson').value = lead.salesperson || '';
+  document.getElementById('leadContactName').value = lead.contactName || '';
+  document.getElementById('leadContactEmail').value = lead.contactEmail || '';
   document.getElementById('leadStatus').value = lead.status;
-  document.getElementById('leadCategory').value = lead.category || '客戶';
+  // Ensure category option exists before setting
+  const catSel = document.getElementById('leadCategory');
+  if (lead.category && ![...catSel.options].some(o => o.value === lead.category)) {
+    catSel.add(new Option(lead.category, lead.category));
+  }
+  catSel.value = lead.category || '客戶';
   document.getElementById('leadEstValue').value = lead.estimatedValue || '';
   document.getElementById('leadNotes').value = lead.notes || '';
   document.getElementById('leadModalError').style.display = 'none';
@@ -1966,6 +2005,8 @@ async function saveLead() {
   const body = {
     companyName,
     salesperson: document.getElementById('leadSalesperson').value.trim(),
+    contactName: document.getElementById('leadContactName').value.trim(),
+    contactEmail: document.getElementById('leadContactEmail').value.trim(),
     status: document.getElementById('leadStatus').value,
     category: document.getElementById('leadCategory').value,
     estimatedValue: document.getElementById('leadEstValue').value ? Number(document.getElementById('leadEstValue').value) : null,

@@ -9,6 +9,14 @@ const { requireDashboard } = require('../middleware/auth');
 // All pipeline routes require 'pipeline' dashboard access
 router.use(requireDashboard('pipeline'));
 
+// ===== Config =====
+router.get('/config', (req, res) => {
+  res.json({
+    statuses: pipelineStore.STATUSES,
+    categories: pipelineStore.CATEGORIES,
+  });
+});
+
 // ===== Leads CRUD =====
 
 // GET /leads — list with optional filters

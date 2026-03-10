@@ -13,7 +13,7 @@ if (process.env.VERCEL && !fs.existsSync(PIPELINE_FILE) && fs.existsSync(PIPELIN
 }
 
 const STATUSES = ['初步接觸', '進行中', '報價', '已完成'];
-const CATEGORIES = ['合作廠商', '倉儲客戶', '車機廠商', '客戶', '車隊+客戶'];
+const CATEGORIES = ['客戶', '車隊', '車隊+客戶', '合作廠商', '倉儲客戶', '戰略合作夥伴', '系統商', '系統商+潛在合作對象'];
 
 function readData() {
   try {
@@ -70,7 +70,7 @@ const pipelineStore = {
     return leads.find(l => l.id === id) || null;
   },
 
-  createLead({ companyName, salesperson, status, category, notes, estimatedValue, createdBy }) {
+  createLead({ companyName, salesperson, status, category, notes, estimatedValue, contactName, contactEmail, createdBy }) {
     if (!companyName || !companyName.trim()) {
       throw new Error('公司/客戶名稱為必填');
     }
@@ -84,6 +84,8 @@ const pipelineStore = {
       category: (category || '').trim(),
       notes: (notes || '').trim(),
       estimatedValue: estimatedValue != null ? Number(estimatedValue) : null,
+      contactName: (contactName || '').trim(),
+      contactEmail: (contactEmail || '').trim(),
       createdAt: now,
       updatedAt: now,
       createdBy: createdBy || null,
@@ -107,6 +109,8 @@ const pipelineStore = {
     if (fields.estimatedValue !== undefined) {
       lead.estimatedValue = fields.estimatedValue != null ? Number(fields.estimatedValue) : null;
     }
+    if (fields.contactName !== undefined) lead.contactName = (fields.contactName || '').trim();
+    if (fields.contactEmail !== undefined) lead.contactEmail = (fields.contactEmail || '').trim();
     lead.updatedAt = new Date().toISOString();
 
     writeData(data);
