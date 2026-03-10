@@ -463,8 +463,9 @@ let userDisplayName = '';
       sel.innerHTML = companiesList.map(c => `<option value="${c.id}" data-name="${c.name}" data-name-en="${c.nameEn}">${c.name}</option>`).join('');
       if (companiesList.length <= 1) document.getElementById('companyGroup').style.display = 'none';
 
-      // Set default tab: pipeline users default to 'my-pipeline'
-      if (canAccessDashboard('pipeline')) currentTab = 'my-pipeline';
+      // Set default tab based on role
+      if (userRole === 'admin' && canAccessDashboard('pipeline')) currentTab = 'pipeline-dashboard';
+      else if (canAccessDashboard('pipeline')) currentTab = 'my-pipeline';
       // Render tabs based on permissions + init dashboard dates
       renderTabs();
       initDashFilterDates();
@@ -486,13 +487,14 @@ function renderTabs() {
     { id: 'dashboard', label: l.dFinancialTab, perm: 'financial' },
     { id: 'sales-dashboard', label: l.dSalesTab, perm: 'sales' },
     { id: 'purchasing-dashboard', label: l.dPurchasingTab, perm: 'purchasing' },
-    { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline' },
+    { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline', userOnly: true },
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
-    { id: 'reports', label: l.dReports, perm: null },
+    { id: 'reports', label: l.dReports, perm: 'financial' },
   ];
   const visibleTabs = allTabs.filter(t => {
     if (t.adminOnly && userRole !== 'admin') return false;
-    return t.perm === null || canAccessDashboard(t.perm);
+    if (t.userOnly && userRole === 'admin') return false;
+    return canAccessDashboard(t.perm);
   });
   const container = document.getElementById('tabButtons');
   container.innerHTML = visibleTabs.map(t =>
