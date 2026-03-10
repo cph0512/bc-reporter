@@ -215,12 +215,20 @@
   </div>
   <div id="myPlLeadListSection" style="padding:0 24px 24px;max-width:1400px;margin:0 auto;">
     <div class="card">
-      <div class="card-header" style="justify-content:space-between;">
+      <div class="card-header" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <h2>我的商機列表</h2>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()">+ 新增商機</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <select id="myPlFilterStatus" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
+            <option value="">狀態：全部</option>
+          </select>
+          <select id="myPlFilterCat" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
+            <option value="">類別：全部</option>
+          </select>
+          <input type="date" id="myPlFilterDateFrom" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;" title="建檔起始">
+          <input type="date" id="myPlFilterDateTo" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;" title="建檔結束">
           <label style="font-size:12px;color:#666;">週次</label>
-          <select id="myPlWeekSelect" onchange="renderMyPipelineTable()" style="padding:5px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
+          <select id="myPlWeekSelect" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
+          <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()">+ 新增商機</button>
         </div>
       </div>
       <div class="card-body" style="overflow-x:auto;">
@@ -263,6 +271,14 @@
       <select id="plFilterCat" onchange="renderPipelineTable()">
         <option value="">全部</option>
       </select>
+    </div>
+    <div>
+      <label>建檔起始</label>
+      <input type="date" id="plFilterDateFrom" onchange="renderPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+    </div>
+    <div>
+      <label>建檔結束</label>
+      <input type="date" id="plFilterDateTo" onchange="renderPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
     </div>
     <button class="btn btn-primary btn-sm" onclick="loadPipelineDashboard()">查詢</button>
     <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()">+ 新增商機</button>
@@ -1862,7 +1878,16 @@ function renderMyPipelineTable() {
   const tbody = document.getElementById('myPlLeadsTable');
   const empty = document.getElementById('myPlLeadsEmpty');
   const weekLabel = document.getElementById('myPlWeekSelect').value || getCurrentWeekLabel();
-  const leads = myPlLeadsCache;
+  // Client-side filtering
+  const filterStatus = document.getElementById('myPlFilterStatus').value;
+  const filterCat = document.getElementById('myPlFilterCat').value;
+  const filterDateFrom = document.getElementById('myPlFilterDateFrom').value;
+  const filterDateTo = document.getElementById('myPlFilterDateTo').value;
+  let leads = myPlLeadsCache;
+  if (filterStatus) leads = leads.filter(l => l.status === filterStatus);
+  if (filterCat) leads = leads.filter(l => l.category === filterCat);
+  if (filterDateFrom) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 10) >= filterDateFrom);
+  if (filterDateTo) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 10) <= filterDateTo);
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = leads.map(lead => {
@@ -1932,6 +1957,19 @@ async function loadPipelineConfig() {
   const currentStatus = filterStatusSel.value;
   filterStatusSel.innerHTML = '<option value="">全部</option>' +
     plConfig.statuses.map(s => `<option value="${escHtml(s)}"${s === currentStatus ? ' selected' : ''}>${escHtml(s)}</option>`).join('');
+  // Also populate personal view (my-pipeline) filter dropdowns
+  const myStatusSel = document.getElementById('myPlFilterStatus');
+  if (myStatusSel) {
+    const curMyS = myStatusSel.value;
+    myStatusSel.innerHTML = '<option value="">狀態：全部</option>' +
+      plConfig.statuses.map(s => `<option value="${escHtml(s)}"${s === curMyS ? ' selected' : ''}>${escHtml(s)}</option>`).join('');
+  }
+  const myCatSel = document.getElementById('myPlFilterCat');
+  if (myCatSel) {
+    const curMyC = myCatSel.value;
+    myCatSel.innerHTML = '<option value="">類別：全部</option>' +
+      [...allCats].map(c => `<option value="${escHtml(c)}"${c === curMyC ? ' selected' : ''}>${escHtml(c)}</option>`).join('');
+  }
 }
 
 // ===== Pipeline Config Management =====
@@ -2190,10 +2228,14 @@ function renderPipelineTable() {
   const filterSP = document.getElementById('plFilterSP').value;
   const filterStatus = document.getElementById('plFilterStatus').value;
   const filterCat = document.getElementById('plFilterCat').value;
+  const filterDateFrom = document.getElementById('plFilterDateFrom').value;
+  const filterDateTo = document.getElementById('plFilterDateTo').value;
   let leads = plLeadsCache;
   if (filterSP) leads = leads.filter(l => l.salesperson === filterSP);
   if (filterStatus) leads = leads.filter(l => l.status === filterStatus);
   if (filterCat) leads = leads.filter(l => l.category === filterCat);
+  if (filterDateFrom) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 10) >= filterDateFrom);
+  if (filterDateTo) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 10) <= filterDateTo);
   const weekLabel = document.getElementById('plWeekSelect').value || getCurrentWeekLabel();
 
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
