@@ -10,7 +10,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-03-10T00:00:00.000Z"
     },
     {
       "id": "lead_2",
@@ -22,7 +23,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
       "updatedAt": "2025-10-21T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-10-21T00:00:00.000Z"
     },
     {
       "id": "lead_3",
@@ -34,7 +36,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
       "updatedAt": "2026-02-09T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-09T00:00:00.000Z"
     },
     {
       "id": "lead_4",
@@ -46,7 +49,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-03-10T00:00:00.000Z"
     },
     {
       "id": "lead_5",
@@ -58,7 +62,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
       "updatedAt": "2025-10-21T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-10-21T00:00:00.000Z"
     },
     {
       "id": "lead_6",
@@ -70,7 +75,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
       "updatedAt": "2026-01-19T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-01-19T00:00:00.000Z"
     },
     {
       "id": "lead_7",
@@ -82,7 +88,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
       "updatedAt": "2025-10-21T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-10-21T00:00:00.000Z"
     },
     {
       "id": "lead_8",
@@ -94,7 +101,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
       "updatedAt": "2025-12-30T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-12-30T00:00:00.000Z"
     },
     {
       "id": "lead_9",
@@ -106,7 +114,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
       "updatedAt": "2025-10-21T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-10-21T00:00:00.000Z"
     },
     {
       "id": "lead_10",
@@ -118,7 +127,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
       "updatedAt": "2026-02-23T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-02-23T00:00:00.000Z"
     },
     {
       "id": "lead_11",
@@ -130,7 +140,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-28T00:00:00.000Z",
       "updatedAt": "2025-10-28T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-10-28T00:00:00.000Z"
     },
     {
       "id": "lead_12",
@@ -142,7 +153,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-28T00:00:00.000Z",
       "updatedAt": "2025-12-16T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-16T00:00:00.000Z"
     },
     {
       "id": "lead_13",
@@ -154,7 +166,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-28T00:00:00.000Z",
       "updatedAt": "2025-11-25T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-11-25T00:00:00.000Z"
     },
     {
       "id": "lead_14",
@@ -166,7 +179,8 @@
       "estimatedValue": null,
       "createdAt": "2025-10-28T00:00:00.000Z",
       "updatedAt": "2025-10-28T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-10-28T00:00:00.000Z"
     },
     {
       "id": "lead_15",
@@ -178,7 +192,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-11T00:00:00.000Z",
       "updatedAt": "2026-01-19T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-01-19T00:00:00.000Z"
     },
     {
       "id": "lead_16",
@@ -190,7 +205,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
       "updatedAt": "2025-12-09T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-09T00:00:00.000Z"
     },
     {
       "id": "lead_17",
@@ -202,7 +218,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
       "updatedAt": "2025-11-18T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-11-18T00:00:00.000Z"
     },
     {
       "id": "lead_18",
@@ -214,7 +231,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
       "updatedAt": "2025-11-18T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-11-18T00:00:00.000Z"
     },
     {
       "id": "lead_19",
@@ -226,7 +244,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
       "updatedAt": "2025-11-18T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-11-18T00:00:00.000Z"
     },
     {
       "id": "lead_20",
@@ -238,7 +257,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
       "updatedAt": "2025-12-30T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-12-30T00:00:00.000Z"
     },
     {
       "id": "lead_21",
@@ -250,7 +270,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
       "updatedAt": "2025-12-23T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-12-23T00:00:00.000Z"
     },
     {
       "id": "lead_22",
@@ -262,7 +283,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
       "updatedAt": "2025-11-18T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-11-18T00:00:00.000Z"
     },
     {
       "id": "lead_23",
@@ -274,7 +296,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-03-10T00:00:00.000Z"
     },
     {
       "id": "lead_24",
@@ -286,7 +309,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
       "updatedAt": "2025-11-18T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-11-18T00:00:00.000Z"
     },
     {
       "id": "lead_25",
@@ -298,7 +322,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
       "updatedAt": "2025-11-18T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-11-18T00:00:00.000Z"
     },
     {
       "id": "lead_26",
@@ -310,7 +335,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-11T00:00:00.000Z",
       "updatedAt": "2025-11-11T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-11-11T00:00:00.000Z"
     },
     {
       "id": "lead_27",
@@ -322,7 +348,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-11T00:00:00.000Z",
       "updatedAt": "2025-11-11T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-11-11T00:00:00.000Z"
     },
     {
       "id": "lead_28",
@@ -334,7 +361,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-11T00:00:00.000Z",
       "updatedAt": "2025-11-11T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-11-11T00:00:00.000Z"
     },
     {
       "id": "lead_29",
@@ -346,7 +374,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
       "updatedAt": "2026-02-09T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-09T00:00:00.000Z"
     },
     {
       "id": "lead_30",
@@ -358,7 +387,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
       "updatedAt": "2025-11-25T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-11-25T00:00:00.000Z"
     },
     {
       "id": "lead_31",
@@ -370,7 +400,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
       "updatedAt": "2025-12-23T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-23T00:00:00.000Z"
     },
     {
       "id": "lead_32",
@@ -382,7 +413,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-03-10T00:00:00.000Z"
     },
     {
       "id": "lead_33",
@@ -394,7 +426,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
       "updatedAt": "2025-11-25T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-11-25T00:00:00.000Z"
     },
     {
       "id": "lead_34",
@@ -406,7 +439,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
       "updatedAt": "2026-02-23T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-02-23T00:00:00.000Z"
     },
     {
       "id": "lead_35",
@@ -418,7 +452,8 @@
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
       "updatedAt": "2025-11-25T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-11-25T00:00:00.000Z"
     },
     {
       "id": "lead_36",
@@ -430,7 +465,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-02T00:00:00.000Z",
       "updatedAt": "2026-02-09T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-09T00:00:00.000Z"
     },
     {
       "id": "lead_37",
@@ -442,7 +478,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-02T00:00:00.000Z",
       "updatedAt": "2025-12-02T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-02T00:00:00.000Z"
     },
     {
       "id": "lead_38",
@@ -454,7 +491,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-02T00:00:00.000Z",
       "updatedAt": "2025-12-02T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-02T00:00:00.000Z"
     },
     {
       "id": "lead_39",
@@ -466,7 +504,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-02T00:00:00.000Z",
       "updatedAt": "2025-12-02T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-12-02T00:00:00.000Z"
     },
     {
       "id": "lead_40",
@@ -478,7 +517,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-02T00:00:00.000Z",
       "updatedAt": "2025-12-02T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-12-02T00:00:00.000Z"
     },
     {
       "id": "lead_41",
@@ -490,7 +530,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-09T00:00:00.000Z",
       "updatedAt": "2025-12-09T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-09T00:00:00.000Z"
     },
     {
       "id": "lead_42",
@@ -502,7 +543,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-09T00:00:00.000Z",
       "updatedAt": "2025-12-23T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-23T00:00:00.000Z"
     },
     {
       "id": "lead_43",
@@ -514,7 +556,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-16T00:00:00.000Z",
       "updatedAt": "2025-12-23T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-23T00:00:00.000Z"
     },
     {
       "id": "lead_44",
@@ -526,7 +569,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-16T00:00:00.000Z",
       "updatedAt": "2025-12-16T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-16T00:00:00.000Z"
     },
     {
       "id": "lead_45",
@@ -538,7 +582,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-16T00:00:00.000Z",
       "updatedAt": "2025-12-16T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-12-16T00:00:00.000Z"
     },
     {
       "id": "lead_46",
@@ -550,7 +595,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-23T00:00:00.000Z",
       "updatedAt": "2025-12-23T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-23T00:00:00.000Z"
     },
     {
       "id": "lead_47",
@@ -562,7 +608,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-23T00:00:00.000Z",
       "updatedAt": "2025-12-30T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2025-12-30T00:00:00.000Z"
     },
     {
       "id": "lead_48",
@@ -574,7 +621,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-30T00:00:00.000Z",
       "updatedAt": "2025-12-30T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-30T00:00:00.000Z"
     },
     {
       "id": "lead_49",
@@ -586,7 +634,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-30T00:00:00.000Z",
       "updatedAt": "2025-12-30T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-30T00:00:00.000Z"
     },
     {
       "id": "lead_50",
@@ -598,7 +647,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-30T00:00:00.000Z",
       "updatedAt": "2025-12-30T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2025-12-30T00:00:00.000Z"
     },
     {
       "id": "lead_51",
@@ -610,7 +660,8 @@
       "estimatedValue": null,
       "createdAt": "2025-12-30T00:00:00.000Z",
       "updatedAt": "2026-01-05T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-05T00:00:00.000Z"
     },
     {
       "id": "lead_52",
@@ -622,7 +673,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-05T00:00:00.000Z",
       "updatedAt": "2026-01-05T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-05T00:00:00.000Z"
     },
     {
       "id": "lead_53",
@@ -634,7 +686,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-05T00:00:00.000Z",
       "updatedAt": "2026-01-05T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-05T00:00:00.000Z"
     },
     {
       "id": "lead_54",
@@ -646,7 +699,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-05T00:00:00.000Z",
       "updatedAt": "2026-02-09T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-09T00:00:00.000Z"
     },
     {
       "id": "lead_55",
@@ -658,7 +712,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-05T00:00:00.000Z",
       "updatedAt": "2026-02-09T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-09T00:00:00.000Z"
     },
     {
       "id": "lead_56",
@@ -670,7 +725,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-05T00:00:00.000Z",
       "updatedAt": "2026-01-05T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-01-05T00:00:00.000Z"
     },
     {
       "id": "lead_57",
@@ -682,7 +738,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-05T00:00:00.000Z",
       "updatedAt": "2026-01-05T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-05T00:00:00.000Z"
     },
     {
       "id": "lead_58",
@@ -694,7 +751,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-05T00:00:00.000Z",
       "updatedAt": "2026-01-05T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-05T00:00:00.000Z"
     },
     {
       "id": "lead_59",
@@ -706,7 +764,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-12T00:00:00.000Z",
       "updatedAt": "2026-01-12T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-12T00:00:00.000Z"
     },
     {
       "id": "lead_60",
@@ -718,7 +777,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-12T00:00:00.000Z",
       "updatedAt": "2026-01-12T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-12T00:00:00.000Z"
     },
     {
       "id": "lead_61",
@@ -730,7 +790,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-12T00:00:00.000Z",
       "updatedAt": "2026-01-12T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-12T00:00:00.000Z"
     },
     {
       "id": "lead_62",
@@ -742,7 +803,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-19T00:00:00.000Z",
       "updatedAt": "2026-02-09T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-09T00:00:00.000Z"
     },
     {
       "id": "lead_63",
@@ -754,7 +816,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-19T00:00:00.000Z",
       "updatedAt": "2026-01-19T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-19T00:00:00.000Z"
     },
     {
       "id": "lead_64",
@@ -766,7 +829,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-19T00:00:00.000Z",
       "updatedAt": "2026-01-19T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-19T00:00:00.000Z"
     },
     {
       "id": "lead_65",
@@ -778,7 +842,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-19T00:00:00.000Z",
       "updatedAt": "2026-01-19T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-19T00:00:00.000Z"
     },
     {
       "id": "lead_66",
@@ -790,7 +855,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-19T00:00:00.000Z",
       "updatedAt": "2026-02-09T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-02-09T00:00:00.000Z"
     },
     {
       "id": "lead_67",
@@ -802,7 +868,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
       "updatedAt": "2026-01-26T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-01-26T00:00:00.000Z"
     },
     {
       "id": "lead_68",
@@ -814,7 +881,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
       "updatedAt": "2026-01-26T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-26T00:00:00.000Z"
     },
     {
       "id": "lead_69",
@@ -826,7 +894,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
       "updatedAt": "2026-01-26T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-01-26T00:00:00.000Z"
     },
     {
       "id": "lead_70",
@@ -838,7 +907,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
       "updatedAt": "2026-02-02T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-02T00:00:00.000Z"
     },
     {
       "id": "lead_71",
@@ -850,7 +920,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
       "updatedAt": "2026-02-02T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-02-02T00:00:00.000Z"
     },
     {
       "id": "lead_72",
@@ -862,7 +933,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
       "updatedAt": "2026-01-26T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-01-26T00:00:00.000Z"
     },
     {
       "id": "lead_73",
@@ -874,7 +946,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
       "updatedAt": "2026-02-09T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-09T00:00:00.000Z"
     },
     {
       "id": "lead_74",
@@ -886,7 +959,8 @@
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
       "updatedAt": "2026-01-26T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-01-26T00:00:00.000Z"
     },
     {
       "id": "lead_75",
@@ -898,7 +972,8 @@
       "estimatedValue": null,
       "createdAt": "2026-02-02T00:00:00.000Z",
       "updatedAt": "2026-02-02T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-02T00:00:00.000Z"
     },
     {
       "id": "lead_76",
@@ -910,7 +985,8 @@
       "estimatedValue": null,
       "createdAt": "2026-02-02T00:00:00.000Z",
       "updatedAt": "2026-02-02T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-02T00:00:00.000Z"
     },
     {
       "id": "lead_77",
@@ -922,7 +998,8 @@
       "estimatedValue": null,
       "createdAt": "2026-02-02T00:00:00.000Z",
       "updatedAt": "2026-02-02T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-02T00:00:00.000Z"
     },
     {
       "id": "lead_78",
@@ -934,7 +1011,8 @@
       "estimatedValue": null,
       "createdAt": "2026-02-09T00:00:00.000Z",
       "updatedAt": "2026-02-09T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-02-09T00:00:00.000Z"
     },
     {
       "id": "lead_79",
@@ -946,7 +1024,8 @@
       "estimatedValue": null,
       "createdAt": "2026-03-03T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-03-10T00:00:00.000Z"
     },
     {
       "id": "lead_80",
@@ -958,7 +1037,8 @@
       "estimatedValue": null,
       "createdAt": "2026-03-10T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-03-10T00:00:00.000Z"
     },
     {
       "id": "lead_81",
@@ -970,7 +1050,8 @@
       "estimatedValue": null,
       "createdAt": "2026-03-10T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-03-10T00:00:00.000Z"
     },
     {
       "id": "lead_82",
@@ -982,7 +1063,8 @@
       "estimatedValue": null,
       "createdAt": "2026-03-10T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
-      "createdBy": "Jeff"
+      "createdBy": "Jeff",
+      "statusChangedAt": "2026-03-10T00:00:00.000Z"
     },
     {
       "id": "lead_83",
@@ -994,7 +1076,8 @@
       "estimatedValue": null,
       "createdAt": "2026-03-10T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-03-10T00:00:00.000Z"
     },
     {
       "id": "lead_84",
@@ -1006,7 +1089,8 @@
       "estimatedValue": null,
       "createdAt": "2026-03-10T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
-      "createdBy": "Jerry"
+      "createdBy": "Jerry",
+      "statusChangedAt": "2026-03-10T00:00:00.000Z"
     }
   ],
   "activities": [

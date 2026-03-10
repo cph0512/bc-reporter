@@ -115,6 +115,7 @@ const pipelineStore = {
       contactEmail: (contactEmail || '').trim(),
       createdAt: now,
       updatedAt: now,
+      statusChangedAt: now,
       createdBy: createdBy || null,
     };
     data.leads.push(lead);
@@ -130,6 +131,7 @@ const pipelineStore = {
     const lead = data.leads[idx];
     if (fields.companyName !== undefined) lead.companyName = fields.companyName.trim();
     if (fields.salesperson !== undefined) lead.salesperson = (fields.salesperson || '').trim();
+    const oldStatus = lead.status;
     if (fields.status !== undefined) lead.status = (fields.status || '').trim() || lead.status;
     if (fields.category !== undefined) lead.category = (fields.category || '').trim();
     if (fields.notes !== undefined) lead.notes = (fields.notes || '').trim();
@@ -138,7 +140,12 @@ const pipelineStore = {
     }
     if (fields.contactName !== undefined) lead.contactName = (fields.contactName || '').trim();
     if (fields.contactEmail !== undefined) lead.contactEmail = (fields.contactEmail || '').trim();
-    lead.updatedAt = new Date().toISOString();
+    const now = new Date().toISOString();
+    lead.updatedAt = now;
+    // Track status change timestamp
+    if (lead.status !== oldStatus) {
+      lead.statusChangedAt = now;
+    }
 
     writeData(data);
     return lead;

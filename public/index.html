@@ -112,6 +112,23 @@
   .pl-badge-進行中 { background: #fff3e0; color: #e65100; }
   .pl-badge-報價 { background: #f3e5f5; color: #7b1fa2; }
   .pl-badge-已完成 { background: #e8f5e9; color: #2e7d32; }
+  /* Stale lead indicator */
+  .stale-wrap { display: inline-flex; align-items: center; gap: 4px; }
+  .stale-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .stale-dot.warn { background: #e65100; }
+  .stale-dot.danger { background: #c62828; animation: stalePulse 1.5s ease-in-out infinite; }
+  @keyframes stalePulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.5; transform:scale(1.4); } }
+  .stale-days { font-size: 10px; color: #999; white-space: nowrap; }
+  /* Notification bell */
+  .notif-bell { position: relative; cursor: pointer; font-size: 18px; line-height: 1; user-select: none; }
+  .notif-bell .notif-count { position: absolute; top: -6px; right: -8px; background: #c62828; color: white; font-size: 10px; font-weight: 700; border-radius: 10px; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+  .notif-panel { display: none; position: absolute; top: 36px; right: 0; width: 340px; max-height: 400px; overflow-y: auto; background: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.18); z-index: 200; }
+  .notif-panel.show { display: block; }
+  .notif-panel-header { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600; font-size: 14px; color: #1a1a2e; }
+  .notif-item { padding: 10px 16px; border-bottom: 1px solid #f8f8f8; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .notif-item:hover { background: #f8f9fa; }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-empty { padding: 24px; text-align: center; color: #999; font-size: 13px; }
   .pl-notes-cell.expanded { white-space: pre-wrap !important; max-height: none !important; overflow: visible !important; text-overflow: unset !important; }
 
   /* Dashboard filter bar */
@@ -147,6 +164,13 @@
   </div>
   <div class="header-right" style="display:flex;align-items:center;gap:10px;">
     <span id="userDisplay" style="font-size:13px;color:#aaa;"></span>
+    <div class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" style="display:none;">
+      🔔<span class="notif-count" id="notifCount" style="display:none;">0</span>
+      <div class="notif-panel" id="notifPanel">
+        <div class="notif-panel-header">⚠️ 停滯商機提醒</div>
+        <div id="notifList"></div>
+      </div>
+    </div>
     <button class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;" onclick="openChangePw()">改密碼</button>
     <a id="adminLink" href="/admin" class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;text-decoration:none;display:none;">帳號管理</a>
     <button class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;" onclick="doLogout()">登出</button>
@@ -226,6 +250,11 @@
           </select>
           <input type="date" id="myPlFilterDateFrom" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;" title="建檔起始">
           <input type="date" id="myPlFilterDateTo" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;" title="建檔結束">
+          <select id="myPlFilterStale" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
+            <option value="">停滯：全部</option>
+            <option value="30">30天+</option>
+            <option value="60">60天+</option>
+          </select>
           <label style="font-size:12px;color:#666;">週次</label>
           <select id="myPlWeekSelect" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
           <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()">+ 新增商機</button>
@@ -279,6 +308,14 @@
     <div>
       <label>建檔結束</label>
       <input type="date" id="plFilterDateTo" onchange="renderPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+    </div>
+    <div>
+      <label>停滯</label>
+      <select id="plFilterStale" onchange="renderPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <option value="">全部</option>
+        <option value="30">30天+</option>
+        <option value="60">60天+</option>
+      </select>
     </div>
     <button class="btn btn-primary btn-sm" onclick="loadPipelineDashboard()">查詢</button>
     <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()">+ 新增商機</button>
@@ -1813,15 +1850,11 @@ function renderMyPipelineKpis(data, container) {
   </div>`;
   const charts = data.charts;
   let chartsHtml = '';
-  const hasChartData = charts.funnel?.some(d => d.value > 0) || charts.leadsByCategory?.some(d => d.value > 0) || charts.pipelineValueByStatus?.some(d => d.value > 0);
+  const hasChartData = charts.funnel?.some(d => d.value > 0) || charts.leadsByCategory?.some(d => d.value > 0);
   if (hasChartData) {
     chartsHtml = `<div class="chart-row-2">
       <div class="chart-card"><h3>${l.plFunnel}</h3><canvas id="myChartPlFunnel"></canvas></div>
       <div class="chart-card"><h3>${l.plByCategory}</h3><canvas id="myChartPlByCat"></canvas></div>
-    </div>
-    <div class="chart-row-2">
-      <div class="chart-card"><h3>${l.plValueByStatus}</h3><canvas id="myChartPlValByStatus"></canvas></div>
-      <div class="chart-card"></div>
     </div>`;
   }
   container.innerHTML = kpis + chartsHtml;
@@ -1845,20 +1878,6 @@ function renderMyPipelineKpis(data, container) {
       data: { labels: charts.leadsByCategory.map(d => d.name), datasets: [{ data: charts.leadsByCategory.map(d => d.value), backgroundColor: catColors.slice(0, charts.leadsByCategory.length) }] },
       options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
     }));
-  }
-  // Value by Status (bar chart)
-  const vEl = document.getElementById('myChartPlValByStatus');
-  if (charts.pipelineValueByStatus?.length && vEl) {
-    const hasVal = charts.pipelineValueByStatus.some(d => d.value > 0);
-    if (hasVal) {
-      myPipelineCharts.push(new Chart(vEl, {
-        type: 'bar',
-        data: { labels: charts.pipelineValueByStatus.map(d => d.name), datasets: [{ data: charts.pipelineValueByStatus.map(d => d.value), backgroundColor: funnelBorders, borderRadius: 4 }] },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtShort(v) } } } }
-      }));
-    } else {
-      vEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">尚無預估金額資料</div>';
-    }
   }
 }
 
@@ -1888,6 +1907,10 @@ function renderMyPipelineTable() {
   if (filterCat) leads = leads.filter(l => l.category === filterCat);
   if (filterDateFrom) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 10) >= filterDateFrom);
   if (filterDateTo) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 10) <= filterDateTo);
+  const filterStale = document.getElementById('myPlFilterStale').value;
+  if (filterStale) leads = leads.filter(l => l.status !== '已完成' && getDaysSinceStatusChange(l) >= Number(filterStale));
+  // Update notification bell with ALL leads (not filtered)
+  updateNotifBell(myPlLeadsCache);
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = leads.map(lead => {
@@ -1909,7 +1932,7 @@ function renderMyPipelineTable() {
       <td><strong>${escHtml(lead.companyName)}</strong></td>
       <td style="font-size:12px;">${contactDisplay}</td>
       <td style="font-size:12px;white-space:nowrap;">${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</td>
-      <td><span class="pl-badge pl-badge-${lead.status}" onclick="quickStatusToggle('${lead.id}')" title="點擊切換狀態">${lead.status}</span></td>
+      <td><div class="stale-wrap"><span class="pl-badge pl-badge-${lead.status}" onclick="quickStatusToggle('${lead.id}')" title="點擊切換狀態">${lead.status}</span>${staleIndicator(lead)}</div></td>
       <td>${escHtml(lead.category)}</td>
       <td class="amount">${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</td>
       <td style="min-width:250px;">${reviewCell}</td>
@@ -2055,6 +2078,80 @@ function fmtTWDate(isoStr) {
   const d = new Date(isoStr);
   const y = d.getFullYear() - 1911;
   return `${y}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// Stale lead helpers
+function getDaysSinceStatusChange(lead) {
+  const ref = lead.statusChangedAt || lead.updatedAt || lead.createdAt;
+  if (!ref) return 0;
+  return Math.floor((Date.now() - new Date(ref).getTime()) / 86400000);
+}
+
+function staleIndicator(lead) {
+  if (lead.status === '已完成') return '';
+  const days = getDaysSinceStatusChange(lead);
+  if (days < 30) return '';
+  const cls = days >= 60 ? 'danger' : 'warn';
+  return `<span class="stale-dot ${cls}" title="${days}天未更新狀態"></span><span class="stale-days">${days}天</span>`;
+}
+
+// Notification bell
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  panel.classList.toggle('show');
+}
+// Close panel when clicking outside
+document.addEventListener('click', (e) => {
+  const bell = document.getElementById('notifBell');
+  if (bell && !bell.contains(e.target)) {
+    document.getElementById('notifPanel').classList.remove('show');
+  }
+});
+
+function updateNotifBell(leads) {
+  const staleLeads = leads
+    .filter(l => l.status !== '已完成' && getDaysSinceStatusChange(l) >= 30)
+    .sort((a, b) => getDaysSinceStatusChange(b) - getDaysSinceStatusChange(a));
+
+  const bellEl = document.getElementById('notifBell');
+  const countEl = document.getElementById('notifCount');
+  const listEl = document.getElementById('notifList');
+
+  if (staleLeads.length === 0) {
+    bellEl.style.display = 'none';
+    return;
+  }
+  bellEl.style.display = '';
+  countEl.style.display = '';
+  countEl.textContent = staleLeads.length;
+
+  listEl.innerHTML = staleLeads.map(l => {
+    const days = getDaysSinceStatusChange(l);
+    const cls = days >= 60 ? 'danger' : 'warn';
+    return `<div class="notif-item" onclick="notifJumpToLead('${l.id}')">
+      <span class="stale-dot ${cls}"></span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:500;">${escHtml(l.companyName)}</div>
+        <div style="font-size:11px;color:#999;">${escHtml(l.salesperson)} · ${l.status} · ${days}天未更新</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function notifJumpToLead(leadId) {
+  document.getElementById('notifPanel').classList.remove('show');
+  // Switch to appropriate tab
+  if (userRole === 'admin') {
+    if (currentTab !== 'pipeline-dashboard') switchTab('pipeline-dashboard');
+    setTimeout(() => {
+      document.getElementById('plLeadListSection').scrollIntoView({ behavior: 'smooth' });
+    }, 300);
+  } else {
+    if (currentTab !== 'my-pipeline') switchTab('my-pipeline');
+    setTimeout(() => {
+      document.getElementById('myPlLeadListSection').scrollIntoView({ behavior: 'smooth' });
+    }, 300);
+  }
 }
 
 async function loadPipelineDashboard() {
@@ -2236,7 +2333,12 @@ function renderPipelineTable() {
   if (filterCat) leads = leads.filter(l => l.category === filterCat);
   if (filterDateFrom) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 10) >= filterDateFrom);
   if (filterDateTo) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 10) <= filterDateTo);
+  const filterStale = document.getElementById('plFilterStale').value;
+  if (filterStale) leads = leads.filter(l => l.status !== '已完成' && getDaysSinceStatusChange(l) >= Number(filterStale));
   const weekLabel = document.getElementById('plWeekSelect').value || getCurrentWeekLabel();
+
+  // Update notification bell with ALL leads (not filtered)
+  updateNotifBell(plLeadsCache);
 
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
@@ -2250,11 +2352,12 @@ function renderPipelineTable() {
         ? `<span title="${escHtml(lead.contactEmail)}">${escHtml(lead.contactName)}</span>`
         : escHtml(lead.contactName))
       : (lead.contactEmail ? `<span style="font-size:11px;">${escHtml(lead.contactEmail)}</span>` : '—');
+    const staleHtml = staleIndicator(lead);
     return `<tr>
       <td><strong>${escHtml(lead.companyName)}</strong></td>
       <td>${escHtml(lead.salesperson)}</td>
       <td style="font-size:12px;">${contactDisplay}</td>
-      <td><span class="pl-badge pl-badge-${lead.status}">${lead.status}</span></td>
+      <td><div class="stale-wrap"><span class="pl-badge pl-badge-${lead.status}">${lead.status}</span>${staleHtml}</div></td>
       <td>${escHtml(lead.category)}</td>
       <td class="amount">${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</td>
       <td style="font-size:12px;white-space:nowrap;">${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</td>
