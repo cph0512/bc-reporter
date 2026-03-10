@@ -215,7 +215,7 @@
     </div>
     <div>
       <label>狀態</label>
-      <select id="plFilterStatus" onchange="loadPipelineLeads()">
+      <select id="plFilterStatus" onchange="renderPipelineTable()">
         <option value="">全部</option>
         <option value="初步接觸">初步接觸</option>
         <option value="進行中">進行中</option>
@@ -225,13 +225,8 @@
     </div>
     <div>
       <label>類別</label>
-      <select id="plFilterCat" onchange="loadPipelineLeads()">
+      <select id="plFilterCat" onchange="renderPipelineTable()">
         <option value="">全部</option>
-        <option value="合作廠商">合作廠商</option>
-        <option value="倉儲客戶">倉儲客戶</option>
-        <option value="車機廠商">車機廠商</option>
-        <option value="客戶">客戶</option>
-        <option value="車隊+客戶">車隊+客戶</option>
       </select>
     </div>
     <button class="btn btn-primary btn-sm" onclick="loadPipelineDashboard()">查詢</button>
@@ -1688,14 +1683,19 @@ async function loadPipelineConfig() {
     const res = await fetch('/api/pipeline/config');
     if (res.ok) plConfig = await res.json();
   } catch {}
-  // Populate status dropdown
+  // Populate modal status dropdown
   const sSel = document.getElementById('leadStatus');
   sSel.innerHTML = plConfig.statuses.map(s => `<option value="${s}">${s}</option>`).join('');
-  // Populate category dropdown - include all from config + unique from data
+  // Populate modal category dropdown - include all from config + unique from data
   const allCats = new Set(plConfig.categories);
   plLeadsCache.forEach(l => { if (l.category) allCats.add(l.category); });
   const cSel = document.getElementById('leadCategory');
   cSel.innerHTML = [...allCats].map(c => `<option value="${c}">${c}</option>`).join('');
+  // Populate filter category dropdown
+  const filterCatSel = document.getElementById('plFilterCat');
+  const currentCat = filterCatSel.value;
+  filterCatSel.innerHTML = '<option value="">全部</option>' +
+    [...allCats].map(c => `<option value="${escHtml(c)}"${c === currentCat ? ' selected' : ''}>${escHtml(c)}</option>`).join('');
 }
 
 function escHtml(s) {
@@ -1764,7 +1764,7 @@ function renderPipelineCharts(charts) {
   const catColors = ['#1a1a2e', '#2d4a7a', '#3a7ca5', '#5cb3a0', '#8cd17d', '#e65100', '#c62828'];
   const spColors = ['#1a1a2e', '#3a7ca5', '#5cb3a0', '#e65100', '#7b1fa2', '#c62828'];
 
-  // Click-to-filter helper: set filter, reload data from API, scroll to lead list
+  // Click-to-filter helper: set dropdown filter and re-render table (client-side)
   function chartClickFilter(filterType, filterValue) {
     if (filterType === 'status') {
       document.getElementById('plFilterStatus').value = filterValue;
@@ -1773,9 +1773,8 @@ function renderPipelineCharts(charts) {
     } else if (filterType === 'category') {
       document.getElementById('plFilterCat').value = filterValue;
     }
-    loadPipelineLeads().then(() => {
-      document.getElementById('plLeadListSection').scrollIntoView({ behavior: 'smooth' });
-    });
+    renderPipelineTable();
+    document.getElementById('plLeadListSection').scrollIntoView({ behavior: 'smooth' });
   }
   const chartClickOpts = { onClick: (e, els, chart) => { /* overridden per chart */ } };
 
@@ -1833,27 +1832,20 @@ function renderPipelineCharts(charts) {
 
 async function loadPipelineLeads() {
   try {
-    const sp = document.getElementById('plFilterSP').value;
-    const status = document.getElementById('plFilterStatus').value;
-    const cat = document.getElementById('plFilterCat').value;
-    let url = '/api/pipeline/leads?';
-    if (sp) url += `salesperson=${encodeURIComponent(sp)}&`;
-    if (status) url += `status=${encodeURIComponent(status)}&`;
-    if (cat) url += `category=${encodeURIComponent(cat)}&`;
-
+    // Always fetch ALL leads — filtering is done client-side in renderPipelineTable()
     const [leadsRes, actRes] = await Promise.all([
-      fetch(url),
+      fetch('/api/pipeline/leads'),
       fetch('/api/pipeline/activities'),
     ]);
     if (!leadsRes.ok || !actRes.ok) return;
     plLeadsCache = await leadsRes.json();
     plActivitiesCache = await actRes.json();
 
-    // Populate salesperson filter
+    // Populate salesperson filter (uses full lead list)
     populatePlSPFilter(plLeadsCache);
     // Populate week selector
     populatePlWeekSelect();
-    // Render table
+    // Render table (applies client-side filters from dropdowns)
     renderPipelineTable();
   } catch (e) { console.error('loadPipelineLeads error:', e); }
 }
@@ -1885,7 +1877,14 @@ function populatePlWeekSelect() {
 function renderPipelineTable() {
   const tbody = document.getElementById('plLeadsTable');
   const empty = document.getElementById('plLeadsEmpty');
-  const leads = plLeadsCache;
+  // Client-side filtering from dropdown values
+  const filterSP = document.getElementById('plFilterSP').value;
+  const filterStatus = document.getElementById('plFilterStatus').value;
+  const filterCat = document.getElementById('plFilterCat').value;
+  let leads = plLeadsCache;
+  if (filterSP) leads = leads.filter(l => l.salesperson === filterSP);
+  if (filterStatus) leads = leads.filter(l => l.status === filterStatus);
+  if (filterCat) leads = leads.filter(l => l.category === filterCat);
   const weekLabel = document.getElementById('plWeekSelect').value || getCurrentWeekLabel();
 
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
