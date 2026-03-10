@@ -208,6 +208,42 @@
   </div>
 </div>
 
+<!-- My Pipeline (Personal View) -->
+<div id="myPipelineView" style="display:none">
+  <div class="dashboard-content" id="myPlDashContent">
+    <div class="loading">載入中...</div>
+  </div>
+  <div id="myPlLeadListSection" style="padding:0 24px 24px;max-width:1400px;margin:0 auto;">
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;">
+        <h2>我的商機列表</h2>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <label style="font-size:12px;color:#666;">週次</label>
+          <select id="myPlWeekSelect" onchange="renderMyPipelineTable()" style="padding:5px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
+        </div>
+      </div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>公司/客戶</th>
+              <th>窗口</th>
+              <th>狀態</th>
+              <th>類別</th>
+              <th style="text-align:right;">預估金額</th>
+              <th style="min-width:250px;">本週回顧</th>
+              <th>備註</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="myPlLeadsTable"></tbody>
+        </table>
+        <div id="myPlLeadsEmpty" class="empty-msg" style="display:none;">尚無商機資料</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="pipelineDashboardView" style="display:none">
   <div class="dash-filters">
     <div>
@@ -252,9 +288,9 @@
               <th>狀態</th>
               <th>類別</th>
               <th style="text-align:right;">預估金額</th>
+              <th>建檔日期</th>
               <th>備註</th>
               <th>本週回顧</th>
-              <th>操作</th>
             </tr>
           </thead>
           <tbody id="plLeadsTable"></tbody>
@@ -427,6 +463,8 @@ let userDisplayName = '';
       sel.innerHTML = companiesList.map(c => `<option value="${c.id}" data-name="${c.name}" data-name-en="${c.nameEn}">${c.name}</option>`).join('');
       if (companiesList.length <= 1) document.getElementById('companyGroup').style.display = 'none';
 
+      // Set default tab: pipeline users default to 'my-pipeline'
+      if (canAccessDashboard('pipeline')) currentTab = 'my-pipeline';
       // Render tabs based on permissions + init dashboard dates
       renderTabs();
       initDashFilterDates();
@@ -448,10 +486,14 @@ function renderTabs() {
     { id: 'dashboard', label: l.dFinancialTab, perm: 'financial' },
     { id: 'sales-dashboard', label: l.dSalesTab, perm: 'sales' },
     { id: 'purchasing-dashboard', label: l.dPurchasingTab, perm: 'purchasing' },
-    { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline' },
+    { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline' },
+    { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
     { id: 'reports', label: l.dReports, perm: null },
   ];
-  const visibleTabs = allTabs.filter(t => t.perm === null || canAccessDashboard(t.perm));
+  const visibleTabs = allTabs.filter(t => {
+    if (t.adminOnly && userRole !== 'admin') return false;
+    return t.perm === null || canAccessDashboard(t.perm);
+  });
   const container = document.getElementById('tabButtons');
   container.innerHTML = visibleTabs.map(t =>
     `<button class="tab${t.id === currentTab ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`
@@ -508,6 +550,7 @@ function loadCurrentDashboard() {
   if (currentTab === 'dashboard') loadDashboard();
   else if (currentTab === 'sales-dashboard') loadSalesDashboard();
   else if (currentTab === 'purchasing-dashboard') loadPurchasingDashboard();
+  else if (currentTab === 'my-pipeline') loadMyPipeline();
   else if (currentTab === 'pipeline-dashboard') loadPipelineDashboard();
 }
 
@@ -649,7 +692,7 @@ const LABELS = {
     sMargin: '利潤率',
 
     // Dashboard tabs
-    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dPipelineTab: '業務管線', dReports: '報表',
+    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dReports: '報表',
     // Financial Dashboard
     dRevenue: '營業收入', dNetProfit: '稅後淨利', dNetProfitMargin: '淨利率',
     dTotalAssets: '總資產', dDSO: '應收帳款天數 (DSO)', dDIO: '存貨週轉天數 (DIO)', dDPO: '應付帳款天數 (DPO)',
@@ -771,7 +814,7 @@ const LABELS = {
     sMargin: 'Margin',
 
     // Dashboard tabs
-    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dPipelineTab: 'Pipeline', dReports: 'Reports',
+    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dReports: 'Reports',
     // Financial Dashboard
     dRevenue: 'Revenue', dNetProfit: 'Net Profit', dNetProfitMargin: 'Net Profit Margin',
     dTotalAssets: 'Total Assets', dDSO: 'Days Sales Outstanding (DSO)', dDIO: 'Days Inventory Outstanding (DIO)', dDPO: 'Days Payable Outstanding (DPO)',
@@ -1344,6 +1387,7 @@ function switchTab(tab) {
   document.getElementById('dashboardView').style.display = 'none';
   document.getElementById('salesDashboardView').style.display = 'none';
   document.getElementById('purchasingDashboardView').style.display = 'none';
+  document.getElementById('myPipelineView').style.display = 'none';
   document.getElementById('pipelineDashboardView').style.display = 'none';
   document.getElementById('reportsView').style.display = 'none';
 
@@ -1356,6 +1400,9 @@ function switchTab(tab) {
   } else if (tab === 'purchasing-dashboard') {
     document.getElementById('purchasingDashboardView').style.display = '';
     loadPurchasingDashboard();
+  } else if (tab === 'my-pipeline') {
+    document.getElementById('myPipelineView').style.display = '';
+    loadMyPipeline();
   } else if (tab === 'pipeline-dashboard') {
     document.getElementById('pipelineDashboardView').style.display = '';
     loadPipelineDashboard();
@@ -1698,7 +1745,137 @@ function renderPurchasingCharts(charts) {
 }
 
 // ==========================================
-//  Pipeline Dashboard
+//  My Pipeline (Personal View)
+// ==========================================
+let myPlLeadsCache = [];
+let myPlActivitiesCache = [];
+let myPipelineCharts = [];
+
+async function loadMyPipeline() {
+  const container = document.getElementById('myPlDashContent');
+  container.innerHTML = `<div class="loading">${L().dLoading}</div>`;
+  try {
+    const dashRes = await fetch(`/api/pipeline/dashboard?salesperson=${encodeURIComponent(userDisplayName)}`);
+    if (dashRes.status === 401) { window.location.href = '/login'; return; }
+    if (dashRes.ok) {
+      const dashData = await dashRes.json();
+      renderMyPipelineKpis(dashData, container);
+    }
+    await loadMyPipelineLeads();
+  } catch (e) {
+    container.innerHTML = `<div class="error">載入失敗：${e.message}</div>`;
+  }
+  loadPipelineConfig();
+}
+
+async function loadMyPipelineLeads() {
+  try {
+    const [leadsRes, actRes] = await Promise.all([
+      fetch(`/api/pipeline/leads?salesperson=${encodeURIComponent(userDisplayName)}`),
+      fetch('/api/pipeline/activities'),
+    ]);
+    if (!leadsRes.ok || !actRes.ok) return;
+    myPlLeadsCache = await leadsRes.json();
+    myPlActivitiesCache = await actRes.json();
+    populateMyPlWeekSelect();
+    renderMyPipelineTable();
+  } catch (e) { console.error('loadMyPipelineLeads error:', e); }
+}
+
+function renderMyPipelineKpis(data, container) {
+  const l = L();
+  const k = data.kpis;
+  const kpis = `<div class="kpi-grid">
+    ${kpiCard(l.plTotalLeads, k.totalLeads, '', false)}
+    ${kpiCard(l.plCompleted, k.completedCount, '', false)}
+    ${kpiCard(l.plTotalValue, k.totalValue > 0 ? fmtKpi(k.totalValue) : '—', '', false)}
+    ${kpiCard(l.plConversionRate, fmtKpi(k.conversionRate, 'pct'), '', false)}
+  </div>`;
+  const charts = data.charts;
+  let chartsHtml = '';
+  if (charts.funnel?.some(d => d.value > 0) || charts.leadsByCategory?.some(d => d.value > 0)) {
+    chartsHtml = `<div class="chart-row-2">
+      <div class="chart-card"><h3>${l.plFunnel}</h3><canvas id="myChartPlFunnel"></canvas></div>
+      <div class="chart-card"><h3>${l.plByCategory}</h3><canvas id="myChartPlByCat"></canvas></div>
+    </div>`;
+  }
+  container.innerHTML = kpis + chartsHtml;
+  myPipelineCharts.forEach(c => c.destroy());
+  myPipelineCharts = [];
+  const funnelColors = ['#e3f2fd', '#fff3e0', '#f3e5f5', '#e8f5e9'];
+  const funnelBorders = ['#1565c0', '#e65100', '#7b1fa2', '#2e7d32'];
+  const catColors = ['#1a1a2e', '#2d4a7a', '#3a7ca5', '#5cb3a0', '#8cd17d', '#e65100', '#c62828'];
+  const fEl = document.getElementById('myChartPlFunnel');
+  if (charts.funnel?.length && fEl) {
+    myPipelineCharts.push(new Chart(fEl, {
+      type: 'bar',
+      data: { labels: charts.funnel.map(d => d.name), datasets: [{ data: charts.funnel.map(d => d.value), backgroundColor: funnelColors, borderColor: funnelBorders, borderWidth: 1, borderRadius: 4 }] },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    }));
+  }
+  const cEl = document.getElementById('myChartPlByCat');
+  if (charts.leadsByCategory?.length && cEl) {
+    myPipelineCharts.push(new Chart(cEl, {
+      type: 'doughnut',
+      data: { labels: charts.leadsByCategory.map(d => d.name), datasets: [{ data: charts.leadsByCategory.map(d => d.value), backgroundColor: catColors.slice(0, charts.leadsByCategory.length) }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+    }));
+  }
+}
+
+function populateMyPlWeekSelect() {
+  const sel = document.getElementById('myPlWeekSelect');
+  const current = sel.value;
+  const thisWeek = getCurrentWeekLabel();
+  const weeks = [...new Set(myPlActivitiesCache.map(a => a.weekLabel))].sort().reverse();
+  if (!weeks.includes(thisWeek)) weeks.unshift(thisWeek);
+  else { weeks.splice(weeks.indexOf(thisWeek), 1); weeks.unshift(thisWeek); }
+  sel.innerHTML = weeks.map((w, i) =>
+    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(w)}${w === thisWeek ? ' (本週)' : ''}</option>`
+  ).join('');
+}
+
+function renderMyPipelineTable() {
+  const tbody = document.getElementById('myPlLeadsTable');
+  const empty = document.getElementById('myPlLeadsEmpty');
+  const weekLabel = document.getElementById('myPlWeekSelect').value || getCurrentWeekLabel();
+  const leads = myPlLeadsCache;
+  if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = leads.map(lead => {
+    const activity = myPlActivitiesCache.find(a => a.leadId === lead.id && a.weekLabel === weekLabel);
+    const reviewText = activity ? escHtml(activity.content) : '';
+    const reviewId = activity ? activity.id : '';
+    const contactDisplay = lead.contactName
+      ? (lead.contactEmail
+        ? `<span title="${escHtml(lead.contactEmail)}">${escHtml(lead.contactName)}</span>`
+        : escHtml(lead.contactName))
+      : (lead.contactEmail ? `<span style="font-size:11px;">${escHtml(lead.contactEmail)}</span>` : '—');
+    const reviewCell = `<div class="pl-review-cell" data-lead-id="${lead.id}" data-week="${escHtml(weekLabel)}" data-act-id="${reviewId}">
+      ${reviewText
+        ? `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:32px;padding:6px 8px;border-radius:4px;background:#f0f7ff;border:1px solid #d0e3f7;" title="點擊編輯">${reviewText}</div>`
+        : `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:32px;padding:6px 8px;border-radius:4px;background:#fff3e0;border:1px dashed #e65100;color:#e65100;text-align:center;" title="點擊填寫">✏️ 填寫回顧</div>`
+      }
+    </div>`;
+    return `<tr>
+      <td><strong>${escHtml(lead.companyName)}</strong></td>
+      <td style="font-size:12px;">${contactDisplay}</td>
+      <td><span class="pl-badge pl-badge-${lead.status}" onclick="quickStatusToggle('${lead.id}')" title="點擊切換狀態">${lead.status}</span></td>
+      <td>${escHtml(lead.category)}</td>
+      <td class="amount">${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</td>
+      <td style="min-width:250px;">${reviewCell}</td>
+      <td style="font-size:12px;max-width:150px;">${lead.notes
+        ? `<div class="pl-notes-cell" onclick="this.classList.toggle('expanded')" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-height:1.5em;" title="點擊展開">${escHtml(lead.notes)}</div>`
+        : '—'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-sm btn-edit" onclick="openEditLead('${lead.id}')">編輯</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ==========================================
+//  Pipeline Dashboard (Admin View)
 // ==========================================
 let pipelineCharts = [];
 let editingLeadId = null;
@@ -1806,10 +1983,16 @@ function escHtml(s) {
 
 function getCurrentWeekLabel() {
   const now = new Date();
-  const y = now.getFullYear() - 1911; // Taiwan year
+  const y = now.getFullYear() - 1911;
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
   return `${y}/${m}/${d}`;
+}
+
+function fmtTWDate(isoStr) {
+  const d = new Date(isoStr);
+  const y = d.getFullYear() - 1911;
+  return `${y}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
 }
 
 async function loadPipelineDashboard() {
@@ -2005,28 +2188,15 @@ function renderPipelineTable() {
       <td><strong>${escHtml(lead.companyName)}</strong></td>
       <td>${escHtml(lead.salesperson)}</td>
       <td style="font-size:12px;">${contactDisplay}</td>
-      <td><span class="pl-badge pl-badge-${lead.status}" onclick="quickStatusToggle('${lead.id}')" title="點擊切換狀態">${lead.status}</span></td>
+      <td><span class="pl-badge pl-badge-${lead.status}">${lead.status}</span></td>
       <td>${escHtml(lead.category)}</td>
       <td class="amount">${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</td>
+      <td style="font-size:12px;white-space:nowrap;">${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</td>
       <td style="font-size:12px;max-width:150px;">${lead.notes
         ? `<div class="pl-notes-cell" onclick="this.classList.toggle('expanded')" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-height:1.5em;" title="點擊展開">${escHtml(lead.notes)}</div>`
         : '—'}</td>
       <td style="min-width:180px;">
-        ${(() => {
-          const canEdit = userRole === 'admin' || lead.salesperson === userDisplayName;
-          return `<div class="pl-review-cell" data-lead-id="${lead.id}" data-week="${escHtml(weekLabel)}" data-act-id="${reviewId}">
-          ${reviewText
-            ? `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;${canEdit ? 'cursor:pointer;' : ''}min-height:24px;padding:4px;border-radius:4px;background:#f8f9fa;" title="${canEdit ? '點擊編輯' : ''}">${reviewText}</div>`
-            : (canEdit
-              ? `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:24px;padding:4px;border-radius:4px;background:#f8f9fa;color:#999;" title="點擊新增週回顧">+</div>`
-              : `<div style="font-size:12px;min-height:24px;padding:4px;color:#ccc;">—</div>`)
-          }
-        </div>`;
-        })()}
-      </td>
-      <td style="white-space:nowrap;">
-        <button class="btn btn-sm btn-edit" onclick="openEditLead('${lead.id}')">編輯</button>
-        <button class="btn btn-sm" style="background:#ffebee;color:#c62828;" onclick="deleteLead('${lead.id}','${escHtml(lead.companyName)}')">刪除</button>
+        <div style="font-size:12px;min-height:24px;padding:4px;border-radius:4px;background:#f8f9fa;">${reviewText || '<span style="color:#ccc;">—</span>'}</div>
       </td>
     </tr>`;
   }).join('');
@@ -2036,21 +2206,23 @@ function renderPipelineTable() {
 function startEditReview(el) {
   const cell = el.closest('.pl-review-cell');
   const leadId = cell.dataset.leadId;
+  const isMyView = currentTab === 'my-pipeline';
+  const leadsCache = isMyView ? myPlLeadsCache : plLeadsCache;
+  const actCache = isMyView ? myPlActivitiesCache : plActivitiesCache;
   // Permission check: non-admin users can only edit their own leads' reviews
-  if (userRole !== 'admin') {
-    const lead = plLeadsCache.find(l => l.id === leadId);
-    if (lead && lead.salesperson !== userDisplayName) {
-      return; // silently ignore click on other people's reviews
-    }
+  if (userRole !== 'admin' && !isMyView) {
+    const lead = leadsCache.find(l => l.id === leadId);
+    if (lead && lead.salesperson !== userDisplayName) return;
   }
   const week = cell.dataset.week;
   const actId = cell.dataset.actId;
-  const currentText = actId ? (plActivitiesCache.find(a => a.id === actId)?.content || '') : '';
+  const currentText = actId ? (actCache.find(a => a.id === actId)?.content || '') : '';
+  const cancelFn = isMyView ? 'loadMyPipelineLeads()' : 'loadPipelineLeads()';
 
   cell.innerHTML = `<textarea rows="3" style="width:100%;font-size:12px;padding:6px;border:1px solid #1a1a2e;border-radius:4px;resize:vertical;">${escHtml(currentText)}</textarea>
     <div style="margin-top:4px;display:flex;gap:4px;">
       <button class="btn btn-sm btn-primary" onclick="saveReview('${leadId}','${escHtml(week)}','${actId}',this)">存</button>
-      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="loadPipelineLeads()">取消</button>
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="${cancelFn}">取消</button>
     </div>`;
   cell.querySelector('textarea').focus();
 }
@@ -2060,26 +2232,26 @@ async function saveReview(leadId, weekLabel, actId, btn) {
   const content = textarea.value.trim();
   try {
     if (actId) {
-      // Update existing
       await fetch(`/api/pipeline/activities/${actId}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
       });
     } else {
-      // Create new
       await fetch('/api/pipeline/activities', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ leadId, weekLabel, content }),
       });
     }
-    loadPipelineLeads();
+    if (currentTab === 'my-pipeline') loadMyPipelineLeads();
+    else loadPipelineLeads();
   } catch (e) { alert(e.message); }
 }
 
 // Quick status toggle
 async function quickStatusToggle(id) {
-  const statuses = ['初步接觸', '進行中', '報價', '已完成'];
-  const lead = plLeadsCache.find(l => l.id === id);
+  const statuses = plConfig.statuses || ['初步接觸', '進行中', '報價', '已完成'];
+  const leadsCache = currentTab === 'my-pipeline' ? myPlLeadsCache : plLeadsCache;
+  const lead = leadsCache.find(l => l.id === id);
   if (!lead) return;
   const idx = statuses.indexOf(lead.status);
   const next = statuses[(idx + 1) % statuses.length];
@@ -2089,7 +2261,8 @@ async function quickStatusToggle(id) {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: next }),
     });
-    loadPipelineDashboard();
+    if (currentTab === 'my-pipeline') loadMyPipeline();
+    else loadPipelineDashboard();
   } catch (e) { alert(e.message); }
 }
 
@@ -2110,7 +2283,8 @@ function openCreateLead() {
 }
 
 function openEditLead(id) {
-  const lead = plLeadsCache.find(l => l.id === id);
+  const leadsCache = currentTab === 'my-pipeline' ? myPlLeadsCache : plLeadsCache;
+  const lead = leadsCache.find(l => l.id === id);
   if (!lead) return;
   editingLeadId = id;
   document.getElementById('leadModalTitle').textContent = L().plEditLead;
@@ -2155,7 +2329,8 @@ async function saveLead() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     closeLeadModal();
-    loadPipelineDashboard();
+    if (currentTab === 'my-pipeline') loadMyPipeline();
+    else loadPipelineDashboard();
   } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
 }
 
