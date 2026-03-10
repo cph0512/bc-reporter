@@ -1764,7 +1764,7 @@ function renderPipelineCharts(charts) {
   const catColors = ['#1a1a2e', '#2d4a7a', '#3a7ca5', '#5cb3a0', '#8cd17d', '#e65100', '#c62828'];
   const spColors = ['#1a1a2e', '#3a7ca5', '#5cb3a0', '#e65100', '#7b1fa2', '#c62828'];
 
-  // Click-to-filter helper: scroll to lead list and apply filter
+  // Click-to-filter helper: set filter, reload data from API, scroll to lead list
   function chartClickFilter(filterType, filterValue) {
     if (filterType === 'status') {
       document.getElementById('plFilterStatus').value = filterValue;
@@ -1773,8 +1773,9 @@ function renderPipelineCharts(charts) {
     } else if (filterType === 'category') {
       document.getElementById('plFilterCat').value = filterValue;
     }
-    renderPipelineTable();
-    document.getElementById('plLeadListSection').scrollIntoView({ behavior: 'smooth' });
+    loadPipelineLeads().then(() => {
+      document.getElementById('plLeadListSection').scrollIntoView({ behavior: 'smooth' });
+    });
   }
   const chartClickOpts = { onClick: (e, els, chart) => { /* overridden per chart */ } };
 
