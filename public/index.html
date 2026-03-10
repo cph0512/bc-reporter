@@ -240,7 +240,7 @@
   <div class="dashboard-content" id="plDashContent">
     <div class="loading">載入中...</div>
   </div>
-  <div style="padding:0 24px 24px;max-width:1400px;margin:0 auto;">
+  <div id="plLeadListSection" style="padding:0 24px 24px;max-width:1400px;margin:0 auto;">
     <div class="card">
       <div class="card-header" style="justify-content:space-between;">
         <h2 id="plLeadListTitle">商機列表</h2>
@@ -1764,33 +1764,53 @@ function renderPipelineCharts(charts) {
   const catColors = ['#1a1a2e', '#2d4a7a', '#3a7ca5', '#5cb3a0', '#8cd17d', '#e65100', '#c62828'];
   const spColors = ['#1a1a2e', '#3a7ca5', '#5cb3a0', '#e65100', '#7b1fa2', '#c62828'];
 
-  // Funnel (horizontal bar)
+  // Click-to-filter helper: scroll to lead list and apply filter
+  function chartClickFilter(filterType, filterValue) {
+    if (filterType === 'status') {
+      document.getElementById('plFilterStatus').value = filterValue;
+    } else if (filterType === 'salesperson') {
+      document.getElementById('plFilterSP').value = filterValue;
+    } else if (filterType === 'category') {
+      document.getElementById('plFilterCat').value = filterValue;
+    }
+    renderPipelineTable();
+    document.getElementById('plLeadListSection').scrollIntoView({ behavior: 'smooth' });
+  }
+  const chartClickOpts = { onClick: (e, els, chart) => { /* overridden per chart */ } };
+
+  // Funnel (horizontal bar) → click filters by status
   const funnelEl = document.getElementById('chartPlFunnel');
   if (charts.funnel?.length && funnelEl) {
     pipelineCharts.push(new Chart(funnelEl, {
       type: 'bar',
       data: { labels: charts.funnel.map(d => d.name), datasets: [{ data: charts.funnel.map(d => d.value), backgroundColor: funnelColors, borderColor: funnelBorders, borderWidth: 1, borderRadius: 4 }] },
-      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        onClick(e, els) { if (els.length) { const label = charts.funnel[els[0].index].name; chartClickFilter('status', label); } }
+      }
     }));
   }
 
-  // By Salesperson (bar)
+  // By Salesperson (bar) → click filters by salesperson
   const spEl = document.getElementById('chartPlBySP');
   if (charts.leadsBySalesperson?.length && spEl) {
     pipelineCharts.push(new Chart(spEl, {
       type: 'bar',
       data: { labels: charts.leadsBySalesperson.map(d => d.name), datasets: [{ data: charts.leadsBySalesperson.map(d => d.value), backgroundColor: spColors.slice(0, charts.leadsBySalesperson.length), borderRadius: 4 }] },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        onClick(e, els) { if (els.length) { const label = charts.leadsBySalesperson[els[0].index].name; chartClickFilter('salesperson', label); } }
+      }
     }));
   }
 
-  // By Category (doughnut)
+  // By Category (doughnut) → click filters by category
   const catEl = document.getElementById('chartPlByCat');
   if (charts.leadsByCategory?.length && catEl) {
     pipelineCharts.push(new Chart(catEl, {
       type: 'doughnut',
       data: { labels: charts.leadsByCategory.map(d => d.name), datasets: [{ data: charts.leadsByCategory.map(d => d.value), backgroundColor: catColors.slice(0, charts.leadsByCategory.length) }] },
-      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+        onClick(e, els) { if (els.length) { const label = charts.leadsByCategory[els[0].index].name; chartClickFilter('category', label); } }
+      }
     }));
   }
 
