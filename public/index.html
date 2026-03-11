@@ -115,6 +115,7 @@
   /* Stale lead indicator */
   .stale-wrap { display: inline-flex; align-items: center; gap: 4px; }
   .stale-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .stale-dot.info { background: #f9a825; }
   .stale-dot.warn { background: #e65100; }
   .stale-dot.danger { background: #c62828; animation: stalePulse 1.5s ease-in-out infinite; }
   @keyframes stalePulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.5; transform:scale(1.4); } }
@@ -251,8 +252,10 @@
           <input type="month" id="myPlFilterMonth" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;" title="建檔月份">
           <select id="myPlFilterStale" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
             <option value="">停滯：全部</option>
-            <option value="30">30天+</option>
-            <option value="60">60天+</option>
+            <option value="0-14">14天以內</option>
+            <option value="14-30">14-30天</option>
+            <option value="30-45">30-45天</option>
+            <option value="45+">45天以上</option>
           </select>
           <label style="font-size:12px;color:#666;">週次</label>
           <select id="myPlWeekSelect" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
@@ -308,8 +311,10 @@
       <label>停滯</label>
       <select id="plFilterStale" onchange="renderPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
         <option value="">全部</option>
-        <option value="30">30天+</option>
-        <option value="60">60天+</option>
+        <option value="0-14">14天以內</option>
+        <option value="14-30">14-30天</option>
+        <option value="30-45">30-45天</option>
+        <option value="45+">45天以上</option>
       </select>
     </div>
     <button class="btn btn-primary btn-sm" onclick="loadPipelineDashboard()">查詢</button>
@@ -1901,7 +1906,15 @@ function renderMyPipelineTable() {
   if (filterCat) leads = leads.filter(l => l.category === filterCat);
   if (filterMonth) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 7) === filterMonth);
   const filterStale = document.getElementById('myPlFilterStale').value;
-  if (filterStale) leads = leads.filter(l => l.status !== '已完成' && getDaysSinceStatusChange(l) >= Number(filterStale));
+  if (filterStale) leads = leads.filter(l => {
+    if (l.status === '已完成') return false;
+    const d = getDaysSinceStatusChange(l);
+    if (filterStale === '0-14') return d < 14;
+    if (filterStale === '14-30') return d >= 14 && d < 30;
+    if (filterStale === '30-45') return d >= 30 && d < 45;
+    if (filterStale === '45+') return d >= 45;
+    return true;
+  });
   // Update notification bell with ALL leads (not filtered)
   updateNotifBell(myPlLeadsCache);
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
@@ -2083,8 +2096,8 @@ function getDaysSinceStatusChange(lead) {
 function staleIndicator(lead) {
   if (lead.status === '已完成') return '';
   const days = getDaysSinceStatusChange(lead);
-  if (days < 30) return '';
-  const cls = days >= 60 ? 'danger' : 'warn';
+  if (days < 14) return '';
+  const cls = days >= 45 ? 'danger' : days >= 30 ? 'warn' : 'info';
   return `<span class="stale-dot ${cls}" title="${days}天未更新狀態"></span><span class="stale-days">${days}天</span>`;
 }
 
@@ -2103,7 +2116,7 @@ document.addEventListener('click', (e) => {
 
 function updateNotifBell(leads) {
   const staleLeads = leads
-    .filter(l => l.status !== '已完成' && getDaysSinceStatusChange(l) >= 30)
+    .filter(l => l.status !== '已完成' && getDaysSinceStatusChange(l) >= 14)
     .sort((a, b) => getDaysSinceStatusChange(b) - getDaysSinceStatusChange(a));
 
   const bellEl = document.getElementById('notifBell');
@@ -2120,7 +2133,7 @@ function updateNotifBell(leads) {
 
   listEl.innerHTML = staleLeads.map(l => {
     const days = getDaysSinceStatusChange(l);
-    const cls = days >= 60 ? 'danger' : 'warn';
+    const cls = days >= 45 ? 'danger' : days >= 30 ? 'warn' : 'info';
     return `<div class="notif-item" onclick="notifJumpToLead('${l.id}')">
       <span class="stale-dot ${cls}"></span>
       <div style="flex:1;min-width:0;">
@@ -2325,7 +2338,15 @@ function renderPipelineTable() {
   if (filterCat) leads = leads.filter(l => l.category === filterCat);
   if (filterMonth) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 7) === filterMonth);
   const filterStale = document.getElementById('plFilterStale').value;
-  if (filterStale) leads = leads.filter(l => l.status !== '已完成' && getDaysSinceStatusChange(l) >= Number(filterStale));
+  if (filterStale) leads = leads.filter(l => {
+    if (l.status === '已完成') return false;
+    const d = getDaysSinceStatusChange(l);
+    if (filterStale === '0-14') return d < 14;
+    if (filterStale === '14-30') return d >= 14 && d < 30;
+    if (filterStale === '30-45') return d >= 30 && d < 45;
+    if (filterStale === '45+') return d >= 45;
+    return true;
+  });
   const weekLabel = document.getElementById('plWeekSelect').value || getCurrentWeekLabel();
 
   // Update notification bell with ALL leads (not filtered)
