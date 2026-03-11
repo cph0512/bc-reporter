@@ -46,7 +46,7 @@ async function main() {
 
   // 1. Login
   console.log(`🔑 Logging in to ${PROD_URL}...`);
-  const loginRes = await request(`${PROD_URL}/api/auth/login`, {
+  const loginRes = await request(`${PROD_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: ADMIN_USER, password: adminPass }),
