@@ -97,7 +97,7 @@ const pipelineStore = {
     return leads.find(l => l.id === id) || null;
   },
 
-  createLead({ companyName, salesperson, status, category, notes, estimatedValue, contactName, contactEmail, createdBy }) {
+  createLead({ companyName, salesperson, status, category, notes, estimatedValue, contactName, contactEmail, leadDate, createdBy }) {
     if (!companyName || !companyName.trim()) {
       throw new Error('公司/客戶名稱為必填');
     }
@@ -113,6 +113,7 @@ const pipelineStore = {
       estimatedValue: estimatedValue != null ? Number(estimatedValue) : null,
       contactName: (contactName || '').trim(),
       contactEmail: (contactEmail || '').trim(),
+      leadDate: leadDate || null,
       createdAt: now,
       updatedAt: now,
       statusChangedAt: now,
@@ -140,6 +141,7 @@ const pipelineStore = {
     }
     if (fields.contactName !== undefined) lead.contactName = (fields.contactName || '').trim();
     if (fields.contactEmail !== undefined) lead.contactEmail = (fields.contactEmail || '').trim();
+    if (fields.leadDate !== undefined) lead.leadDate = fields.leadDate || null;
     const now = new Date().toISOString();
     lead.updatedAt = now;
     // Track status change timestamp

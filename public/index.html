@@ -268,6 +268,7 @@
             <tr>
               <th>公司/客戶</th>
               <th>窗口</th>
+              <th>商機日期</th>
               <th>建檔日期</th>
               <th>狀態</th>
               <th>類別</th>
@@ -343,6 +344,7 @@
               <th>狀態</th>
               <th>類別</th>
               <th style="text-align:right;">預估金額</th>
+              <th>商機日期</th>
               <th>建檔日期</th>
               <th>備註</th>
               <th>本週回顧</th>
@@ -375,7 +377,10 @@
       <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">類別</label>
         <select id="leadCategory" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select></div>
     </div>
-    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">預估金額 (選填)</label><input type="number" id="leadEstValue" placeholder="" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">商機日期</label><input type="date" id="leadDate" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">預估金額 (選填)</label><input type="number" id="leadEstValue" placeholder="" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    </div>
     <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">備註</label><textarea id="leadNotes" rows="2" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;resize:vertical;"></textarea></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
       <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeLeadModal()">取消</button>
@@ -1937,6 +1942,7 @@ function renderMyPipelineTable() {
     return `<tr>
       <td><strong>${escHtml(lead.companyName)}</strong></td>
       <td style="font-size:12px;">${contactDisplay}</td>
+      <td style="font-size:12px;white-space:nowrap;">${lead.leadDate ? fmtTWDate(lead.leadDate) : '—'}</td>
       <td style="font-size:12px;white-space:nowrap;">${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</td>
       <td><div class="stale-wrap"><span class="pl-badge pl-badge-${lead.status}" onclick="quickStatusToggle('${lead.id}')" title="點擊切換狀態">${lead.status}</span>${staleIndicator(lead)}</div></td>
       <td>${escHtml(lead.category)}</td>
@@ -2372,6 +2378,7 @@ function renderPipelineTable() {
       <td><div class="stale-wrap"><span class="pl-badge pl-badge-${lead.status}">${lead.status}</span>${staleHtml}</div></td>
       <td>${escHtml(lead.category)}</td>
       <td class="amount">${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</td>
+      <td style="font-size:12px;white-space:nowrap;">${lead.leadDate ? fmtTWDate(lead.leadDate) : '—'}</td>
       <td style="font-size:12px;white-space:nowrap;">${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</td>
       <td style="font-size:12px;max-width:150px;">${lead.notes
         ? `<div class="pl-notes-cell" onclick="this.classList.toggle('expanded')" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-height:1.5em;" title="點擊展開">${escHtml(lead.notes)}</div>`
@@ -2458,6 +2465,7 @@ function openCreateLead() {
   document.getElementById('leadContactEmail').value = '';
   document.getElementById('leadStatus').value = '初步接觸';
   document.getElementById('leadCategory').value = '客戶';
+  document.getElementById('leadDate').value = new Date().toISOString().slice(0, 10);
   document.getElementById('leadEstValue').value = '';
   document.getElementById('leadNotes').value = '';
   document.getElementById('leadModalError').style.display = 'none';
@@ -2481,6 +2489,7 @@ function openEditLead(id) {
     catSel.add(new Option(lead.category, lead.category));
   }
   catSel.value = lead.category || '客戶';
+  document.getElementById('leadDate').value = lead.leadDate ? lead.leadDate.slice(0, 10) : '';
   document.getElementById('leadEstValue').value = lead.estimatedValue || '';
   document.getElementById('leadNotes').value = lead.notes || '';
   document.getElementById('leadModalError').style.display = 'none';
@@ -2501,6 +2510,7 @@ async function saveLead() {
     contactEmail: document.getElementById('leadContactEmail').value.trim(),
     status: document.getElementById('leadStatus').value,
     category: document.getElementById('leadCategory').value,
+    leadDate: document.getElementById('leadDate').value || null,
     estimatedValue: document.getElementById('leadEstValue').value ? Number(document.getElementById('leadEstValue').value) : null,
     notes: document.getElementById('leadNotes').value.trim(),
   };
