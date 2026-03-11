@@ -40,6 +40,10 @@ const userStore = {
     return readUsers().map(({ passwordHash, ...rest }) => rest);
   },
 
+  getAllRaw() {
+    return readUsers();
+  },
+
   findById(id) {
     return readUsers().find(u => u.id === id) || null;
   },

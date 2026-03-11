@@ -5,9 +5,14 @@ const express = require('express');
 const router = express.Router();
 const userStore = require('../services/userStore');
 
-// GET /api/admin/users — list all users
+// GET /api/admin/users — list all users (no password hashes)
 router.get('/users', (req, res) => {
   res.json(userStore.getAll());
+});
+
+// GET /api/admin/users-export — full export for deployment sync (includes hashes)
+router.get('/users-export', (req, res) => {
+  res.json(userStore.getAllRaw());
 });
 
 // POST /api/admin/users — create user
