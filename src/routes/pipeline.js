@@ -73,6 +73,16 @@ router.delete('/leads/:id', (req, res) => {
   }
 });
 
+// POST /leads/:id/notes — add a note to lead's noteLog
+router.post('/leads/:id/notes', (req, res) => {
+  try {
+    const lead = pipelineStore.addLeadNote(req.params.id, req.body.content, req.session?.user?.displayName || null);
+    res.status(201).json(lead);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // ===== Activities (週回顧) CRUD =====
 
 // GET /activities — list with optional filters

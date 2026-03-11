@@ -129,6 +129,9 @@
   .ld-act-card .ld-act-content { font-size: 13px; color: #333; white-space: pre-wrap; line-height: 1.5; }
   .ld-act-card .ld-act-date { font-size: 11px; color: #aaa; text-align: right; margin-top: 6px; }
   .ld-empty { color: #bbb; font-size: 13px; text-align: center; padding: 20px 0; }
+  .ld-note-item { padding: 8px 12px; margin-bottom: 6px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; }
+  .ld-note-content { font-size: 13px; color: #333; white-space: pre-wrap; line-height: 1.5; }
+  .ld-note-meta { font-size: 11px; color: #aaa; text-align: right; margin-top: 4px; }
   .ld-company-link { cursor: pointer; color: #1565c0; text-decoration: none; }
   .ld-company-link:hover { text-decoration: underline; }
   /* Sort arrows */
@@ -412,6 +415,10 @@
       <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeLeadDetail()">✕</span>
     </div>
     <div id="ldInfo" style="margin-bottom:18px;"></div>
+    <div style="border-top:1px solid #eee;padding-top:14px;margin-bottom:14px;">
+      <h4 style="font-size:14px;margin:0 0 12px;color:#333;">📝 備註紀錄</h4>
+      <div id="ldNotes"></div>
+    </div>
     <div style="border-top:1px solid #eee;padding-top:14px;">
       <h4 style="font-size:14px;margin:0 0 12px;color:#333;">📋 歷史回顧紀錄</h4>
       <div id="ldActivities"></div>
@@ -2591,7 +2598,10 @@ function openEditLead(id) {
 function closeLeadModal() { document.getElementById('leadModal').style.display = 'none'; }
 
 // Lead Detail Modal
+let currentDetailLeadId = null;
+
 function openLeadDetail(leadId) {
+  currentDetailLeadId = leadId;
   const leadsCache = currentTab === 'my-pipeline' ? myPlLeadsCache : plLeadsCache;
   const activitiesCache = currentTab === 'my-pipeline' ? myPlActivitiesCache : plActivitiesCache;
   const lead = leadsCache.find(l => l.id === leadId);
@@ -2611,8 +2621,10 @@ function openLeadDetail(leadId) {
     <div class="ld-info-item"><label>建檔日期</label>${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</div>
     <div class="ld-info-item"><label>預估金額</label>${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</div>
     <div class="ld-info-item"><label>最後更新</label>${lead.updatedAt ? fmtTWDate(lead.updatedAt) : '—'}</div>
-    ${lead.notes ? `<div class="ld-info-item" style="grid-column:1/-1;"><label>備註</label>${escHtml(lead.notes)}</div>` : ''}
   </div>`;
+
+  // Note log (備註紀錄)
+  renderNoteLog(lead);
 
   // Activities (all weeks, sorted newest first)
   const acts = activitiesCache
@@ -2635,6 +2647,49 @@ function openLeadDetail(leadId) {
   }
 
   document.getElementById('leadDetailModal').style.display = 'flex';
+}
+
+function renderNoteLog(lead) {
+  const notes = lead.noteLog || [];
+  const oldNote = lead.notes ? [{ content: lead.notes, createdAt: lead.createdAt, createdBy: null, isLegacy: true }] : [];
+  const allNotes = [...notes].reverse().concat(oldNote.length && !notes.length ? oldNote : []);
+
+  const notesEl = document.getElementById('ldNotes');
+  let html = `<div style="display:flex;gap:6px;margin-bottom:10px;">
+    <input type="text" id="ldNoteInput" placeholder="新增備註..." style="flex:1;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" onkeydown="if(event.key==='Enter')addLeadNote()">
+    <button class="btn btn-sm btn-primary" onclick="addLeadNote()">新增</button>
+  </div>`;
+
+  if (allNotes.length === 0) {
+    html += '<div class="ld-empty">尚無備註</div>';
+  } else {
+    html += allNotes.map(n => `<div class="ld-note-item">
+      <div class="ld-note-content">${escHtml(n.content)}</div>
+      <div class="ld-note-meta">${n.createdBy ? escHtml(n.createdBy) + ' · ' : ''}${n.createdAt ? fmtTWDate(n.createdAt) : ''}${n.isLegacy ? ' (舊備註)' : ''}</div>
+    </div>`).join('');
+  }
+  notesEl.innerHTML = html;
+}
+
+async function addLeadNote() {
+  const input = document.getElementById('ldNoteInput');
+  const content = input.value.trim();
+  if (!content) return;
+  try {
+    const res = await fetch(`/api/pipeline/leads/${currentDetailLeadId}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    const updatedLead = await res.json();
+    // Update cache
+    const leadsCache = currentTab === 'my-pipeline' ? myPlLeadsCache : plLeadsCache;
+    const idx = leadsCache.findIndex(l => l.id === currentDetailLeadId);
+    if (idx !== -1) leadsCache[idx] = updatedLead;
+    input.value = '';
+    renderNoteLog(updatedLead);
+  } catch (e) { alert('新增備註失敗：' + e.message); }
 }
 
 function closeLeadDetail() { document.getElementById('leadDetailModal').style.display = 'none'; }

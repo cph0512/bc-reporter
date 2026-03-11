@@ -153,6 +153,21 @@ const pipelineStore = {
     return lead;
   },
 
+  addLeadNote(id, content, createdBy) {
+    const data = readData();
+    const lead = data.leads.find(l => l.id === id);
+    if (!lead) throw new Error('Lead not found');
+    if (!content || !content.trim()) throw new Error('備註內容不可為空');
+    if (!lead.noteLog) lead.noteLog = [];
+    lead.noteLog.push({
+      content: content.trim(),
+      createdAt: new Date().toISOString(),
+      createdBy: createdBy || null,
+    });
+    writeData(data);
+    return lead;
+  },
+
   deleteLead(id) {
     const data = readData();
     const idx = data.leads.findIndex(l => l.id === id);
