@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const userStore = require('../services/userStore');
+const pipelineStore = require('../services/pipelineStore');
 
 // GET /api/admin/users — list all users (no password hashes)
 router.get('/users', (req, res) => {
@@ -13,6 +14,11 @@ router.get('/users', (req, res) => {
 // GET /api/admin/users-export — full export for deployment sync (includes hashes)
 router.get('/users-export', (req, res) => {
   res.json(userStore.getAllRaw());
+});
+
+// GET /api/admin/pipeline-export — full pipeline data for deployment sync
+router.get('/pipeline-export', (req, res) => {
+  res.json(pipelineStore.getRawData());
 });
 
 // POST /api/admin/users — create user

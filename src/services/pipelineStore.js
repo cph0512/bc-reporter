@@ -55,6 +55,11 @@ const pipelineStore = {
   get STATUSES() { return readData().statuses; },
   get CATEGORIES() { return readData().categories; },
 
+  // Full raw data export for deployment sync
+  getRawData() {
+    return readData();
+  },
+
   // ===== Config =====
 
   getConfig() {
