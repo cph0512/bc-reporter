@@ -120,6 +120,21 @@
   .stale-dot.danger { background: #c62828; animation: stalePulse 1.5s ease-in-out infinite; }
   @keyframes stalePulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.5; transform:scale(1.4); } }
   .stale-days { font-size: 10px; color: #999; white-space: nowrap; }
+  /* Lead detail */
+  .ld-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+  .ld-info-item { font-size: 13px; }
+  .ld-info-item label { display: block; font-size: 11px; color: #888; margin-bottom: 2px; }
+  .ld-act-card { border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; background: #fafbfc; }
+  .ld-act-card .ld-act-week { font-size: 12px; font-weight: 600; color: #1565c0; margin-bottom: 6px; }
+  .ld-act-card .ld-act-content { font-size: 13px; color: #333; white-space: pre-wrap; line-height: 1.5; }
+  .ld-act-card .ld-act-date { font-size: 11px; color: #aaa; text-align: right; margin-top: 6px; }
+  .ld-empty { color: #bbb; font-size: 13px; text-align: center; padding: 20px 0; }
+  .ld-company-link { cursor: pointer; color: #1565c0; text-decoration: none; }
+  .ld-company-link:hover { text-decoration: underline; }
+  /* Sort arrows */
+  .sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  .sortable:hover { color: #1565c0; }
+  .sort-arrow { font-size: 10px; margin-left: 2px; }
   /* Notification bell */
   .notif-bell { position: relative; cursor: pointer; font-size: 18px; line-height: 1; user-select: none; }
   .notif-bell .notif-count { position: absolute; top: -6px; right: -8px; background: #c62828; color: white; font-size: 10px; font-weight: 700; border-radius: 10px; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
@@ -268,8 +283,8 @@
             <tr>
               <th>公司/客戶</th>
               <th>窗口</th>
-              <th>商機日期</th>
-              <th>建檔日期</th>
+              <th class="sortable" onclick="toggleMyPlSort('leadDate')">商機日期<span class="sort-arrow" id="myPlSortArrowLeadDate"></span></th>
+              <th class="sortable" onclick="toggleMyPlSort('createdAt')">建檔日期<span class="sort-arrow" id="myPlSortArrowCreatedAt"></span></th>
               <th>狀態</th>
               <th>類別</th>
               <th style="text-align:right;">預估金額</th>
@@ -344,8 +359,8 @@
               <th>狀態</th>
               <th>類別</th>
               <th style="text-align:right;">預估金額</th>
-              <th>商機日期</th>
-              <th>建檔日期</th>
+              <th class="sortable" onclick="togglePlSort('leadDate')">商機日期<span class="sort-arrow" id="plSortArrowLeadDate"></span></th>
+              <th class="sortable" onclick="togglePlSort('createdAt')">建檔日期<span class="sort-arrow" id="plSortArrowCreatedAt"></span></th>
               <th>備註</th>
               <th>本週回顧</th>
             </tr>
@@ -385,6 +400,25 @@
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
       <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeLeadModal()">取消</button>
       <button class="btn btn-sm btn-primary" onclick="saveLead()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lead Detail Modal -->
+<div id="leadDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:10px;padding:28px 24px;width:100%;max-width:620px;box-shadow:0 8px 30px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto;margin:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="ldTitle" style="font-size:17px;margin:0;"></h3>
+      <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeLeadDetail()">✕</span>
+    </div>
+    <div id="ldInfo" style="margin-bottom:18px;"></div>
+    <div style="border-top:1px solid #eee;padding-top:14px;">
+      <h4 style="font-size:14px;margin:0 0 12px;color:#333;">📋 歷史回顧紀錄</h4>
+      <div id="ldActivities"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeLeadDetail()">關閉</button>
+      <button class="btn btn-sm btn-edit" id="ldEditBtn" onclick="">編輯商機</button>
     </div>
   </div>
 </div>
@@ -1898,6 +1932,46 @@ function populateMyPlWeekSelect() {
   ).join('');
 }
 
+// Sort state for personal view
+let myPlSortField = null; // 'leadDate' or 'createdAt'
+let myPlSortDir = 'desc'; // 'asc' or 'desc'
+
+function toggleMyPlSort(field) {
+  if (myPlSortField === field) {
+    myPlSortDir = myPlSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    myPlSortField = field;
+    myPlSortDir = 'desc';
+  }
+  renderMyPipelineTable();
+}
+
+// Sort state for admin view
+let plSortField = null;
+let plSortDir = 'desc';
+
+function togglePlSort(field) {
+  if (plSortField === field) {
+    plSortDir = plSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    plSortField = field;
+    plSortDir = 'desc';
+  }
+  renderPipelineTable();
+}
+
+function updateSortArrows(prefix, sortField, sortDir) {
+  ['leadDate', 'createdAt'].forEach(f => {
+    const el = document.getElementById(`${prefix}SortArrow${f.charAt(0).toUpperCase() + f.slice(1)}`);
+    if (!el) return;
+    if (f === sortField) {
+      el.textContent = sortDir === 'desc' ? ' ▼' : ' ▲';
+    } else {
+      el.textContent = '';
+    }
+  });
+}
+
 function renderMyPipelineTable() {
   const tbody = document.getElementById('myPlLeadsTable');
   const empty = document.getElementById('myPlLeadsEmpty');
@@ -1922,6 +1996,15 @@ function renderMyPipelineTable() {
   });
   // Update notification bell with ALL leads (not filtered)
   updateNotifBell(myPlLeadsCache);
+  // Sort
+  if (myPlSortField) {
+    leads = [...leads].sort((a, b) => {
+      const va = a[myPlSortField] || '';
+      const vb = b[myPlSortField] || '';
+      return myPlSortDir === 'desc' ? vb.localeCompare(va) : va.localeCompare(vb);
+    });
+  }
+  updateSortArrows('myPl', myPlSortField, myPlSortDir);
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = leads.map(lead => {
@@ -1940,7 +2023,7 @@ function renderMyPipelineTable() {
       }
     </div>`;
     return `<tr>
-      <td><strong>${escHtml(lead.companyName)}</strong></td>
+      <td><strong class="ld-company-link" onclick="openLeadDetail('${lead.id}')">${escHtml(lead.companyName)}</strong></td>
       <td style="font-size:12px;">${contactDisplay}</td>
       <td style="font-size:12px;white-space:nowrap;">${lead.leadDate ? fmtTWDate(lead.leadDate) : '—'}</td>
       <td style="font-size:12px;white-space:nowrap;">${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</td>
@@ -2357,6 +2440,15 @@ function renderPipelineTable() {
 
   // Update notification bell with ALL leads (not filtered)
   updateNotifBell(plLeadsCache);
+  // Sort
+  if (plSortField) {
+    leads = [...leads].sort((a, b) => {
+      const va = a[plSortField] || '';
+      const vb = b[plSortField] || '';
+      return plSortDir === 'desc' ? vb.localeCompare(va) : va.localeCompare(vb);
+    });
+  }
+  updateSortArrows('pl', plSortField, plSortDir);
 
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
@@ -2372,7 +2464,7 @@ function renderPipelineTable() {
       : (lead.contactEmail ? `<span style="font-size:11px;">${escHtml(lead.contactEmail)}</span>` : '—');
     const staleHtml = staleIndicator(lead);
     return `<tr>
-      <td><strong>${escHtml(lead.companyName)}</strong></td>
+      <td><strong class="ld-company-link" onclick="openLeadDetail('${lead.id}')">${escHtml(lead.companyName)}</strong></td>
       <td>${escHtml(lead.salesperson)}</td>
       <td style="font-size:12px;">${contactDisplay}</td>
       <td><div class="stale-wrap"><span class="pl-badge pl-badge-${lead.status}">${lead.status}</span>${staleHtml}</div></td>
@@ -2497,6 +2589,55 @@ function openEditLead(id) {
 }
 
 function closeLeadModal() { document.getElementById('leadModal').style.display = 'none'; }
+
+// Lead Detail Modal
+function openLeadDetail(leadId) {
+  const leadsCache = currentTab === 'my-pipeline' ? myPlLeadsCache : plLeadsCache;
+  const activitiesCache = currentTab === 'my-pipeline' ? myPlActivitiesCache : plActivitiesCache;
+  const lead = leadsCache.find(l => l.id === leadId);
+  if (!lead) return;
+
+  document.getElementById('ldTitle').textContent = lead.companyName;
+  document.getElementById('ldEditBtn').setAttribute('onclick', `closeLeadDetail(); openEditLead('${leadId}')`);
+
+  // Basic info
+  const staleHtml = staleIndicator(lead);
+  document.getElementById('ldInfo').innerHTML = `<div class="ld-info-grid">
+    <div class="ld-info-item"><label>業務人員</label>${escHtml(lead.salesperson || '—')}</div>
+    <div class="ld-info-item"><label>窗口</label>${lead.contactName ? escHtml(lead.contactName) + (lead.contactEmail ? ` (${escHtml(lead.contactEmail)})` : '') : '—'}</div>
+    <div class="ld-info-item"><label>狀態</label><div class="stale-wrap"><span class="pl-badge pl-badge-${lead.status}">${lead.status}</span>${staleHtml}</div></div>
+    <div class="ld-info-item"><label>類別</label>${escHtml(lead.category || '—')}</div>
+    <div class="ld-info-item"><label>商機日期</label>${lead.leadDate ? fmtTWDate(lead.leadDate) : '—'}</div>
+    <div class="ld-info-item"><label>建檔日期</label>${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</div>
+    <div class="ld-info-item"><label>預估金額</label>${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</div>
+    <div class="ld-info-item"><label>最後更新</label>${lead.updatedAt ? fmtTWDate(lead.updatedAt) : '—'}</div>
+    ${lead.notes ? `<div class="ld-info-item" style="grid-column:1/-1;"><label>備註</label>${escHtml(lead.notes)}</div>` : ''}
+  </div>`;
+
+  // Activities (all weeks, sorted newest first)
+  const acts = activitiesCache
+    .filter(a => a.leadId === leadId && a.content)
+    .sort((a, b) => (b.weekLabel || '').localeCompare(a.weekLabel || ''));
+
+  const curWeek = getCurrentWeekLabel();
+  const actEl = document.getElementById('ldActivities');
+  if (acts.length === 0) {
+    actEl.innerHTML = '<div class="ld-empty">尚無回顧紀錄</div>';
+  } else {
+    actEl.innerHTML = acts.map(a => {
+      const isThisWeek = a.weekLabel === curWeek;
+      return `<div class="ld-act-card">
+        <div class="ld-act-week">${escHtml(a.weekLabel)}${isThisWeek ? ' <span style="color:#e65100;">(本週)</span>' : ''}</div>
+        <div class="ld-act-content">${escHtml(a.content)}</div>
+        <div class="ld-act-date">${a.createdAt ? fmtTWDate(a.createdAt) : ''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('leadDetailModal').style.display = 'flex';
+}
+
+function closeLeadDetail() { document.getElementById('leadDetailModal').style.display = 'none'; }
 
 async function saveLead() {
   const errEl = document.getElementById('leadModalError');
