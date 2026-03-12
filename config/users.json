@@ -15,10 +15,38 @@
     "passwordHash": "$2b$10$kS0ozA0WpFuPTWzy2gq3devPO16bLoNEnOv2NF8ad.MnN7SnAF9Sa",
     "role": "user",
     "displayName": "Jerry",
-    "companies": [],
-    "dashboards": [
-      "pipeline"
-    ],
+    "companies": ["品辰科技物流"],
+    "dashboards": ["pipeline"],
     "createdAt": "2026-03-10T15:00:02.319Z"
+  },
+  {
+    "id": "u_3",
+    "username": "gary@bbtruck.cc",
+    "passwordHash": "$2b$10$7bLNkAk0bzMed2lpGPIx5OpTjEftNgpH2SQy.2qrL31iyCBnOBjgK",
+    "role": "user",
+    "displayName": "Gary",
+    "companies": ["品辰科技物流"],
+    "dashboards": ["pipeline"],
+    "createdAt": "2026-03-12T06:00:00.000Z"
+  },
+  {
+    "id": "u_4",
+    "username": "jeff@bbtruck.cc",
+    "passwordHash": "$2b$10$7bLNkAk0bzMed2lpGPIx5OpTjEftNgpH2SQy.2qrL31iyCBnOBjgK",
+    "role": "user",
+    "displayName": "Jeff",
+    "companies": ["品辰科技物流"],
+    "dashboards": ["pipeline"],
+    "createdAt": "2026-03-12T06:00:00.000Z"
+  },
+  {
+    "id": "u_5",
+    "username": "sc@bbtruck.io",
+    "passwordHash": "$2b$10$k4HI8j8P.hOopsV6K9z1gOa3B85ejGiMQ1csgO7jCY8Apm7QnZZrS",
+    "role": "admin",
+    "displayName": "SC",
+    "companies": [],
+    "dashboards": [],
+    "createdAt": "2026-03-12T06:00:00.000Z"
   }
 ]
