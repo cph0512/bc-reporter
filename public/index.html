@@ -420,12 +420,9 @@
       <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeLeadDetail()">✕</span>
     </div>
     <div id="ldInfo" style="margin-bottom:18px;"></div>
-    <div style="border-top:1px solid #eee;padding-top:14px;margin-bottom:14px;">
-      <h4 style="font-size:14px;margin:0 0 12px;color:#333;">📝 備註紀錄</h4>
-      <div id="ldNotes"></div>
-    </div>
     <div style="border-top:1px solid #eee;padding-top:14px;">
       <h4 style="font-size:14px;margin:0 0 12px;color:#333;">📋 歷史回顧紀錄</h4>
+      <div id="ldAddReview" style="margin-bottom:12px;"></div>
       <div id="ldActivities"></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
@@ -2637,13 +2634,23 @@ function openLeadDetail(leadId) {
     <div class="ld-info-item"><label>最後更新</label>${lead.updatedAt ? fmtTWDate(lead.updatedAt) : '—'}</div>
   </div>`;
 
-  // Note log (備註紀錄)
-  renderNoteLog(lead);
+  // Add review input
+  const curWeek = getCurrentWeekLabel();
+  document.getElementById('ldAddReview').innerHTML = `<div style="display:flex;gap:6px;">
+    <input type="text" id="ldReviewInput" placeholder="新增本週回顧..." style="flex:1;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" onkeydown="if(event.key==='Enter')addLeadReview()">
+    <button class="btn btn-sm btn-primary" onclick="addLeadReview()">新增</button>
+  </div>`;
 
   // Activities (all weeks, sorted newest first)
+  renderLeadActivities(leadId, activitiesCache);
+
+  document.getElementById('leadDetailModal').style.display = 'flex';
+}
+
+function renderLeadActivities(leadId, activitiesCache) {
   const acts = activitiesCache
     .filter(a => a.leadId === leadId && a.content)
-    .sort((a, b) => (b.weekLabel || '').localeCompare(a.weekLabel || ''));
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 
   const curWeek = getCurrentWeekLabel();
   const actEl = document.getElementById('ldActivities');
@@ -2659,51 +2666,27 @@ function openLeadDetail(leadId) {
       </div>`;
     }).join('');
   }
-
-  document.getElementById('leadDetailModal').style.display = 'flex';
 }
 
-function renderNoteLog(lead) {
-  const notes = lead.noteLog || [];
-  const oldNote = lead.notes ? [{ content: lead.notes, createdAt: lead.createdAt, createdBy: null, isLegacy: true }] : [];
-  const allNotes = [...notes].reverse().concat(oldNote.length && !notes.length ? oldNote : []);
-
-  const notesEl = document.getElementById('ldNotes');
-  let html = `<div style="display:flex;gap:6px;margin-bottom:10px;">
-    <input type="text" id="ldNoteInput" placeholder="新增備註..." style="flex:1;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" onkeydown="if(event.key==='Enter')addLeadNote()">
-    <button class="btn btn-sm btn-primary" onclick="addLeadNote()">新增</button>
-  </div>`;
-
-  if (allNotes.length === 0) {
-    html += '<div class="ld-empty">尚無備註</div>';
-  } else {
-    html += allNotes.map(n => `<div class="ld-note-item">
-      <div class="ld-note-content">${escHtml(n.content)}</div>
-      <div class="ld-note-meta">${n.createdBy ? escHtml(n.createdBy) + ' · ' : ''}${n.createdAt ? fmtTWDate(n.createdAt) : ''}${n.isLegacy ? ' (舊備註)' : ''}</div>
-    </div>`).join('');
-  }
-  notesEl.innerHTML = html;
-}
-
-async function addLeadNote() {
-  const input = document.getElementById('ldNoteInput');
+async function addLeadReview() {
+  const input = document.getElementById('ldReviewInput');
   const content = input.value.trim();
   if (!content) return;
+  const weekLabel = getCurrentWeekLabel();
   try {
-    const res = await fetch(`/api/pipeline/leads/${currentDetailLeadId}/notes`, {
+    const res = await fetch('/api/pipeline/activities', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ leadId: currentDetailLeadId, weekLabel, content }),
     });
     if (!res.ok) throw new Error((await res.json()).error);
-    const updatedLead = await res.json();
+    const newAct = await res.json();
     // Update cache
-    const leadsCache = currentTab === 'my-pipeline' ? myPlLeadsCache : plLeadsCache;
-    const idx = leadsCache.findIndex(l => l.id === currentDetailLeadId);
-    if (idx !== -1) leadsCache[idx] = updatedLead;
+    const activitiesCache = currentTab === 'my-pipeline' ? myPlActivitiesCache : plActivitiesCache;
+    activitiesCache.push(newAct);
     input.value = '';
-    renderNoteLog(updatedLead);
-  } catch (e) { alert('新增備註失敗：' + e.message); }
+    renderLeadActivities(currentDetailLeadId, activitiesCache);
+  } catch (e) { alert('新增回顧失敗：' + e.message); }
 }
 
 function closeLeadDetail() { document.getElementById('leadDetailModal').style.display = 'none'; }
