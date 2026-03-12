@@ -2005,12 +2005,14 @@ function renderMyPipelineTable() {
   });
   // Update notification bell with ALL leads (not filtered)
   updateNotifBell(myPlLeadsCache);
-  // Sort
-  if (myPlSortField) {
+  // Sort — default: newest first by createdAt
+  {
+    const sf = myPlSortField || 'createdAt';
+    const sd = myPlSortField ? myPlSortDir : 'desc';
     leads = [...leads].sort((a, b) => {
-      const va = a[myPlSortField] || '';
-      const vb = b[myPlSortField] || '';
-      return myPlSortDir === 'desc' ? vb.localeCompare(va) : va.localeCompare(vb);
+      const va = a[sf] || '';
+      const vb = b[sf] || '';
+      return sd === 'desc' ? vb.localeCompare(va) : va.localeCompare(vb);
     });
   }
   updateSortArrows('myPl', myPlSortField, myPlSortDir);
@@ -2449,12 +2451,14 @@ function renderPipelineTable() {
 
   // Update notification bell with ALL leads (not filtered)
   updateNotifBell(plLeadsCache);
-  // Sort
-  if (plSortField) {
+  // Sort — default: newest first by createdAt
+  {
+    const sf = plSortField || 'createdAt';
+    const sd = plSortField ? plSortDir : 'desc';
     leads = [...leads].sort((a, b) => {
-      const va = a[plSortField] || '';
-      const vb = b[plSortField] || '';
-      return plSortDir === 'desc' ? vb.localeCompare(va) : va.localeCompare(vb);
+      const va = a[sf] || '';
+      const vb = b[sf] || '';
+      return sd === 'desc' ? vb.localeCompare(va) : va.localeCompare(vb);
     });
   }
   updateSortArrows('pl', plSortField, plSortDir);
