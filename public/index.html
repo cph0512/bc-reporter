@@ -383,11 +383,16 @@
     <div id="leadModalError" style="color:#c62828;font-size:12px;margin-bottom:10px;display:none;"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">公司/客戶名稱 *</label><input type="text" id="leadCompanyName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">統一編號</label><input type="text" id="leadTaxId" maxlength="8" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">公司地址</label><input type="text" id="leadAddress" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">業務人員</label><input type="text" id="leadSalesperson" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">窗口聯絡人</label><input type="text" id="leadContactName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">窗口聯絡人</label><input type="text" id="leadContactName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
       <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">Email</label><input type="email" id="leadContactEmail" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">電話</label><input type="text" id="leadContactPhone" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">狀態</label>
@@ -2558,10 +2563,13 @@ function openCreateLead() {
   editingLeadId = null;
   document.getElementById('leadModalTitle').textContent = L().plAddLead;
   document.getElementById('leadCompanyName').value = '';
+  document.getElementById('leadTaxId').value = '';
+  document.getElementById('leadAddress').value = '';
   // Auto-fill salesperson for personal view
   document.getElementById('leadSalesperson').value = currentTab === 'my-pipeline' ? userDisplayName : '';
   document.getElementById('leadContactName').value = '';
   document.getElementById('leadContactEmail').value = '';
+  document.getElementById('leadContactPhone').value = '';
   document.getElementById('leadStatus').value = '初步接觸';
   document.getElementById('leadCategory').value = '客戶';
   document.getElementById('leadDate').value = new Date().toISOString().slice(0, 10);
@@ -2578,9 +2586,12 @@ function openEditLead(id) {
   editingLeadId = id;
   document.getElementById('leadModalTitle').textContent = L().plEditLead;
   document.getElementById('leadCompanyName').value = lead.companyName;
+  document.getElementById('leadTaxId').value = lead.taxId || '';
+  document.getElementById('leadAddress').value = lead.address || '';
   document.getElementById('leadSalesperson').value = lead.salesperson || '';
   document.getElementById('leadContactName').value = lead.contactName || '';
   document.getElementById('leadContactEmail').value = lead.contactEmail || '';
+  document.getElementById('leadContactPhone').value = lead.contactPhone || '';
   document.getElementById('leadStatus').value = lead.status;
   // Ensure category option exists before setting
   const catSel = document.getElementById('leadCategory');
@@ -2613,8 +2624,11 @@ function openLeadDetail(leadId) {
   // Basic info
   const staleHtml = staleIndicator(lead);
   document.getElementById('ldInfo').innerHTML = `<div class="ld-info-grid">
+    <div class="ld-info-item"><label>統一編號</label>${escHtml(lead.taxId || '—')}</div>
     <div class="ld-info-item"><label>業務人員</label>${escHtml(lead.salesperson || '—')}</div>
-    <div class="ld-info-item"><label>窗口</label>${lead.contactName ? escHtml(lead.contactName) + (lead.contactEmail ? ` (${escHtml(lead.contactEmail)})` : '') : '—'}</div>
+    ${lead.address ? `<div class="ld-info-item" style="grid-column:1/-1;"><label>地址</label>${escHtml(lead.address)}</div>` : ''}
+    <div class="ld-info-item"><label>窗口</label>${lead.contactName ? escHtml(lead.contactName) + (lead.contactPhone ? ` (${escHtml(lead.contactPhone)})` : '') : '—'}</div>
+    <div class="ld-info-item"><label>Email</label>${escHtml(lead.contactEmail || '—')}</div>
     <div class="ld-info-item"><label>狀態</label><div class="stale-wrap"><span class="pl-badge pl-badge-${lead.status}">${lead.status}</span>${staleHtml}</div></div>
     <div class="ld-info-item"><label>類別</label>${escHtml(lead.category || '—')}</div>
     <div class="ld-info-item"><label>商機日期</label>${lead.leadDate ? fmtTWDate(lead.leadDate) : '—'}</div>
@@ -2701,9 +2715,12 @@ async function saveLead() {
   if (!companyName) { errEl.textContent = '公司/客戶名稱為必填'; errEl.style.display = 'block'; return; }
   const body = {
     companyName,
+    taxId: document.getElementById('leadTaxId').value.trim(),
+    address: document.getElementById('leadAddress').value.trim(),
     salesperson: document.getElementById('leadSalesperson').value.trim(),
     contactName: document.getElementById('leadContactName').value.trim(),
     contactEmail: document.getElementById('leadContactEmail').value.trim(),
+    contactPhone: document.getElementById('leadContactPhone').value.trim(),
     status: document.getElementById('leadStatus').value,
     category: document.getElementById('leadCategory').value,
     leadDate: document.getElementById('leadDate').value || null,

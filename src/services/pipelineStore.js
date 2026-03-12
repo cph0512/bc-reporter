@@ -102,7 +102,7 @@ const pipelineStore = {
     return leads.find(l => l.id === id) || null;
   },
 
-  createLead({ companyName, salesperson, status, category, notes, estimatedValue, contactName, contactEmail, leadDate, createdBy }) {
+  createLead({ companyName, taxId, address, salesperson, status, category, notes, estimatedValue, contactName, contactEmail, contactPhone, leadDate, createdBy }) {
     if (!companyName || !companyName.trim()) {
       throw new Error('公司/客戶名稱為必填');
     }
@@ -111,6 +111,8 @@ const pipelineStore = {
     const lead = {
       id: nextLeadId(data.leads),
       companyName: companyName.trim(),
+      taxId: (taxId || '').trim(),
+      address: (address || '').trim(),
       salesperson: (salesperson || '').trim(),
       status: (status || '').trim() || data.statuses[0],
       category: (category || '').trim(),
@@ -118,6 +120,7 @@ const pipelineStore = {
       estimatedValue: estimatedValue != null ? Number(estimatedValue) : null,
       contactName: (contactName || '').trim(),
       contactEmail: (contactEmail || '').trim(),
+      contactPhone: (contactPhone || '').trim(),
       leadDate: leadDate || null,
       createdAt: now,
       updatedAt: now,
@@ -136,6 +139,8 @@ const pipelineStore = {
 
     const lead = data.leads[idx];
     if (fields.companyName !== undefined) lead.companyName = fields.companyName.trim();
+    if (fields.taxId !== undefined) lead.taxId = (fields.taxId || '').trim();
+    if (fields.address !== undefined) lead.address = (fields.address || '').trim();
     if (fields.salesperson !== undefined) lead.salesperson = (fields.salesperson || '').trim();
     const oldStatus = lead.status;
     if (fields.status !== undefined) lead.status = (fields.status || '').trim() || lead.status;
@@ -146,6 +151,7 @@ const pipelineStore = {
     }
     if (fields.contactName !== undefined) lead.contactName = (fields.contactName || '').trim();
     if (fields.contactEmail !== undefined) lead.contactEmail = (fields.contactEmail || '').trim();
+    if (fields.contactPhone !== undefined) lead.contactPhone = (fields.contactPhone || '').trim();
     if (fields.leadDate !== undefined) lead.leadDate = fields.leadDate || null;
     const now = new Date().toISOString();
     lead.updatedAt = now;
