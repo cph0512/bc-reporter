@@ -2911,7 +2911,12 @@ function injectContactsUI(container) {
             <div>點擊上傳或拖曳名片圖片</div>
             <div style="font-size:11px;margin-top:4px;">支援 JPEG、PNG、WebP</div>
           </div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
+            <button class="btn btn-sm" onclick="document.getElementById('ctScanFileInput').click()">📁 選擇檔案</button>
+            <button class="btn btn-sm btn-primary" onclick="document.getElementById('ctCameraInput').click()">📷 拍照掃描</button>
+          </div>
           <input type="file" id="ctScanFileInput" accept="image/*" style="display:none" onchange="handleScanFile(this)">
+          <input type="file" id="ctCameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleScanFile(this)">
           <img id="ctScanPreview" class="ct-scan-preview" style="display:none;">
           <div style="text-align:center;margin-top:8px;">
             <button class="btn btn-primary" id="ctScanBtn" onclick="startScan()" style="display:none;">🔍 開始辨識</button>
