@@ -17,14 +17,14 @@
       "id": "lead_2",
       "companyName": "三代電子",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "持續香港倉儲暫存進出貨，再爭取11月中空運三角的出貨(韓國to香港)",
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
-      "updatedAt": "2025-10-21T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-10-21T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_3",
@@ -56,14 +56,14 @@
       "id": "lead_5",
       "companyName": "三龍",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "朋友介紹的廠商，主要是海運從韓國出口到大陸，每個月固定出貨2~4票，已經先把提供報價參考",
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
-      "updatedAt": "2025-10-21T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-10-21T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_6",
@@ -80,42 +80,42 @@
     },
     {
       "id": "lead_7",
-      "companyName": "百辰",
+      "companyName": "���辰",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "之前配合的廠商，主要是從台灣空運出口到上海，不過價錢很低，要再跟朋友那邊討論",
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
-      "updatedAt": "2025-10-21T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-10-21T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_8",
       "companyName": "永航",
       "salesperson": "Jerry",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "併購",
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
-      "updatedAt": "2025-12-30T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-12-30T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_9",
       "companyName": "廣德",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "此為之前認識的船務，屬於case by case的出貨型態，預計11月底有一批海運貨要從上海進口，先提供報價跟進",
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
-      "updatedAt": "2025-10-21T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-10-21T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_10",
@@ -134,27 +134,27 @@
       "id": "lead_11",
       "companyName": "義隆",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "之前配合的廠商，之前認識的窗口要離職，帶我認識新的小姐，並提供報價參考",
       "estimatedValue": null,
       "createdAt": "2025-10-28T00:00:00.000Z",
-      "updatedAt": "2025-10-28T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-10-28T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_12",
       "companyName": "榮復",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 此為之前認識廠商，主要是從台灣出口到香港以及香港&台灣倉儲作業\n2. 目前窗口是新來的，先提供需求報價，持續追蹤",
       "estimatedValue": null,
       "createdAt": "2025-10-28T00:00:00.000Z",
-      "updatedAt": "2025-12-16T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-12-16T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_13",
@@ -173,14 +173,14 @@
       "id": "lead_14",
       "companyName": "晨昕",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "客戶介紹的廠商，主要空運出口到上海 香港 越南，每週出3~4票，但是價格很低...再詢問看看",
       "estimatedValue": null,
       "createdAt": "2025-10-28T00:00:00.000Z",
-      "updatedAt": "2025-10-28T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-10-28T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_15",
@@ -199,40 +199,40 @@
       "id": "lead_16",
       "companyName": "慶豐富",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 朋友那邊可以調降USD 300，會再更新報價給他們，希望可以爭取試走的機會",
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
-      "updatedAt": "2025-12-09T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-12-09T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_17",
       "companyName": "鉅航",
       "salesperson": "Jerry",
-      "status": "進行中",
+      "status": "擱置",
       "category": "車隊",
       "notes": "車隊",
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
-      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-11-18T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_18",
       "companyName": "今展",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "之前配合的廠商，主要空運出口到上海跟香港，每週出1.2票，每次約50~100公斤。價格也是很低，再請朋友跟航司議價",
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
-      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-11-18T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_19",
@@ -251,40 +251,40 @@
       "id": "lead_20",
       "companyName": "慶豐富",
       "salesperson": "Jerry",
-      "status": "初步接觸",
+      "status": "擱置",
       "category": "客戶",
       "notes": "準客戶",
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
-      "updatedAt": "2025-12-30T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-12-30T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_21",
       "companyName": "藍旅",
       "salesperson": "Jerry",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "終止洽談",
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
-      "updatedAt": "2025-12-23T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-12-23T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_22",
       "companyName": "銀禾",
       "salesperson": "Jerry",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "客戶",
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
-      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-11-18T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_23",
@@ -303,53 +303,53 @@
       "id": "lead_24",
       "companyName": "鴻達",
       "salesperson": "Jerry",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "合作夥伴",
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
-      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-11-18T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_25",
       "companyName": "資策會",
       "salesperson": "Jerry",
-      "status": "初步接觸",
+      "status": "擱置",
       "category": "客戶",
       "notes": "未定",
       "estimatedValue": null,
       "createdAt": "2025-11-18T00:00:00.000Z",
-      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-11-18T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_26",
       "companyName": "勁昇光電",
       "salesperson": "Jeff",
-      "status": "��行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "此為之前配合廠商，有一票機台要出貨到深圳，已提供海運to door報價，跟進中",
       "estimatedValue": null,
       "createdAt": "2025-11-11T00:00:00.000Z",
-      "updatedAt": "2025-11-11T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-11-11T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_27",
       "companyName": "妍婈",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "客戶介紹廠商，主要是做美容保養商品，12月有一票海運櫃子要出口到馬來西亞，先已提供報價參考，不過還有一些台灣端的細節要再確認倉庫是否可操作",
       "estimatedValue": null,
       "createdAt": "2025-11-11T00:00:00.000Z",
-      "updatedAt": "2025-11-11T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-11-11T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_28",
@@ -381,27 +381,27 @@
       "id": "lead_30",
       "companyName": "華星光通",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "預計12月中有機台要從大陸運進來，週五要到工廠察看，並確認規格尺寸後報價",
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
-      "updatedAt": "2025-11-25T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-11-25T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_31",
       "companyName": "昱捷",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 客戶介紹的廠商，是做電子零件\n2. 主要是從台灣空運出口到上海&香港，目前是配合萬達，每週出貨2~3次，但是重量沒有很大\n3. 已提供報價再追蹤",
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
-      "updatedAt": "2025-12-23T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-12-23T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_32",
@@ -420,14 +420,14 @@
       "id": "lead_33",
       "companyName": "廣隆",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "之前認識的船務到新公司，也是在幫客戶安排進出口的航運，也都是配合同行在報價，有給我幾個案子在請我報價參考看看",
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
-      "updatedAt": "2025-11-25T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-11-25T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_34",
@@ -446,14 +446,14 @@
       "id": "lead_35",
       "companyName": "興陸",
       "salesperson": "Jerry",
-      "status": "初步接觸",
+      "status": "擱置",
       "category": "車隊",
       "notes": "車隊",
       "estimatedValue": null,
       "createdAt": "2025-11-25T00:00:00.000Z",
-      "updatedAt": "2025-11-25T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-11-25T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_36",
@@ -472,79 +472,79 @@
       "id": "lead_37",
       "companyName": "海韻電子",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 客戶介紹的廠商，主要是做電源供應���\n2. 所提供的深圳to馬尼拉海運報價偏高，本週會再更詢問價格更新追蹤",
       "estimatedValue": null,
       "createdAt": "2025-12-02T00:00:00.000Z",
-      "updatedAt": "2025-12-02T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-12-02T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_38",
       "companyName": "千瀧興業",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 朋友介紹的廠商，是做紡織布料的進出口貿易\n2. 主要是從越南峴港海運出口到台灣、澳洲、德國\n3. 已將第一版報價提供過去，本週會再追蹤確認",
       "estimatedValue": null,
       "createdAt": "2025-12-02T00:00:00.000Z",
-      "updatedAt": "2025-12-02T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-12-02T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_39",
       "companyName": "DHL",
       "salesperson": "Jerry",
-      "status": "初步接觸",
+      "status": "擱置",
       "category": "客戶",
       "notes": "",
       "estimatedValue": null,
       "createdAt": "2025-12-02T00:00:00.000Z",
-      "updatedAt": "2025-12-02T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-12-02T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_40",
       "companyName": "日翊",
       "salesperson": "Jerry",
-      "status": "初步接觸",
+      "status": "擱置",
       "category": "客戶",
       "notes": "",
       "estimatedValue": null,
       "createdAt": "2025-12-02T00:00:00.000Z",
-      "updatedAt": "2025-12-02T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-12-02T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_41",
       "companyName": "金國光學",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 此為客戶介紹的廠商，主要是做光學鏡頭的產品\n2. 都是走空運出口到泰國、越南、上海、香港，不過大部分是客戶指定為主，偶爾會有一些自有貨就會詢問報價\n3. 預計1月中有一批貨要詢價，到時候會再跟我詢問報價",
       "estimatedValue": null,
       "createdAt": "2025-12-09T00:00:00.000Z",
-      "updatedAt": "2025-12-09T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-12-09T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_42",
       "companyName": "昇岳科技",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 更新報價後價格接近，但有聽說1月份價格還會再下修一些，所以等到1月再看那時候的報價，如果還是有競爭力就有機會合作",
       "estimatedValue": null,
       "createdAt": "2025-12-09T00:00:00.000Z",
-      "updatedAt": "2025-12-23T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-12-23T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_43",
@@ -563,27 +563,27 @@
       "id": "lead_44",
       "companyName": "密望實",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 之前配合過的廠商，主要是台灣出口到上海\n2. 目前是跟鴻霖還有萬達配合，第一次報價偏高，要在重新詢問後持續追蹤",
       "estimatedValue": null,
       "createdAt": "2025-12-16T00:00:00.000Z",
-      "updatedAt": "2025-12-16T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-12-16T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_45",
       "companyName": "日日通",
       "salesperson": "Jerry",
-      "status": "進行中",
+      "status": "擱置",
       "category": "戰略合作夥伴",
       "notes": "戰略合作夥伴",
       "estimatedValue": null,
       "createdAt": "2025-12-16T00:00:00.000Z",
-      "updatedAt": "2025-12-16T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-12-16T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_46",
@@ -602,40 +602,40 @@
       "id": "lead_47",
       "companyName": "金車",
       "salesperson": "Jerry",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "倉儲客戶",
       "estimatedValue": null,
       "createdAt": "2025-12-23T00:00:00.000Z",
-      "updatedAt": "2025-12-30T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2025-12-30T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_48",
       "companyName": "其立",
       "salesperson": "Jeff",
-      "status": "報價",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 客戶介紹廠商，主要台灣空運出口到上海\n2. 已經跟萬達配合多年，所提供的價格跟服務也都很好\n3. 第一版報價高出許多，除非有更優惠的價格吸引力才會考慮合作",
       "estimatedValue": null,
       "createdAt": "2025-12-30T00:00:00.000Z",
-      "updatedAt": "2025-12-30T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-12-30T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_49",
       "companyName": "輔信科技",
       "salesperson": "Jeff",
-      "status": "報價",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 此微電腦周邊設邊大廠，主要是從大陸海空運出口到美國\n2. 這次請我先提供鹽田to洛杉磯的報價\n3. 由於是含有鋰電池產品，要再請航司及船公司確認承攬條件及價格",
       "estimatedValue": null,
       "createdAt": "2025-12-30T00:00:00.000Z",
-      "updatedAt": "2025-12-30T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2025-12-30T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_50",
@@ -654,40 +654,40 @@
       "id": "lead_51",
       "companyName": "港岱",
       "salesperson": "Jeff",
-      "status": "報價",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 所提供的報價還可以，等業務端確認貿易條件後會通知出貨",
       "estimatedValue": null,
       "createdAt": "2025-12-30T00:00:00.000Z",
-      "updatedAt": "2026-01-05T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2026-01-05T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_52",
       "companyName": "佶盟科技",
       "salesperson": "Jeff",
-      "status": "初步接觸",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 客戶介紹廠商，是以空運出口香港線為主\n2. 與目前貨代配合很久，且我提供的報價也偏高\n3. 再更新給主管約訪",
       "estimatedValue": null,
       "createdAt": "2026-01-05T00:00:00.000Z",
-      "updatedAt": "2026-01-05T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2026-01-05T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_53",
       "companyName": "吉裕電子",
       "salesperson": "Jeff",
-      "status": "進行中",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 之前認識的窗口離職，目前為蔡小姐\n2. 主要出貨是空運上海跟香港\n3. 現在還是跟台空在配合，但不是很滿意現在業務的服務\n4. 請我先提供報價參考，價格有跟上再考慮",
       "estimatedValue": null,
       "createdAt": "2026-01-05T00:00:00.000Z",
-      "updatedAt": "2026-01-05T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2026-01-05T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_54",
@@ -719,14 +719,14 @@
       "id": "lead_56",
       "companyName": "嵘華欣",
       "salesperson": "Jerry",
-      "status": "報價",
+      "status": "擱置",
       "category": "客戶",
       "notes": "尚未有合作",
       "estimatedValue": null,
       "createdAt": "2026-01-05T00:00:00.000Z",
-      "updatedAt": "2026-01-05T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2026-01-05T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_57",
@@ -758,40 +758,40 @@
       "id": "lead_59",
       "companyName": "瑞朋科技",
       "salesperson": "Jeff",
-      "status": "初步接觸",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 客戶介紹廠商，主要是協助客戶採購IT以及3C相關國際產品\n2. 沒有固定的航線，就是看客戶此次購買的地區\n3. 下個月有需求空運海運到SFO&OAK，請我先提供報價參考",
       "estimatedValue": null,
       "createdAt": "2026-01-12T00:00:00.000Z",
-      "updatedAt": "2026-01-12T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2026-01-12T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_60",
       "companyName": "亞驪企業",
       "salesperson": "Jeff",
-      "status": "初步接觸",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 客戶介紹廠商，是一間電腦連接器以及無線網路天線製造商\n2. 主要是空運出口到上海&香港(DDU)，每週約2~3票，每次重量50K~200K左右，已經跟萬泰配合超過10年的時間\n3. 對於目前的價格跟服務都還滿意，我所提供的報價也偏貴，要有一段落差才會考慮",
       "estimatedValue": null,
       "createdAt": "2026-01-12T00:00:00.000Z",
-      "updatedAt": "2026-01-12T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2026-01-12T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_61",
       "companyName": "登盛企業",
       "salesperson": "Jeff",
-      "status": "初步接觸",
+      "status": "擱置",
       "category": "客戶",
       "notes": "1. 之前認識的船務小姐剛到職，公司都是從國外進口原料，此次先請我提供LAX空運回台的報價參考",
       "estimatedValue": null,
       "createdAt": "2026-01-12T00:00:00.000Z",
-      "updatedAt": "2026-01-12T00:00:00.000Z",
+      "updatedAt": "2026-03-17T14:52:35.796Z",
       "createdBy": "Jeff",
-      "statusChangedAt": "2026-01-12T00:00:00.000Z"
+      "statusChangedAt": "2026-03-17T14:52:35.796Z"
     },
     {
       "id": "lead_62",
@@ -838,7 +838,7 @@
       "salesperson": "Jeff",
       "status": "初步接觸",
       "category": "客戶",
-      "notes": "1. 客戶介紹廠商，公司是做燈具、燈飾類的產品，總公司位在香港，貨物都是直接從香港出口到德國，但費用是台灣這邊支付\n2. 每個月出貨2~4票，每次重量約100~200KG，先提供HKG-FRA & HKG-DUS的價格，會將報價單傳給總公司，後續追蹤",
+      "notes": "1. 客戶介紹廠商��公司是做燈具、燈飾類的產品，總公司位在香港，貨物都是直接從香港出口到德國，但費用是台灣這邊支付\n2. 每個月出貨2~4票，每次重量約100~200KG，先提供HKG-FRA & HKG-DUS的價格，會將報價單傳給總公司，後續追蹤",
       "estimatedValue": null,
       "createdAt": "2026-01-19T00:00:00.000Z",
       "updatedAt": "2026-01-19T00:00:00.000Z",
@@ -994,7 +994,7 @@
       "salesperson": "Jeff",
       "status": "初步接觸",
       "category": "客戶",
-      "notes": "1. 此為客戶介紹廠商，是一間IC設計公司，是韓國海力士指定貨廠商\n2. 自行付運費的大部分是出到東南亞，不過以小貨居多(50KG左右)\n3. 都是走FEDEX、DHL為主，有比較大的貨量時，才會詢問我們CARGO業者報價\n4. 請我提供新加坡、越南的報價，後續有其他需求會再跟我說",
+      "notes": "1. 此為客��介紹廠商，是一間IC設計公司，是韓國海力士指定貨廠商\n2. 自行付運費的大部分是出到東南亞，不過以小貨居多(50KG左右)\n3. 都是走FEDEX、DHL為主，有比較大的貨量時，才會詢問我們CARGO業者報價\n4. 請我提供新加坡、越南的報價，後續有其他需求會再跟我說",
       "estimatedValue": null,
       "createdAt": "2026-02-02T00:00:00.000Z",
       "updatedAt": "2026-02-02T00:00:00.000Z",
@@ -1226,7 +1226,7 @@
       "id": "act_17",
       "leadId": "lead_21",
       "weekLabel": "114/11/25",
-      "content": "1.目前需求量約50板,每日約200單\n2.總量約500板,有爭取合作,條件為全部過來給予倉租折扣\n3.若有合作後面可以爭取進口以及供應鏈整合的業務",
+      "content": "1.目前需求量約50板,每日約200單\n2.總量約500板,有爭取合作,條件為全部過來給���倉租折扣\n3.若有合作後面可以爭取進口以及供應鏈整合的業務",
       "createdAt": "2025-11-25T00:00:00.000Z",
       "createdBy": "Jerry"
     },

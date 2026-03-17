@@ -151,6 +151,49 @@
   .notif-empty { padding: 24px; text-align: center; color: #999; font-size: 13px; }
   .pl-notes-cell.expanded { white-space: pre-wrap !important; max-height: none !important; overflow: visible !important; text-overflow: unset !important; }
 
+  /* ===== Contacts Module ===== */
+  .contacts-sub-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .contacts-sub-tabs button { padding: 8px 18px; border: 1px solid #d0d0d0; border-radius: 8px; background: #fff; font-size: 13px; cursor: pointer; transition: all .2s; }
+  .contacts-sub-tabs button.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+  .ct-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .ct-stat-card { background: #fff; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); text-align: center; }
+  .ct-stat-card .ct-stat-val { font-size: 24px; font-weight: 700; color: #1a1a2e; }
+  .ct-stat-card .ct-stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+  .ct-toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+  .ct-toolbar input[type="text"] { flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #d0d0d0; border-radius: 8px; font-size: 13px; }
+  .ct-toolbar select { padding: 6px 10px; border: 1px solid #d0d0d0; border-radius: 8px; font-size: 12px; }
+  .ct-card { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: #fff; border-radius: 10px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.05); transition: box-shadow .2s; cursor: pointer; }
+  .ct-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+  .ct-card .ct-avatar { width: 44px; height: 44px; border-radius: 50%; background: #e3f2fd; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: #1565c0; flex-shrink: 0; }
+  .ct-card .ct-info { flex: 1; min-width: 0; }
+  .ct-card .ct-name { font-weight: 600; font-size: 14px; color: #1a1a2e; }
+  .ct-card .ct-company { font-size: 12px; color: #666; margin-top: 2px; }
+  .ct-card .ct-meta { font-size: 11px; color: #999; margin-top: 2px; }
+  .ct-card .ct-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+  .ct-fav { cursor: pointer; font-size: 18px; color: #ccc; transition: color .2s; }
+  .ct-fav.active { color: #f9a825; }
+  .ct-cat-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; color: #fff; white-space: nowrap; }
+  .ct-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin-bottom: 16px; }
+  .ct-detail-item { font-size: 13px; }
+  .ct-detail-item label { display: block; font-size: 11px; color: #888; margin-bottom: 2px; }
+  .ct-detail-item a { color: #1565c0; text-decoration: none; }
+  .ct-confidence { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .ct-confidence.high { background: #e8f5e9; color: #2e7d32; }
+  .ct-confidence.medium { background: #fff3e0; color: #e65100; }
+  .ct-confidence.low { background: #ffebee; color: #c62828; }
+  .ct-scan-zone { border: 2px dashed #d0d0d0; border-radius: 12px; padding: 40px 20px; text-align: center; color: #999; cursor: pointer; transition: all .2s; margin-bottom: 16px; }
+  .ct-scan-zone:hover, .ct-scan-zone.dragover { border-color: #1565c0; color: #1565c0; background: #e3f2fd; }
+  .ct-scan-preview { max-width: 300px; max-height: 200px; border-radius: 8px; margin: 12px auto; display: block; }
+  .ct-scan-result { background: #f8f9fa; border-radius: 10px; padding: 16px; margin-top: 12px; }
+  .ct-form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .ct-form-row > div { flex: 1; }
+  .ct-form-row label { display: block; font-size: 12px; color: #555; margin-bottom: 3px; }
+  .ct-form-row input, .ct-form-row select, .ct-form-row textarea { width: 100%; padding: 7px 10px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
+  .ct-cat-mgmt-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #fff; border-radius: 8px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+  .ct-color-swatch { width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0; }
+  .ct-batch-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .ct-batch-item input[type="checkbox"] { width: 18px; height: 18px; }
+
   /* Dashboard filter bar */
   .dash-filters { display: flex; gap: 12px; padding: 12px 24px; background: #fafafa; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; align-items: flex-end; }
   .dash-filters label { font-size: 12px; color: #666; display: block; margin-bottom: 2px; }
@@ -523,6 +566,144 @@
 </div>
 </div><!-- /reportsView -->
 
+<!-- ===== Contacts Module ===== -->
+<div id="contactsView" style="display:none">
+  <div class="contacts-sub-tabs">
+    <button class="active" onclick="switchContactsSubTab('list')">📇 聯絡人列表</button>
+    <button onclick="switchContactsSubTab('scan')">📷 掃描名片</button>
+    <button onclick="switchContactsSubTab('categories')">🏷️ 分類管理</button>
+  </div>
+
+  <!-- Sub-tab 1: Contact List -->
+  <div id="contactsListTab">
+    <div id="ctStats" class="ct-stats"></div>
+    <div class="ct-toolbar">
+      <input type="text" id="ctSearch" placeholder="搜尋姓名、公司、職稱、Email、電話..." oninput="debounceContactSearch()">
+      <select id="ctFilterCat" onchange="loadContactsList()">
+        <option value="">全部分類</option>
+      </select>
+      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
+        <input type="checkbox" id="ctFilterFav" onchange="loadContactsList()"> ⭐ 最愛
+      </label>
+      <div style="margin-left:auto;display:flex;gap:6px;">
+        <button class="btn btn-sm" onclick="openCreateContact()">+ 新增聯絡人</button>
+        <button class="btn btn-sm" onclick="exportContacts('vcard')">📤 vCard</button>
+        <button class="btn btn-sm" onclick="exportContacts('csv')">📤 CSV</button>
+      </div>
+    </div>
+    <div id="ctList"></div>
+    <div id="ctEmpty" class="ld-empty" style="display:none;">尚無聯絡人</div>
+  </div>
+
+  <!-- Sub-tab 2: Scan -->
+  <div id="contactsScanTab" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <h3 style="font-size:15px;margin:0 0 12px;">📷 掃描名片</h3>
+        <div id="ctScanZone" class="ct-scan-zone" onclick="document.getElementById('ctScanFileInput').click()">
+          <div style="font-size:32px;margin-bottom:8px;">📸</div>
+          <div>點擊上傳或拖曳名片圖片</div>
+          <div style="font-size:11px;margin-top:4px;">支援 JPEG、PNG、WebP</div>
+        </div>
+        <input type="file" id="ctScanFileInput" accept="image/*" style="display:none" onchange="handleScanFile(this)">
+        <img id="ctScanPreview" class="ct-scan-preview" style="display:none;">
+        <div style="text-align:center;margin-top:8px;">
+          <button class="btn btn-primary" id="ctScanBtn" onclick="startScan()" style="display:none;">🔍 開始辨識</button>
+          <div id="ctScanLoading" style="display:none;color:#1565c0;font-size:13px;padding:12px;">AI 辨識中...</div>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-size:15px;margin:0 0 12px;">✏️ 辨識結果 / 手動輸入</h3>
+        <div id="ctScanForm">
+          <div class="ct-form-row">
+            <div><label>全名 *</label><input type="text" id="ctFormName"></div>
+            <div><label>公司</label><input type="text" id="ctFormCompany"></div>
+          </div>
+          <div class="ct-form-row">
+            <div><label>職稱</label><input type="text" id="ctFormTitle"></div>
+            <div><label>部門</label><input type="text" id="ctFormDept"></div>
+          </div>
+          <div class="ct-form-row">
+            <div><label>Email</label><input type="text" id="ctFormEmail" placeholder="多筆用分號分隔"></div>
+            <div><label>電話</label><input type="text" id="ctFormPhone" placeholder="多筆用分號分隔"></div>
+          </div>
+          <div class="ct-form-row">
+            <div><label>地址</label><input type="text" id="ctFormAddress"></div>
+            <div><label>網站</label><input type="text" id="ctFormWebsite"></div>
+          </div>
+          <div class="ct-form-row">
+            <div><label>分類</label><select id="ctFormCategory"></select></div>
+            <div><label>備註</label><input type="text" id="ctFormNotes"></div>
+          </div>
+          <div id="ctScanConfidence" style="margin-bottom:10px;"></div>
+          <div id="ctDupWarning" style="display:none;background:#fff3e0;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:13px;"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button class="btn" onclick="clearScanForm()">清除</button>
+            <button class="btn btn-primary" onclick="saveScanContact()">💾 儲存聯絡人</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <hr style="margin:20px 0;">
+    <h3 style="font-size:15px;margin:0 0 12px;">📦 批量掃描</h3>
+    <div class="ct-scan-zone" onclick="document.getElementById('ctBatchFileInput').click()" style="padding:20px;">
+      <div>點擊上傳多張名片（最多 10 張）</div>
+    </div>
+    <input type="file" id="ctBatchFileInput" accept="image/*" multiple style="display:none" onchange="handleBatchScan(this)">
+    <div id="ctBatchResults"></div>
+  </div>
+
+  <!-- Sub-tab 3: Category Management -->
+  <div id="contactsCategoriesTab" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="font-size:15px;margin:0;">🏷️ 分類管理</h3>
+      <button class="btn btn-sm" onclick="openCreateCategory()">+ 新增分類</button>
+    </div>
+    <div id="ctCategoriesList"></div>
+  </div>
+</div>
+
+<!-- Contact Detail/Edit Modal -->
+<div id="contactModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px;max-width:600px;width:95%;max-height:85vh;overflow-y:auto;position:relative;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="contactModalTitle" style="margin:0;font-size:16px;">聯絡人</h3>
+      <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeContactModal()">✕</span>
+    </div>
+    <div id="contactModalBody"></div>
+  </div>
+</div>
+
+<!-- Category Edit Modal -->
+<div id="catEditModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px;max-width:400px;width:95%;position:relative;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="catEditTitle" style="margin:0;font-size:16px;">分類</h3>
+      <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeCatEditModal()">✕</span>
+    </div>
+    <div class="ct-form-row"><div><label>名稱 *</label><input type="text" id="catEditName"></div></div>
+    <div class="ct-form-row">
+      <div><label>顏色</label><input type="color" id="catEditColor" value="#6b7280" style="width:60px;height:32px;padding:2px;border:1px solid #d0d0d0;border-radius:6px;"></div>
+      <div><label>圖示</label>
+        <select id="catEditIcon" style="width:100%;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+          <option value="briefcase">💼 公事包</option>
+          <option value="truck">🚛 貨車</option>
+          <option value="handshake">🤝 握手</option>
+          <option value="users">👥 人群</option>
+          <option value="tag">🏷️ 標籤</option>
+          <option value="star">⭐ 星號</option>
+          <option value="building">🏢 大樓</option>
+          <option value="globe">🌐 全球</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn" onclick="closeCatEditModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveCategory()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Change Password Modal -->
 <div id="pwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:10px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,0.2);">
@@ -594,6 +775,7 @@ function renderTabs() {
     { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline', userOnly: true },
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
     { id: 'reports', label: l.dReports, perm: 'financial' },
+    { id: 'contacts', label: '名片通訊錄', perm: 'contacts' },
   ];
   const visibleTabs = allTabs.filter(t => {
     if (t.adminOnly && userRole !== 'admin') return false;
@@ -1496,6 +1678,7 @@ function switchTab(tab) {
   document.getElementById('myPipelineView').style.display = 'none';
   document.getElementById('pipelineDashboardView').style.display = 'none';
   document.getElementById('reportsView').style.display = 'none';
+  document.getElementById('contactsView').style.display = 'none';
 
   if (tab === 'dashboard') {
     document.getElementById('dashboardView').style.display = '';
@@ -1514,6 +1697,9 @@ function switchTab(tab) {
     loadPipelineDashboard();
   } else if (tab === 'reports') {
     document.getElementById('reportsView').style.display = '';
+  } else if (tab === 'contacts') {
+    document.getElementById('contactsView').style.display = '';
+    loadContactsModule();
   }
 }
 
@@ -2735,6 +2921,560 @@ async function deleteLead(id, name) {
     loadPipelineDashboard();
   } catch (e) { alert(e.message); }
 }
+
+// ==========================================
+//  Contacts Module (名片通訊錄)
+// ==========================================
+let ctContactsCache = [];
+let ctCategoriesCache = [];
+let ctCurrentSubTab = 'list';
+let ctSearchTimer = null;
+let ctScanImageData = null;
+let ctEditingCatId = null;
+let ctEditingContactId = null;
+
+const ICON_MAP = { briefcase:'💼', truck:'🚛', handshake:'🤝', users:'👥', tag:'🏷️', star:'⭐', building:'🏢', globe:'🌐' };
+
+function switchContactsSubTab(tab) {
+  ctCurrentSubTab = tab;
+  document.querySelectorAll('.contacts-sub-tabs button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.contacts-sub-tabs button').forEach(b => {
+    if ((tab === 'list' && b.textContent.includes('列表')) ||
+        (tab === 'scan' && b.textContent.includes('掃描')) ||
+        (tab === 'categories' && b.textContent.includes('分類'))) b.classList.add('active');
+  });
+  document.getElementById('contactsListTab').style.display = tab === 'list' ? '' : 'none';
+  document.getElementById('contactsScanTab').style.display = tab === 'scan' ? '' : 'none';
+  document.getElementById('contactsCategoriesTab').style.display = tab === 'categories' ? '' : 'none';
+}
+
+async function loadContactsModule() {
+  await loadCategories();
+  await loadContactsList();
+  populateCategoryFilters();
+}
+
+async function loadCategories() {
+  try {
+    const res = await fetch('/api/contacts/categories');
+    if (!res.ok) throw new Error();
+    ctCategoriesCache = await res.json();
+  } catch { ctCategoriesCache = []; }
+}
+
+function populateCategoryFilters() {
+  const filterSel = document.getElementById('ctFilterCat');
+  const cur = filterSel.value;
+  filterSel.innerHTML = '<option value="">全部分類</option>' +
+    ctCategoriesCache.map(c => `<option value="${c.id}"${c.id === cur ? ' selected' : ''}>${escHtml(c.name)}</option>`).join('');
+
+  const formSel = document.getElementById('ctFormCategory');
+  formSel.innerHTML = '<option value="">未分類</option>' +
+    ctCategoriesCache.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join('');
+}
+
+async function loadContactsList() {
+  const params = new URLSearchParams();
+  const search = document.getElementById('ctSearch').value.trim();
+  const catId = document.getElementById('ctFilterCat').value;
+  const favOnly = document.getElementById('ctFilterFav').checked;
+  if (search) params.set('search', search);
+  if (catId) params.set('category_id', catId);
+  if (favOnly) params.set('is_favorite', 'true');
+
+  try {
+    const res = await fetch('/api/contacts?' + params.toString());
+    if (!res.ok) throw new Error();
+    ctContactsCache = await res.json();
+  } catch { ctContactsCache = []; }
+
+  // Stats
+  try {
+    const res = await fetch('/api/contacts/stats');
+    if (res.ok) {
+      const stats = await res.json();
+      document.getElementById('ctStats').innerHTML = `
+        <div class="ct-stat-card"><div class="ct-stat-val">${stats.total}</div><div class="ct-stat-label">聯絡人總數</div></div>
+        <div class="ct-stat-card"><div class="ct-stat-val">${stats.favorites}</div><div class="ct-stat-label">⭐ 最愛</div></div>
+        ${stats.byCategory.map(c => `<div class="ct-stat-card"><div class="ct-stat-val" style="color:${c.color}">${c.count}</div><div class="ct-stat-label">${escHtml(c.name)}</div></div>`).join('')}
+      `;
+    }
+  } catch {}
+
+  renderContactsList();
+}
+
+function renderContactsList() {
+  const list = document.getElementById('ctList');
+  const empty = document.getElementById('ctEmpty');
+  if (!ctContactsCache.length) { list.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  list.innerHTML = ctContactsCache.map(c => {
+    const initials = (c.full_name || '?').slice(0, 1);
+    const cat = ctCategoriesCache.find(cat => cat.id === c.category_id);
+    const catBadge = cat ? `<span class="ct-cat-badge" style="background:${cat.color}">${escHtml(cat.name)}</span>` : '';
+    const email = (c.emails || [])[0]?.value || '';
+    const phone = (c.phones || [])[0]?.value || '';
+    const meta = [c.job_title, email, phone].filter(Boolean).join(' · ');
+    return `<div class="ct-card" onclick="openContactDetail('${c.id}')">
+      <div class="ct-avatar">${escHtml(initials)}</div>
+      <div class="ct-info">
+        <div class="ct-name">${escHtml(c.full_name)} ${catBadge}</div>
+        <div class="ct-company">${escHtml(c.company || '')}</div>
+        <div class="ct-meta">${escHtml(meta)}</div>
+      </div>
+      <div class="ct-actions">
+        <span class="ct-fav ${c.is_favorite ? 'active' : ''}" onclick="event.stopPropagation();toggleCtFav('${c.id}')">★</span>
+        <button class="btn btn-sm" onclick="event.stopPropagation();exportSingleVCard('${c.id}')">📤</button>
+        <button class="btn btn-sm btn-edit" onclick="event.stopPropagation();openEditContact('${c.id}')">編輯</button>
+        <button class="btn btn-sm" style="color:#c62828;" onclick="event.stopPropagation();deleteContactConfirm('${c.id}')">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function debounceContactSearch() {
+  clearTimeout(ctSearchTimer);
+  ctSearchTimer = setTimeout(() => loadContactsList(), 300);
+}
+
+async function toggleCtFav(id) {
+  try {
+    await fetch(`/api/contacts/${id}/favorite`, { method: 'POST' });
+    loadContactsList();
+  } catch {}
+}
+
+async function deleteContactConfirm(id) {
+  if (!confirm('確定要刪除此聯絡人？')) return;
+  try {
+    await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
+    loadContactsList();
+  } catch (e) { alert(e.message); }
+}
+
+function exportSingleVCard(id) {
+  window.open(`/api/contacts/export/vcard?id=${id}`, '_blank');
+}
+
+function exportContacts(format) {
+  window.open(`/api/contacts/export/${format}`, '_blank');
+}
+
+// ===== Contact Detail Modal =====
+function openContactDetail(id) {
+  const c = ctContactsCache.find(x => x.id === id);
+  if (!c) return;
+  const cat = ctCategoriesCache.find(x => x.id === c.category_id);
+  document.getElementById('contactModalTitle').textContent = c.full_name || '聯絡人詳情';
+  const emails = (c.emails || []).map(e => `<a href="mailto:${escHtml(e.value)}">${escHtml(e.value)}</a>${e.label ? ' ('+escHtml(e.label)+')' : ''}`).join('<br>') || '—';
+  const phones = (c.phones || []).map(p => `<a href="tel:${escHtml(p.value)}">${escHtml(p.value)}</a>${p.label ? ' ('+escHtml(p.label)+')' : ''}`).join('<br>') || '—';
+  const confHtml = c.ai_confidence != null ? `<span class="ct-confidence ${c.ai_confidence >= 0.8 ? 'high' : c.ai_confidence >= 0.5 ? 'medium' : 'low'}">${Math.round(c.ai_confidence * 100)}% AI</span>` : '';
+
+  document.getElementById('contactModalBody').innerHTML = `
+    <div class="ct-detail-grid">
+      <div class="ct-detail-item"><label>全名</label>${escHtml(c.full_name || '—')}</div>
+      <div class="ct-detail-item"><label>公司</label>${escHtml(c.company || '—')}</div>
+      <div class="ct-detail-item"><label>職稱</label>${escHtml(c.job_title || '—')}</div>
+      <div class="ct-detail-item"><label>部門</label>${escHtml(c.department || '—')}</div>
+      <div class="ct-detail-item"><label>Email</label>${emails}</div>
+      <div class="ct-detail-item"><label>電話</label>${phones}</div>
+      <div class="ct-detail-item" style="grid-column:1/-1;"><label>地址</label>${escHtml(c.address || '—')}</div>
+      <div class="ct-detail-item"><label>網站</label>${c.website ? `<a href="${escHtml(c.website)}" target="_blank">${escHtml(c.website)}</a>` : '—'}</div>
+      <div class="ct-detail-item"><label>分類</label>${cat ? `<span class="ct-cat-badge" style="background:${cat.color}">${escHtml(cat.name)}</span>` : '未分類'}</div>
+      <div class="ct-detail-item"><label>來源</label>${escHtml(c.source_type || 'manual')} ${confHtml}</div>
+      <div class="ct-detail-item"><label>建立日期</label>${c.created_at ? c.created_at.slice(0, 10) : '—'}</div>
+      ${c.notes ? `<div class="ct-detail-item" style="grid-column:1/-1;"><label>備註</label>${escHtml(c.notes)}</div>` : ''}
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-sm" onclick="exportSingleVCard('${c.id}')">📤 vCard</button>
+      <button class="btn btn-sm btn-edit" onclick="closeContactModal();openEditContact('${c.id}')">✏️ 編輯</button>
+    </div>
+  `;
+  document.getElementById('contactModal').style.display = 'flex';
+}
+
+function closeContactModal() { document.getElementById('contactModal').style.display = 'none'; }
+
+// ===== Create / Edit Contact =====
+function openCreateContact() {
+  ctEditingContactId = null;
+  document.getElementById('contactModalTitle').textContent = '新增聯絡人';
+  renderContactForm({});
+  document.getElementById('contactModal').style.display = 'flex';
+}
+
+function openEditContact(id) {
+  const c = ctContactsCache.find(x => x.id === id);
+  if (!c) return;
+  ctEditingContactId = id;
+  document.getElementById('contactModalTitle').textContent = '編輯聯絡人';
+  renderContactForm(c);
+  document.getElementById('contactModal').style.display = 'flex';
+}
+
+function renderContactForm(c) {
+  const catOptions = '<option value="">未分類</option>' + ctCategoriesCache.map(cat =>
+    `<option value="${cat.id}"${cat.id === c.category_id ? ' selected' : ''}>${escHtml(cat.name)}</option>`
+  ).join('');
+
+  document.getElementById('contactModalBody').innerHTML = `
+    <div class="ct-form-row"><div><label>全名 *</label><input type="text" id="cmFullName" value="${escHtml(c.full_name || '')}"></div><div><label>公司</label><input type="text" id="cmCompany" value="${escHtml(c.company || '')}"></div></div>
+    <div class="ct-form-row"><div><label>職稱</label><input type="text" id="cmTitle" value="${escHtml(c.job_title || '')}"></div><div><label>部門</label><input type="text" id="cmDept" value="${escHtml(c.department || '')}"></div></div>
+    <div class="ct-form-row"><div><label>Email</label><input type="text" id="cmEmail" value="${escHtml((c.emails||[]).map(e=>e.value).join('; '))}" placeholder="多筆用分號分隔"></div><div><label>電話</label><input type="text" id="cmPhone" value="${escHtml((c.phones||[]).map(p=>p.value).join('; '))}" placeholder="多筆用分號分隔"></div></div>
+    <div class="ct-form-row"><div><label>地址</label><input type="text" id="cmAddress" value="${escHtml(c.address || '')}"></div><div><label>網站</label><input type="text" id="cmWebsite" value="${escHtml(c.website || '')}"></div></div>
+    <div class="ct-form-row"><div><label>分類</label><select id="cmCategory">${catOptions}</select></div><div><label>備註</label><input type="text" id="cmNotes" value="${escHtml(c.notes || '')}"></div></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn" onclick="closeContactModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveContactForm()">儲存</button>
+    </div>
+  `;
+}
+
+function parseMulti(val) {
+  return val.split(/[;；]/).map(v => v.trim()).filter(Boolean).map((v, i) => ({ value: v, label: i === 0 ? '主要' : '其他', is_primary: i === 0 }));
+}
+
+async function saveContactForm() {
+  const body = {
+    full_name: document.getElementById('cmFullName').value,
+    company: document.getElementById('cmCompany').value,
+    job_title: document.getElementById('cmTitle').value,
+    department: document.getElementById('cmDept').value,
+    emails: parseMulti(document.getElementById('cmEmail').value),
+    phones: parseMulti(document.getElementById('cmPhone').value),
+    address: document.getElementById('cmAddress').value,
+    website: document.getElementById('cmWebsite').value,
+    category_id: document.getElementById('cmCategory').value || null,
+    notes: document.getElementById('cmNotes').value,
+  };
+  if (!body.full_name.trim()) return alert('全名為必填');
+  try {
+    const url = ctEditingContactId ? `/api/contacts/${ctEditingContactId}` : '/api/contacts';
+    const method = ctEditingContactId ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error((await res.json()).error);
+    closeContactModal();
+    loadContactsList();
+  } catch (e) { alert('儲存失敗：' + e.message); }
+}
+
+// ===== Scan =====
+function handleScanFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    ctScanImageData = { dataUrl: e.target.result, mimeType: file.type };
+    document.getElementById('ctScanPreview').src = e.target.result;
+    document.getElementById('ctScanPreview').style.display = '';
+    document.getElementById('ctScanBtn').style.display = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+// Drag & drop
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('ctScanZone');
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const input = document.getElementById('ctScanFileInput');
+      const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+      handleScanFile(input);
+    }
+  });
+});
+
+async function startScan() {
+  if (!ctScanImageData) return;
+  document.getElementById('ctScanBtn').style.display = 'none';
+  document.getElementById('ctScanLoading').style.display = '';
+  try {
+    const res = await fetch('/api/contacts/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: ctScanImageData.dataUrl, mimeType: ctScanImageData.mimeType }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    const result = await res.json();
+    fillScanForm(result);
+  } catch (e) {
+    alert('掃描失敗：' + e.message);
+    document.getElementById('ctScanBtn').style.display = '';
+  } finally {
+    document.getElementById('ctScanLoading').style.display = 'none';
+  }
+}
+
+function fillScanForm(result) {
+  const c = result.parsed || {};
+  document.getElementById('ctFormName').value = c.full_name || '';
+  document.getElementById('ctFormCompany').value = c.company || '';
+  document.getElementById('ctFormTitle').value = c.job_title || '';
+  document.getElementById('ctFormDept').value = c.department || '';
+  document.getElementById('ctFormEmail').value = (c.emails || []).map(e => e.value).join('; ');
+  document.getElementById('ctFormPhone').value = (c.phones || []).map(p => p.value).join('; ');
+  document.getElementById('ctFormAddress').value = c.address || '';
+  document.getElementById('ctFormWebsite').value = c.website || '';
+  document.getElementById('ctFormNotes').value = result.notes || '';
+
+  // Set category
+  if (result.suggested_category) {
+    const cat = ctCategoriesCache.find(x => x.name === result.suggested_category);
+    if (cat) document.getElementById('ctFormCategory').value = cat.id;
+  }
+
+  // Confidence
+  const conf = result.confidence || 0;
+  const cls = conf >= 0.8 ? 'high' : conf >= 0.5 ? 'medium' : 'low';
+  document.getElementById('ctScanConfidence').innerHTML = `<span class="ct-confidence ${cls}">AI 信心值：${Math.round(conf * 100)}%</span>`;
+
+  // Check duplicates
+  checkScanDuplicates(c);
+}
+
+async function checkScanDuplicates(contact) {
+  const warn = document.getElementById('ctDupWarning');
+  try {
+    const res = await fetch('/api/contacts/check-duplicates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contacts: [contact] }),
+    });
+    if (!res.ok) return;
+    const results = await res.json();
+    const dups = results[0]?.duplicates || [];
+    if (dups.length > 0) {
+      warn.style.display = '';
+      warn.innerHTML = `⚠️ 偵測到 ${dups.length} 筆可能重複的聯絡人：<br>` +
+        dups.map(d => `<div style="margin-top:4px;">• <strong>${escHtml(d.contact.full_name)}</strong>（${escHtml(d.reasons.join(', '))}）<button class="btn btn-sm" style="margin-left:8px;" onclick="ctOverwriteContact('${d.contact.id}')">覆寫</button></div>`).join('');
+    } else {
+      warn.style.display = 'none';
+    }
+  } catch { warn.style.display = 'none'; }
+}
+
+let ctOverwriteId = null;
+function ctOverwriteContact(id) {
+  ctOverwriteId = id;
+  document.getElementById('ctDupWarning').innerHTML = `✅ 將覆寫現有聯絡人，點擊「儲存聯絡人」確認。`;
+}
+
+async function saveScanContact() {
+  const body = {
+    full_name: document.getElementById('ctFormName').value,
+    company: document.getElementById('ctFormCompany').value,
+    job_title: document.getElementById('ctFormTitle').value,
+    department: document.getElementById('ctFormDept').value,
+    emails: parseMulti(document.getElementById('ctFormEmail').value),
+    phones: parseMulti(document.getElementById('ctFormPhone').value),
+    address: document.getElementById('ctFormAddress').value,
+    website: document.getElementById('ctFormWebsite').value,
+    category_id: document.getElementById('ctFormCategory').value || null,
+    notes: document.getElementById('ctFormNotes').value,
+    source_type: ctScanImageData ? 'scan' : 'manual',
+  };
+  if (ctOverwriteId) body.overwrite_id = ctOverwriteId;
+  if (!body.full_name.trim()) return alert('全名為必填');
+  try {
+    const res = await fetch('/api/contacts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    alert('✅ 聯絡人已儲存');
+    clearScanForm();
+    ctOverwriteId = null;
+    switchContactsSubTab('list');
+    loadContactsList();
+  } catch (e) { alert('儲存失敗：' + e.message); }
+}
+
+function clearScanForm() {
+  ['ctFormName','ctFormCompany','ctFormTitle','ctFormDept','ctFormEmail','ctFormPhone','ctFormAddress','ctFormWebsite','ctFormNotes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('ctFormCategory').value = '';
+  document.getElementById('ctScanPreview').style.display = 'none';
+  document.getElementById('ctScanBtn').style.display = 'none';
+  document.getElementById('ctScanConfidence').innerHTML = '';
+  document.getElementById('ctDupWarning').style.display = 'none';
+  document.getElementById('ctScanFileInput').value = '';
+  ctScanImageData = null;
+  ctOverwriteId = null;
+}
+
+// Batch scan
+async function handleBatchScan(input) {
+  const files = Array.from(input.files).slice(0, 10);
+  if (!files.length) return;
+  const resultsDiv = document.getElementById('ctBatchResults');
+  resultsDiv.innerHTML = `<div style="color:#1565c0;padding:12px;">AI 正在辨識 ${files.length} 張名片...</div>`;
+
+  const images = [];
+  for (const file of files) {
+    const dataUrl = await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
+    images.push({ image: dataUrl, mimeType: file.type, fileName: file.name });
+  }
+
+  try {
+    const res = await fetch('/api/contacts/scan-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ images }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    const data = await res.json();
+    renderBatchResults(data.contacts);
+  } catch (e) {
+    resultsDiv.innerHTML = `<div style="color:#c62828;padding:12px;">批量掃描失敗：${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderBatchResults(contacts) {
+  const div = document.getElementById('ctBatchResults');
+  if (!contacts.length) { div.innerHTML = '<div class="ld-empty">未辨識到名片</div>'; return; }
+  div.innerHTML = `<div style="margin-bottom:8px;font-size:13px;">辨識到 ${contacts.filter(c=>c.success).length}/${contacts.length} 張名片</div>` +
+    contacts.map((c, i) => {
+      if (!c.success) return `<div class="ct-batch-item" style="background:#ffebee;"><span>❌ ${escHtml(c.fileName)}: ${escHtml(c.error)}</span></div>`;
+      const p = c.parsed || {};
+      const conf = c.confidence || 0;
+      const cls = conf >= 0.8 ? 'high' : conf >= 0.5 ? 'medium' : 'low';
+      return `<div class="ct-batch-item">
+        <input type="checkbox" checked data-batch-idx="${i}">
+        <div style="flex:1;">
+          <strong>${escHtml(p.full_name || '未知')}</strong> — ${escHtml(p.company || '')} ${escHtml(p.job_title || '')}
+          <span class="ct-confidence ${cls}">${Math.round(conf*100)}%</span>
+        </div>
+      </div>`;
+    }).join('') +
+    `<div style="text-align:right;margin-top:10px;">
+      <button class="btn btn-primary" onclick="saveBatchContacts()">💾 儲存已勾選</button>
+    </div>`;
+  // Store for saving
+  window._batchScanResults = contacts;
+}
+
+async function saveBatchContacts() {
+  const results = window._batchScanResults || [];
+  const checkboxes = document.querySelectorAll('#ctBatchResults input[type="checkbox"]:checked');
+  let saved = 0;
+  for (const cb of checkboxes) {
+    const idx = parseInt(cb.dataset.batchIdx);
+    const r = results[idx];
+    if (!r || !r.success) continue;
+    const p = r.parsed || {};
+    try {
+      await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: p.full_name || '',
+          company: p.company || '',
+          job_title: p.job_title || '',
+          department: p.department || '',
+          emails: p.emails || [],
+          phones: p.phones || [],
+          address: p.address || '',
+          website: p.website || '',
+          notes: r.notes || '',
+          source_type: 'scan',
+          ai_confidence: r.confidence,
+          ai_suggested_category: r.suggested_category,
+        }),
+      });
+      saved++;
+    } catch {}
+  }
+  alert(`✅ 已儲存 ${saved} 筆聯絡人`);
+  document.getElementById('ctBatchResults').innerHTML = '';
+  switchContactsSubTab('list');
+  loadContactsList();
+}
+
+// ===== Category Management =====
+function renderCategoriesList() {
+  const div = document.getElementById('ctCategoriesList');
+  if (!ctCategoriesCache.length) { div.innerHTML = '<div class="ld-empty">尚無分類</div>'; return; }
+  div.innerHTML = ctCategoriesCache.map(c =>
+    `<div class="ct-cat-mgmt-item">
+      <div class="ct-color-swatch" style="background:${c.color}"></div>
+      <span style="font-size:16px;">${ICON_MAP[c.icon] || '🏷️'}</span>
+      <strong style="flex:1;">${escHtml(c.name)}</strong>
+      <button class="btn btn-sm btn-edit" onclick="openEditCategory('${c.id}')">編輯</button>
+      <button class="btn btn-sm" style="color:#c62828;" onclick="deleteCategoryConfirm('${c.id}')">刪除</button>
+    </div>`
+  ).join('');
+}
+
+function openCreateCategory() {
+  ctEditingCatId = null;
+  document.getElementById('catEditTitle').textContent = '新增分類';
+  document.getElementById('catEditName').value = '';
+  document.getElementById('catEditColor').value = '#6b7280';
+  document.getElementById('catEditIcon').value = 'tag';
+  document.getElementById('catEditModal').style.display = 'flex';
+}
+
+function openEditCategory(id) {
+  const cat = ctCategoriesCache.find(c => c.id === id);
+  if (!cat) return;
+  ctEditingCatId = id;
+  document.getElementById('catEditTitle').textContent = '編輯分類';
+  document.getElementById('catEditName').value = cat.name;
+  document.getElementById('catEditColor').value = cat.color || '#6b7280';
+  document.getElementById('catEditIcon').value = cat.icon || 'tag';
+  document.getElementById('catEditModal').style.display = 'flex';
+}
+
+function closeCatEditModal() { document.getElementById('catEditModal').style.display = 'none'; }
+
+async function saveCategory() {
+  const body = {
+    name: document.getElementById('catEditName').value,
+    color: document.getElementById('catEditColor').value,
+    icon: document.getElementById('catEditIcon').value,
+  };
+  if (!body.name.trim()) return alert('名稱為必填');
+  try {
+    const url = ctEditingCatId ? `/api/contacts/categories/${ctEditingCatId}` : '/api/contacts/categories';
+    const method = ctEditingCatId ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error((await res.json()).error);
+    closeCatEditModal();
+    await loadCategories();
+    renderCategoriesList();
+    populateCategoryFilters();
+  } catch (e) { alert('儲存失敗：' + e.message); }
+}
+
+async function deleteCategoryConfirm(id) {
+  if (!confirm('確定要刪除此分類？')) return;
+  try {
+    await fetch(`/api/contacts/categories/${id}`, { method: 'DELETE' });
+    await loadCategories();
+    renderCategoriesList();
+    populateCategoryFilters();
+  } catch (e) { alert(e.message); }
+}
+
+// Override switchContactsSubTab to load data when switching
+const _origSwitchSubTab = switchContactsSubTab;
+switchContactsSubTab = function(tab) {
+  _origSwitchSubTab(tab);
+  if (tab === 'categories') renderCategoriesList();
+};
 
 // Init
 initDates();

@@ -19,6 +19,7 @@ const PROD_URL = process.env.PROD_URL || 'https://reports.velopulse.io';
 const SYNC_SECRET = process.env.SYNC_SECRET || 'bc-sync-default-key';
 const USERS_FILE = path.join(__dirname, '..', 'config', 'users.json');
 const PIPELINE_FILE = path.join(__dirname, '..', 'config', 'pipeline.json');
+const CONTACTS_FILE = path.join(__dirname, '..', 'config', 'contacts.json');
 
 function request(url, options = {}) {
   return new Promise((resolve, reject) => {
@@ -54,6 +55,12 @@ async function main() {
   // Save pipeline
   fs.writeFileSync(PIPELINE_FILE, JSON.stringify(data.pipeline, null, 2), 'utf8');
   console.log(`✅ ${data.pipeline.leads?.length || 0} leads, ${data.pipeline.activities?.length || 0} activities`);
+
+  // Save contacts
+  if (data.contacts) {
+    fs.writeFileSync(CONTACTS_FILE, JSON.stringify(data.contacts, null, 2), 'utf8');
+    console.log(`✅ ${data.contacts.contacts?.length || 0} contacts, ${data.contacts.categories?.length || 0} categories`);
+  }
 
   console.log('\n🎉 Production data synced to config/');
 }

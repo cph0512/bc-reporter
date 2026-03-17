@@ -19,13 +19,15 @@ const { requireAuth, requireAdmin } = require('./middleware/auth');
 const companyAccess = require('./middleware/companyAccess');
 const companyStore = require('./services/companyStore');
 const pipelineStore = require('./services/pipelineStore');
+const contactStore = require('./services/contactStore');
+const contactRoutes = require('./routes/contacts');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ===== Middleware =====
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'bc-reporter-default-secret',
   resave: false,
@@ -89,6 +91,7 @@ app.get('/api/sync/export', (req, res) => {
   res.json({
     users: userStore.getAllRaw(),
     pipeline: pipelineStore.getRawData(),
+    contacts: contactStore.getRawData(),
   });
 });
 
@@ -107,6 +110,7 @@ app.get('/api/companies', requireAuth, (req, res) => {
 });
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/api/pipeline', requireAuth, pipelineRoutes);
+app.use('/api/contacts', requireAuth, contactRoutes);
 app.use('/api', requireAuth, companyAccess, createReportRoutes(reportEngine));
 app.use('/docs', requireAuth, docsRoutes);
 
