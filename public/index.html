@@ -297,6 +297,11 @@
 
 <!-- My Pipeline (Personal View) -->
 <div id="myPipelineView" style="display:none">
+  <div class="contacts-sub-tabs" style="padding:12px 24px 0;">
+    <button class="active" onclick="switchPlSubView('my','leads')">📊 我的商機</button>
+    <button onclick="switchPlSubView('my','contacts')">📇 名片通訊錄</button>
+  </div>
+  <div id="myPlLeadsSubView">
   <div class="dashboard-content" id="myPlDashContent">
     <div class="loading">載入中...</div>
   </div>
@@ -346,9 +351,16 @@
       </div>
     </div>
   </div>
+  </div><!-- /myPlLeadsSubView -->
+  <div id="myPlContactsSubView" style="display:none;padding:12px 24px;"></div>
 </div>
 
 <div id="pipelineDashboardView" style="display:none">
+  <div class="contacts-sub-tabs" style="padding:12px 24px 0;">
+    <button class="active" onclick="switchPlSubView('admin','leads')">📊 業務管線</button>
+    <button onclick="switchPlSubView('admin','contacts')">📇 名片通訊錄</button>
+  </div>
+  <div id="adminPlLeadsSubView">
   <div class="dash-filters">
     <div>
       <label>業務人員</label>
@@ -418,6 +430,8 @@
       </div>
     </div>
   </div>
+  </div><!-- /adminPlLeadsSubView -->
+  <div id="adminPlContactsSubView" style="display:none;padding:12px 24px;"></div>
 </div>
 
 <!-- Lead Modal -->
@@ -567,101 +581,7 @@
 </div><!-- /reportsView -->
 
 <!-- ===== Contacts Module ===== -->
-<div id="contactsView" style="display:none">
-  <div class="contacts-sub-tabs">
-    <button class="active" onclick="switchContactsSubTab('list')">📇 聯絡人列表</button>
-    <button onclick="switchContactsSubTab('scan')">📷 掃描名片</button>
-    <button onclick="switchContactsSubTab('categories')">🏷️ 分類管理</button>
-  </div>
-
-  <!-- Sub-tab 1: Contact List -->
-  <div id="contactsListTab">
-    <div id="ctStats" class="ct-stats"></div>
-    <div class="ct-toolbar">
-      <input type="text" id="ctSearch" placeholder="搜尋姓名、公司、職稱、Email、電話..." oninput="debounceContactSearch()">
-      <select id="ctFilterCat" onchange="loadContactsList()">
-        <option value="">全部分類</option>
-      </select>
-      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
-        <input type="checkbox" id="ctFilterFav" onchange="loadContactsList()"> ⭐ 最愛
-      </label>
-      <div style="margin-left:auto;display:flex;gap:6px;">
-        <button class="btn btn-sm" onclick="openCreateContact()">+ 新增聯絡人</button>
-        <button class="btn btn-sm" onclick="exportContacts('vcard')">📤 vCard</button>
-        <button class="btn btn-sm" onclick="exportContacts('csv')">📤 CSV</button>
-      </div>
-    </div>
-    <div id="ctList"></div>
-    <div id="ctEmpty" class="ld-empty" style="display:none;">尚無聯絡人</div>
-  </div>
-
-  <!-- Sub-tab 2: Scan -->
-  <div id="contactsScanTab" style="display:none">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-      <div>
-        <h3 style="font-size:15px;margin:0 0 12px;">📷 掃描名片</h3>
-        <div id="ctScanZone" class="ct-scan-zone" onclick="document.getElementById('ctScanFileInput').click()">
-          <div style="font-size:32px;margin-bottom:8px;">📸</div>
-          <div>點擊上傳或拖曳名片圖片</div>
-          <div style="font-size:11px;margin-top:4px;">支援 JPEG、PNG、WebP</div>
-        </div>
-        <input type="file" id="ctScanFileInput" accept="image/*" style="display:none" onchange="handleScanFile(this)">
-        <img id="ctScanPreview" class="ct-scan-preview" style="display:none;">
-        <div style="text-align:center;margin-top:8px;">
-          <button class="btn btn-primary" id="ctScanBtn" onclick="startScan()" style="display:none;">🔍 開始辨識</button>
-          <div id="ctScanLoading" style="display:none;color:#1565c0;font-size:13px;padding:12px;">AI 辨識中...</div>
-        </div>
-      </div>
-      <div>
-        <h3 style="font-size:15px;margin:0 0 12px;">✏️ 辨識結果 / 手動輸入</h3>
-        <div id="ctScanForm">
-          <div class="ct-form-row">
-            <div><label>全名 *</label><input type="text" id="ctFormName"></div>
-            <div><label>公司</label><input type="text" id="ctFormCompany"></div>
-          </div>
-          <div class="ct-form-row">
-            <div><label>職稱</label><input type="text" id="ctFormTitle"></div>
-            <div><label>部門</label><input type="text" id="ctFormDept"></div>
-          </div>
-          <div class="ct-form-row">
-            <div><label>Email</label><input type="text" id="ctFormEmail" placeholder="多筆用分號分隔"></div>
-            <div><label>電話</label><input type="text" id="ctFormPhone" placeholder="多筆用分號分隔"></div>
-          </div>
-          <div class="ct-form-row">
-            <div><label>地址</label><input type="text" id="ctFormAddress"></div>
-            <div><label>網站</label><input type="text" id="ctFormWebsite"></div>
-          </div>
-          <div class="ct-form-row">
-            <div><label>分類</label><select id="ctFormCategory"></select></div>
-            <div><label>備註</label><input type="text" id="ctFormNotes"></div>
-          </div>
-          <div id="ctScanConfidence" style="margin-bottom:10px;"></div>
-          <div id="ctDupWarning" style="display:none;background:#fff3e0;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:13px;"></div>
-          <div style="display:flex;gap:8px;justify-content:flex-end;">
-            <button class="btn" onclick="clearScanForm()">清除</button>
-            <button class="btn btn-primary" onclick="saveScanContact()">💾 儲存聯絡人</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <hr style="margin:20px 0;">
-    <h3 style="font-size:15px;margin:0 0 12px;">📦 批量掃描</h3>
-    <div class="ct-scan-zone" onclick="document.getElementById('ctBatchFileInput').click()" style="padding:20px;">
-      <div>點擊上傳多張名片（最多 10 張）</div>
-    </div>
-    <input type="file" id="ctBatchFileInput" accept="image/*" multiple style="display:none" onchange="handleBatchScan(this)">
-    <div id="ctBatchResults"></div>
-  </div>
-
-  <!-- Sub-tab 3: Category Management -->
-  <div id="contactsCategoriesTab" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h3 style="font-size:15px;margin:0;">🏷️ 分類管理</h3>
-      <button class="btn btn-sm" onclick="openCreateCategory()">+ 新增分類</button>
-    </div>
-    <div id="ctCategoriesList"></div>
-  </div>
-</div>
+<!-- contactsView removed — now embedded inside pipeline views -->
 
 <!-- Contact Detail/Edit Modal -->
 <div id="contactModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center;">
@@ -775,7 +695,6 @@ function renderTabs() {
     { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline', userOnly: true },
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
     { id: 'reports', label: l.dReports, perm: 'financial' },
-    { id: 'contacts', label: '名片通訊錄', perm: 'contacts' },
   ];
   const visibleTabs = allTabs.filter(t => {
     if (t.adminOnly && userRole !== 'admin') return false;
@@ -1678,7 +1597,6 @@ function switchTab(tab) {
   document.getElementById('myPipelineView').style.display = 'none';
   document.getElementById('pipelineDashboardView').style.display = 'none';
   document.getElementById('reportsView').style.display = 'none';
-  document.getElementById('contactsView').style.display = 'none';
 
   if (tab === 'dashboard') {
     document.getElementById('dashboardView').style.display = '';
@@ -1697,9 +1615,6 @@ function switchTab(tab) {
     loadPipelineDashboard();
   } else if (tab === 'reports') {
     document.getElementById('reportsView').style.display = '';
-  } else if (tab === 'contacts') {
-    document.getElementById('contactsView').style.display = '';
-    loadContactsModule();
   }
 }
 
@@ -2932,20 +2847,143 @@ let ctSearchTimer = null;
 let ctScanImageData = null;
 let ctEditingCatId = null;
 let ctEditingContactId = null;
+let ctActiveContainer = null; // which container holds the contacts UI
 
 const ICON_MAP = { briefcase:'💼', truck:'🚛', handshake:'🤝', users:'👥', tag:'🏷️', star:'⭐', building:'🏢', globe:'🌐' };
 
+// Switch between leads and contacts within pipeline views
+function switchPlSubView(view, sub) {
+  const prefix = view === 'my' ? 'myPl' : 'adminPl';
+  const parent = view === 'my' ? document.getElementById('myPipelineView') : document.getElementById('pipelineDashboardView');
+  const leadsDiv = document.getElementById(prefix + 'LeadsSubView');
+  const contactsDiv = document.getElementById(prefix + 'ContactsSubView');
+  // Update sub-tab buttons
+  parent.querySelectorAll('.contacts-sub-tabs button').forEach(b => b.classList.remove('active'));
+  parent.querySelectorAll('.contacts-sub-tabs button').forEach(b => {
+    if ((sub === 'leads' && (b.textContent.includes('商機') || b.textContent.includes('管線'))) ||
+        (sub === 'contacts' && b.textContent.includes('通訊錄'))) b.classList.add('active');
+  });
+  if (sub === 'leads') {
+    leadsDiv.style.display = '';
+    contactsDiv.style.display = 'none';
+  } else {
+    leadsDiv.style.display = 'none';
+    contactsDiv.style.display = '';
+    ctActiveContainer = contactsDiv;
+    injectContactsUI(contactsDiv);
+    loadContactsModule();
+  }
+}
+
+function injectContactsUI(container) {
+  // Only inject once
+  if (container.dataset.injected) return;
+  container.dataset.injected = '1';
+  container.innerHTML = `
+    <div class="contacts-sub-tabs" style="margin-bottom:12px;">
+      <button class="active" onclick="switchContactsSubTab('list')">📇 聯絡人列表</button>
+      <button onclick="switchContactsSubTab('scan')">📷 掃描名片</button>
+      <button onclick="switchContactsSubTab('categories')">🏷️ 分類管理</button>
+    </div>
+    <div id="contactsListTab">
+      <div id="ctStats" class="ct-stats"></div>
+      <div class="ct-toolbar">
+        <input type="text" id="ctSearch" placeholder="搜尋姓名、公司、職稱、Email、電話..." oninput="debounceContactSearch()">
+        <select id="ctFilterCat" onchange="loadContactsList()"><option value="">全部分類</option></select>
+        <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="checkbox" id="ctFilterFav" onchange="loadContactsList()"> ⭐ 最愛
+        </label>
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <button class="btn btn-sm" onclick="openCreateContact()">+ 新增聯絡人</button>
+          <button class="btn btn-sm" onclick="exportContacts('vcard')">📤 vCard</button>
+          <button class="btn btn-sm" onclick="exportContacts('csv')">📤 CSV</button>
+        </div>
+      </div>
+      <div id="ctList"></div>
+      <div id="ctEmpty" class="ld-empty" style="display:none;">尚無聯絡人</div>
+    </div>
+    <div id="contactsScanTab" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <h3 style="font-size:15px;margin:0 0 12px;">📷 掃描名片</h3>
+          <div id="ctScanZone" class="ct-scan-zone" onclick="document.getElementById('ctScanFileInput').click()">
+            <div style="font-size:32px;margin-bottom:8px;">📸</div>
+            <div>點擊上傳或拖曳名片圖片</div>
+            <div style="font-size:11px;margin-top:4px;">支援 JPEG、PNG、WebP</div>
+          </div>
+          <input type="file" id="ctScanFileInput" accept="image/*" style="display:none" onchange="handleScanFile(this)">
+          <img id="ctScanPreview" class="ct-scan-preview" style="display:none;">
+          <div style="text-align:center;margin-top:8px;">
+            <button class="btn btn-primary" id="ctScanBtn" onclick="startScan()" style="display:none;">🔍 開始辨識</button>
+            <div id="ctScanLoading" style="display:none;color:#1565c0;font-size:13px;padding:12px;">AI 辨識中...</div>
+          </div>
+        </div>
+        <div>
+          <h3 style="font-size:15px;margin:0 0 12px;">✏️ 辨識結果 / 手動輸入</h3>
+          <div id="ctScanForm">
+            <div class="ct-form-row"><div><label>全名 *</label><input type="text" id="ctFormName"></div><div><label>公司</label><input type="text" id="ctFormCompany"></div></div>
+            <div class="ct-form-row"><div><label>職稱</label><input type="text" id="ctFormTitle"></div><div><label>部門</label><input type="text" id="ctFormDept"></div></div>
+            <div class="ct-form-row"><div><label>Email</label><input type="text" id="ctFormEmail" placeholder="多筆用分號分隔"></div><div><label>電話</label><input type="text" id="ctFormPhone" placeholder="多筆用分號分隔"></div></div>
+            <div class="ct-form-row"><div><label>地址</label><input type="text" id="ctFormAddress"></div><div><label>網站</label><input type="text" id="ctFormWebsite"></div></div>
+            <div class="ct-form-row"><div><label>分類</label><select id="ctFormCategory"></select></div><div><label>備註</label><input type="text" id="ctFormNotes"></div></div>
+            <div id="ctScanConfidence" style="margin-bottom:10px;"></div>
+            <div id="ctDupWarning" style="display:none;background:#fff3e0;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:13px;"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <button class="btn" onclick="clearScanForm()">清除</button>
+              <button class="btn btn-primary" onclick="saveScanContact()">💾 儲存聯絡人</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr style="margin:20px 0;">
+      <h3 style="font-size:15px;margin:0 0 12px;">📦 批量掃描</h3>
+      <div class="ct-scan-zone" onclick="document.getElementById('ctBatchFileInput').click()" style="padding:20px;">
+        <div>點擊上傳多張名片（最多 10 張）</div>
+      </div>
+      <input type="file" id="ctBatchFileInput" accept="image/*" multiple style="display:none" onchange="handleBatchScan(this)">
+      <div id="ctBatchResults"></div>
+    </div>
+    <div id="contactsCategoriesTab" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="font-size:15px;margin:0;">🏷️ 分類管理</h3>
+        <button class="btn btn-sm" onclick="openCreateCategory()">+ 新增分類</button>
+      </div>
+      <div id="ctCategoriesList"></div>
+    </div>
+  `;
+  // Setup drag and drop
+  const zone = container.querySelector('#ctScanZone');
+  if (zone) {
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        const input = container.querySelector('#ctScanFileInput');
+        const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+        handleScanFile(input);
+      }
+    });
+  }
+}
+
 function switchContactsSubTab(tab) {
   ctCurrentSubTab = tab;
-  document.querySelectorAll('.contacts-sub-tabs button').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.contacts-sub-tabs button').forEach(b => {
+  if (!ctActiveContainer) return;
+  ctActiveContainer.querySelectorAll('.contacts-sub-tabs button').forEach(b => b.classList.remove('active'));
+  ctActiveContainer.querySelectorAll('.contacts-sub-tabs button').forEach(b => {
     if ((tab === 'list' && b.textContent.includes('列表')) ||
         (tab === 'scan' && b.textContent.includes('掃描')) ||
         (tab === 'categories' && b.textContent.includes('分類'))) b.classList.add('active');
   });
-  document.getElementById('contactsListTab').style.display = tab === 'list' ? '' : 'none';
-  document.getElementById('contactsScanTab').style.display = tab === 'scan' ? '' : 'none';
-  document.getElementById('contactsCategoriesTab').style.display = tab === 'categories' ? '' : 'none';
+  const listTab = ctActiveContainer.querySelector('#contactsListTab');
+  const scanTab = ctActiveContainer.querySelector('#contactsScanTab');
+  const catTab = ctActiveContainer.querySelector('#contactsCategoriesTab');
+  if (listTab) listTab.style.display = tab === 'list' ? '' : 'none';
+  if (scanTab) scanTab.style.display = tab === 'scan' ? '' : 'none';
+  if (catTab) catTab.style.display = tab === 'categories' ? '' : 'none';
+  if (tab === 'categories') renderCategoriesList();
 }
 
 async function loadContactsModule() {
@@ -3173,23 +3211,6 @@ function handleScanFile(input) {
   };
   reader.readAsDataURL(file);
 }
-
-// Drag & drop
-document.addEventListener('DOMContentLoaded', () => {
-  const zone = document.getElementById('ctScanZone');
-  if (!zone) return;
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault(); zone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      const input = document.getElementById('ctScanFileInput');
-      const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
-      handleScanFile(input);
-    }
-  });
-});
 
 async function startScan() {
   if (!ctScanImageData) return;
@@ -3468,13 +3489,6 @@ async function deleteCategoryConfirm(id) {
     populateCategoryFilters();
   } catch (e) { alert(e.message); }
 }
-
-// Override switchContactsSubTab to load data when switching
-const _origSwitchSubTab = switchContactsSubTab;
-switchContactsSubTab = function(tab) {
-  _origSwitchSubTab(tab);
-  if (tab === 'categories') renderCategoriesList();
-};
 
 // Init
 initDates();
