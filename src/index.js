@@ -18,6 +18,7 @@ const pipelineRoutes = require('./routes/pipeline');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 const companyAccess = require('./middleware/companyAccess');
 const companyStore = require('./services/companyStore');
+const pipelineStore = require('./services/pipelineStore');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -78,6 +79,18 @@ if (process.env.LINE_CHANNEL_SECRET && process.env.LINE_CHANNEL_ACCESS_TOKEN) {
 
   console.log('LINE Bot webhook enabled at /webhook/line');
 }
+
+// ===== Sync Export (token-based, no session needed) =====
+const syncSecret = process.env.SYNC_SECRET || 'bc-sync-default-key';
+app.get('/api/sync/export', (req, res) => {
+  if (req.headers['x-sync-secret'] !== syncSecret) {
+    return res.status(401).json({ error: 'Invalid sync secret' });
+  }
+  res.json({
+    users: userStore.getAllRaw(),
+    pipeline: pipelineStore.getRawData(),
+  });
+});
 
 // ===== Protected: Dashboard & Admin =====
 app.get('/', requireAuth, (req, res) => {
