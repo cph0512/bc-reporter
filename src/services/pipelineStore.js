@@ -83,7 +83,29 @@ const pipelineStore = {
 
   // ===== Leads =====
 
+  // Auto-shelve: 超過 60 天未更新的商機自動變成「擱置」
+  autoShelve() {
+    const data = readData();
+    const now = Date.now();
+    let changed = false;
+    data.leads.forEach(lead => {
+      if (lead.status === '已完成' || lead.status === '擱置') return;
+      const ref = lead.statusChangedAt || lead.updatedAt || lead.createdAt;
+      if (!ref) return;
+      const days = Math.floor((now - new Date(ref).getTime()) / 86400000);
+      if (days >= 60) {
+        lead.status = '擱置';
+        lead.statusChangedAt = new Date().toISOString();
+        lead.updatedAt = new Date().toISOString();
+        changed = true;
+      }
+    });
+    if (changed) writeData(data);
+  },
+
   getLeads(filters = {}) {
+    // Auto-shelve before returning leads
+    this.autoShelve();
     let { leads } = readData();
     if (filters.salesperson) {
       leads = leads.filter(l => l.salesperson === filters.salesperson);
