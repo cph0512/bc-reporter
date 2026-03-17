@@ -15,8 +15,12 @@
     "passwordHash": "$2b$10$kS0ozA0WpFuPTWzy2gq3devPO16bLoNEnOv2NF8ad.MnN7SnAF9Sa",
     "role": "user",
     "displayName": "Jerry",
-    "companies": ["品辰科技物流"],
-    "dashboards": ["pipeline"],
+    "companies": [
+      "品辰科技物流"
+    ],
+    "dashboards": [
+      "pipeline"
+    ],
     "createdAt": "2026-03-10T15:00:02.319Z"
   },
   {
@@ -25,8 +29,12 @@
     "passwordHash": "$2b$10$7bLNkAk0bzMed2lpGPIx5OpTjEftNgpH2SQy.2qrL31iyCBnOBjgK",
     "role": "user",
     "displayName": "Gary",
-    "companies": ["品辰科技物流"],
-    "dashboards": ["pipeline"],
+    "companies": [
+      "品辰科技物流"
+    ],
+    "dashboards": [
+      "pipeline"
+    ],
     "createdAt": "2026-03-12T06:00:00.000Z"
   },
   {
@@ -35,8 +43,12 @@
     "passwordHash": "$2b$10$7bLNkAk0bzMed2lpGPIx5OpTjEftNgpH2SQy.2qrL31iyCBnOBjgK",
     "role": "user",
     "displayName": "Jeff",
-    "companies": ["品辰科技物流"],
-    "dashboards": ["pipeline"],
+    "companies": [
+      "品辰科技物流"
+    ],
+    "dashboards": [
+      "pipeline"
+    ],
     "createdAt": "2026-03-12T06:00:00.000Z"
   },
   {
