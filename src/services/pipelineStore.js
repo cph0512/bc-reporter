@@ -12,7 +12,7 @@ if (process.env.VERCEL && !fs.existsSync(PIPELINE_FILE) && fs.existsSync(PIPELIN
   fs.copyFileSync(PIPELINE_SRC, PIPELINE_FILE);
 }
 
-const DEFAULT_STATUSES = ['初步接觸', '進行中', '報價', '已完成'];
+const DEFAULT_STATUSES = ['初步接觸', '進行中', '報價', '已完成', '擱置'];
 const DEFAULT_CATEGORIES = ['客戶', '車隊', '車隊+客戶', '合作廠商', '倉儲客戶', '戰略合作夥伴', '系統商', '系統商+潛在合作對象'];
 
 function readData() {

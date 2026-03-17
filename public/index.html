@@ -112,6 +112,7 @@
   .pl-badge-進行中 { background: #fff3e0; color: #e65100; }
   .pl-badge-報價 { background: #f3e5f5; color: #7b1fa2; }
   .pl-badge-已完成 { background: #e8f5e9; color: #2e7d32; }
+  .pl-badge-擱置 { background: #f3e5f5; color: #7b1fa2; }
   /* Stale lead indicator */
   .stale-wrap { display: inline-flex; align-items: center; gap: 4px; }
   .stale-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -1995,7 +1996,7 @@ function renderMyPipelineTable() {
   if (filterMonth) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 7) === filterMonth);
   const filterStale = document.getElementById('myPlFilterStale').value;
   if (filterStale) leads = leads.filter(l => {
-    if (l.status === '已完成') return false;
+    if (l.status === '已完成' || l.status === '擱置') return false;
     const d = getDaysSinceStatusChange(l);
     if (filterStale === '0-14') return d < 14;
     if (filterStale === '14-30') return d >= 14 && d < 30;
@@ -2059,7 +2060,7 @@ let pipelineCharts = [];
 let editingLeadId = null;
 let plLeadsCache = [];
 let plActivitiesCache = [];
-let plConfig = { statuses: ['初步接觸','進行中','報價','已完成'], categories: ['客戶'] };
+let plConfig = { statuses: ['初步接觸','進行中','報價','已完成','擱置'], categories: ['客戶'] };
 
 async function loadPipelineConfig() {
   try {
@@ -2194,7 +2195,7 @@ function getDaysSinceStatusChange(lead) {
 }
 
 function staleIndicator(lead) {
-  if (lead.status === '已完成') return '';
+  if (lead.status === '已完成' || lead.status === '擱置') return '';
   const days = getDaysSinceStatusChange(lead);
   if (days < 14) return '';
   const cls = days >= 45 ? 'danger' : days >= 30 ? 'warn' : 'info';
@@ -2216,7 +2217,7 @@ document.addEventListener('click', (e) => {
 
 function updateNotifBell(leads) {
   const staleLeads = leads
-    .filter(l => l.status !== '已完成' && getDaysSinceStatusChange(l) >= 14)
+    .filter(l => l.status !== '已完成' && l.status !== '擱置' && getDaysSinceStatusChange(l) >= 14)
     .sort((a, b) => getDaysSinceStatusChange(b) - getDaysSinceStatusChange(a));
 
   const bellEl = document.getElementById('notifBell');
@@ -2439,7 +2440,7 @@ function renderPipelineTable() {
   if (filterMonth) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 7) === filterMonth);
   const filterStale = document.getElementById('plFilterStale').value;
   if (filterStale) leads = leads.filter(l => {
-    if (l.status === '已完成') return false;
+    if (l.status === '已完成' || l.status === '擱置') return false;
     const d = getDaysSinceStatusChange(l);
     if (filterStale === '0-14') return d < 14;
     if (filterStale === '14-30') return d >= 14 && d < 30;
