@@ -4,14 +4,14 @@
       "id": "lead_1",
       "companyName": "普利司通",
       "salesperson": "Jerry",
-      "status": "進行中",
+      "status": "已完成",
       "category": "客戶",
       "notes": "客戶",
       "estimatedValue": null,
       "createdAt": "2025-10-21T00:00:00.000Z",
-      "updatedAt": "2026-03-10T00:00:00.000Z",
+      "updatedAt": "2026-03-18T03:36:28.812Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2026-03-10T00:00:00.000Z"
+      "statusChangedAt": "2026-03-18T03:36:28.812Z"
     },
     {
       "id": "lead_2",
@@ -80,7 +80,7 @@
     },
     {
       "id": "lead_7",
-      "companyName": "�����������辰",
+      "companyName": "�������������辰",
       "salesperson": "Jeff",
       "status": "擱置",
       "category": "客戶",
@@ -877,7 +877,7 @@
       "salesperson": "Jeff",
       "status": "初步接觸",
       "category": "客戶",
-      "notes": "1. 此為客戶介紹廠商，主要是走快遞居多\n2. 每個禮拜約2~4票，貨物品項以五金類的東西為主\n3. 偶有會有較大貨的時候才會詢問空運報價，請我先提供到深圳以及廣東的價格參考",
+      "notes": "1. 此為客戶介紹廠商，主要是走快遞居多\n2. 每個���拜約2~4票，貨物品項以五金類的東西為主\n3. 偶有會有較大貨的時候才會詢問空運報價，請我先提供到深圳以及廣東的價格參考",
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
       "updatedAt": "2026-01-26T00:00:00.000Z",
@@ -893,9 +893,10 @@
       "notes": "倉儲客戶",
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
-      "updatedAt": "2026-01-26T00:00:00.000Z",
+      "updatedAt": "2026-03-18T03:36:39.038Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2026-01-26T00:00:00.000Z"
+      "statusChangedAt": "2026-01-26T00:00:00.000Z",
+      "lastActivityAt": "2026-03-18T03:36:39.038Z"
     },
     {
       "id": "lead_70",
@@ -2005,6 +2006,14 @@
       "content": "環保塑膠杯,專案性質,已寄合約與報價單",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jerry"
+    },
+    {
+      "id": "act_115",
+      "leadId": "lead_69",
+      "weekLabel": "115/03/18",
+      "content": "測試",
+      "createdAt": "2026-03-18T03:36:39.038Z",
+      "createdBy": "u_2"
     }
   ],
   "statuses": [

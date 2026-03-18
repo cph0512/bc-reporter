@@ -3120,7 +3120,7 @@ function injectContactsUI(container) {
           </div>
           <input type="file" id="ctScanFileInput" accept="image/*" style="display:none" onchange="handleScanFile(this)">
           <input type="file" id="ctCameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleScanFile(this)">
-          <img id="ctScanPreview" class="ct-scan-preview" style="display:none;">
+          <img id="ctScanPreview" class="ct-scan-preview" style="display:none;" onerror="this.style.display='none'">
           <div style="text-align:center;margin-top:8px;">
             <button class="btn btn-primary" id="ctScanBtn" onclick="startScan()" style="display:none;">${l.ctStartScan}</button>
             <div id="ctScanLoading" style="display:none;color:#1565c0;font-size:13px;padding:12px;">${l.ctScanning}</div>
@@ -3436,7 +3436,7 @@ async function startScan() {
     const result = await res.json();
     fillScanForm(result);
   } catch (e) {
-    alert('掃描失敗：' + e.message);
+    alert((getLang() === 'en' ? 'Scan failed: ' : '掃描失敗：') + e.message);
     document.getElementById('ctScanBtn').style.display = '';
   } finally {
     document.getElementById('ctScanLoading').style.display = 'none';
