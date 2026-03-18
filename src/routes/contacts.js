@@ -7,6 +7,23 @@ const contactStore = require('../services/contactStore');
 const exporter = require('../services/contactExporter');
 const geminiScanner = require('../services/geminiScanner');
 
+// Helper: get owner filter for non-admin users
+function getOwnerName(req) {
+  const user = req.session?.user;
+  if (!user) return null;
+  if (user.role === 'admin') return null; // admin sees all
+  return user.displayName || user.username || null;
+}
+
+// Helper: check if current user owns a contact (or is admin)
+function canAccessContact(req, contact) {
+  const user = req.session?.user;
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  const owner = user.displayName || user.username;
+  return contact.created_by === owner;
+}
+
 // ===== Contacts CRUD =====
 
 // GET /api/contacts — list contacts
@@ -16,8 +33,10 @@ router.get('/', (req, res) => {
     if (req.query.search) filters.search = req.query.search;
     if (req.query.category_id) filters.category_id = req.query.category_id;
     if (req.query.is_favorite === 'true') filters.is_favorite = true;
-    if (req.query.created_by) filters.created_by = req.query.created_by;
     if (req.query.include_deleted === 'true') filters.include_deleted = true;
+    // Non-admin: only see own contacts
+    const ownerFilter = getOwnerName(req);
+    if (ownerFilter) filters.created_by = ownerFilter;
     const contacts = contactStore.getContacts(filters);
     res.json(contacts);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -26,7 +45,10 @@ router.get('/', (req, res) => {
 // GET /api/contacts/stats — statistics
 router.get('/stats', (req, res) => {
   try {
-    res.json(contactStore.getStats());
+    const statsFilter = {};
+    const ownerFilter = getOwnerName(req);
+    if (ownerFilter) statsFilter.created_by = ownerFilter;
+    res.json(contactStore.getStats(statsFilter));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -109,9 +131,11 @@ router.post('/check-duplicates', (req, res) => {
   try {
     const { contacts } = req.body;
     if (!contacts || !contacts.length) return res.status(400).json({ error: '請提供聯絡人資料' });
+    const ownerFilter = getOwnerName(req);
+    const dupFilters = ownerFilter ? { created_by: ownerFilter } : {};
     const results = contacts.map(c => ({
       contact: c,
-      duplicates: contactStore.findDuplicates(c),
+      duplicates: contactStore.findDuplicates(c, dupFilters),
     }));
     res.json(results);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -121,16 +145,21 @@ router.post('/check-duplicates', (req, res) => {
 // GET /api/contacts/export/vcard
 router.get('/export/vcard', (req, res) => {
   try {
+    const ownerFilter = getOwnerName(req);
     let contacts;
     if (req.query.id) {
       const c = contactStore.getContactById(req.query.id);
       if (!c) return res.status(404).json({ error: 'Contact not found' });
+      if (!canAccessContact(req, c)) return res.status(403).json({ error: 'No permission' });
       contacts = [c];
     } else if (req.query.ids) {
       const ids = req.query.ids.split(',');
       contacts = ids.map(id => contactStore.getContactById(id)).filter(Boolean);
+      if (ownerFilter) contacts = contacts.filter(c => c.created_by === ownerFilter);
     } else {
-      contacts = contactStore.getContacts();
+      const filters = {};
+      if (ownerFilter) filters.created_by = ownerFilter;
+      contacts = contactStore.getContacts(filters);
     }
     const vcf = exporter.toVCardBatch(contacts);
     res.setHeader('Content-Type', 'text/vcard; charset=utf-8');
@@ -142,12 +171,16 @@ router.get('/export/vcard', (req, res) => {
 // GET /api/contacts/export/csv
 router.get('/export/csv', (req, res) => {
   try {
+    const ownerFilter = getOwnerName(req);
     let contacts;
     if (req.query.ids) {
       const ids = req.query.ids.split(',');
       contacts = ids.map(id => contactStore.getContactById(id)).filter(Boolean);
+      if (ownerFilter) contacts = contacts.filter(c => c.created_by === ownerFilter);
     } else {
-      contacts = contactStore.getContacts();
+      const filters = {};
+      if (ownerFilter) filters.created_by = ownerFilter;
+      contacts = contactStore.getContacts(filters);
     }
     const categories = contactStore.getCategories();
     const csv = exporter.toCSV(contacts, categories);
@@ -162,6 +195,7 @@ router.get('/export/salesforce/:id', (req, res) => {
   try {
     const contact = contactStore.getContactById(req.params.id);
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
+    if (!canAccessContact(req, contact)) return res.status(403).json({ error: 'No permission' });
     const script = exporter.toSalesforceScript(contact, req.query);
     res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
     res.send(script);
@@ -184,7 +218,16 @@ router.post('/batch-delete', (req, res) => {
   try {
     const { ids } = req.body;
     if (!ids || !ids.length) return res.status(400).json({ error: '請提供聯絡人 ID' });
-    const count = contactStore.batchDelete(ids);
+    // Non-admin: filter to only own contacts
+    const ownerFilter = getOwnerName(req);
+    let filteredIds = ids;
+    if (ownerFilter) {
+      filteredIds = ids.filter(id => {
+        const c = contactStore.getContactById(id);
+        return c && c.created_by === ownerFilter;
+      });
+    }
+    const count = contactStore.batchDelete(filteredIds);
     res.json({ success: true, deleted: count });
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
@@ -194,6 +237,7 @@ router.get('/:id', (req, res) => {
   try {
     const contact = contactStore.getContactById(req.params.id);
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
+    if (!canAccessContact(req, contact)) return res.status(403).json({ error: 'No permission' });
     res.json(contact);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -201,6 +245,9 @@ router.get('/:id', (req, res) => {
 // PUT /api/contacts/:id — update contact
 router.put('/:id', (req, res) => {
   try {
+    const existing = contactStore.getContactById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Contact not found' });
+    if (!canAccessContact(req, existing)) return res.status(403).json({ error: 'No permission' });
     const contact = contactStore.updateContact(req.params.id, req.body);
     res.json(contact);
   } catch (e) { res.status(400).json({ error: e.message }); }
@@ -209,6 +256,9 @@ router.put('/:id', (req, res) => {
 // DELETE /api/contacts/:id — soft delete
 router.delete('/:id', (req, res) => {
   try {
+    const existing = contactStore.getContactById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Contact not found' });
+    if (!canAccessContact(req, existing)) return res.status(403).json({ error: 'No permission' });
     contactStore.deleteContact(req.params.id);
     res.json({ success: true });
   } catch (e) { res.status(400).json({ error: e.message }); }
@@ -217,6 +267,9 @@ router.delete('/:id', (req, res) => {
 // POST /api/contacts/:id/restore — restore soft-deleted
 router.post('/:id/restore', (req, res) => {
   try {
+    const existing = contactStore.getContactById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Contact not found' });
+    if (!canAccessContact(req, existing)) return res.status(403).json({ error: 'No permission' });
     const contact = contactStore.restoreContact(req.params.id);
     res.json(contact);
   } catch (e) { res.status(400).json({ error: e.message }); }
@@ -225,6 +278,9 @@ router.post('/:id/restore', (req, res) => {
 // POST /api/contacts/:id/favorite — toggle favorite
 router.post('/:id/favorite', (req, res) => {
   try {
+    const existing = contactStore.getContactById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Contact not found' });
+    if (!canAccessContact(req, existing)) return res.status(403).json({ error: 'No permission' });
     const contact = contactStore.toggleFavorite(req.params.id);
     res.json(contact);
   } catch (e) { res.status(400).json({ error: e.message }); }

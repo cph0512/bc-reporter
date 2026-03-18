@@ -886,17 +886,23 @@
     },
     {
       "id": "lead_69",
-      "companyName": "阿源肥皂",
+      "companyName": "阿原肥皂",
       "salesperson": "Jerry",
       "status": "初步接觸",
       "category": "客戶",
       "notes": "倉儲客戶",
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
-      "updatedAt": "2026-03-18T03:36:39.038Z",
+      "updatedAt": "2026-03-18T04:30:49.825Z",
       "createdBy": "Jerry",
       "statusChangedAt": "2026-01-26T00:00:00.000Z",
-      "lastActivityAt": "2026-03-18T03:36:39.038Z"
+      "lastActivityAt": "2026-03-18T03:36:39.038Z",
+      "taxId": "",
+      "address": "",
+      "contactName": "",
+      "contactEmail": "",
+      "contactPhone": "",
+      "leadDate": null
     },
     {
       "id": "lead_70",
@@ -913,16 +919,22 @@
     },
     {
       "id": "lead_71",
-      "companyName": "雲安",
+      "companyName": "雲安科技",
       "salesperson": "Jerry",
       "status": "初步接觸",
       "category": "系統商+潛在合作對象",
       "notes": "系統商+潛在合作對象",
       "estimatedValue": null,
       "createdAt": "2026-01-26T00:00:00.000Z",
-      "updatedAt": "2026-02-02T00:00:00.000Z",
+      "updatedAt": "2026-03-18T04:31:06.556Z",
       "createdBy": "Jerry",
-      "statusChangedAt": "2026-02-02T00:00:00.000Z"
+      "statusChangedAt": "2026-02-02T00:00:00.000Z",
+      "taxId": "",
+      "address": "",
+      "contactName": "",
+      "contactEmail": "",
+      "contactPhone": "",
+      "leadDate": null
     },
     {
       "id": "lead_72",
@@ -1047,7 +1059,7 @@
       "salesperson": "Jeff",
       "status": "進行中",
       "category": "客戶",
-      "notes": "1. 此為陌生開發廠商，都是出口一些商業類的書籍雜誌，客戶主要在大陸以及東南亞\n2. 每次出貨的量不會很大，而且有些在大陸的客人沒有進出口合同，所以都是跟快遞業者合作居多，在操作流程上也比較方便\n3. 比較過我的報價還是快遞比較便宜，畢竟也是有比較大的折扣。請我另外再提供新加坡跟泰國的door to door的報價參考",
+      "notes": "1. 此為陌生開發廠商，都是出口一些商業類的書籍雜誌，客戶主要在大陸以及東南亞\n2. 每次出貨的量不會很大，而且有些在大陸的客人沒有進出口合同，所以都是跟快遞業者合作居多，在操作流程上也比較方便\n3. 比較過我的報價還是快遞比較便宜，畢竟也是有比較大的折扣。請我另外再提供新加坡跟泰國的door to door��報價參考",
       "estimatedValue": null,
       "createdAt": "2026-03-10T00:00:00.000Z",
       "updatedAt": "2026-03-10T00:00:00.000Z",
@@ -1092,6 +1104,25 @@
       "updatedAt": "2026-03-10T00:00:00.000Z",
       "createdBy": "Jerry",
       "statusChangedAt": "2026-03-10T00:00:00.000Z"
+    },
+    {
+      "id": "lead_85",
+      "companyName": "阿原工作室股份有限公司",
+      "taxId": "",
+      "address": "251402 新北市淡水區中正東路二段69號7樓",
+      "salesperson": "Jerry",
+      "status": "初步接觸",
+      "category": "客戶",
+      "notes": "英文姓名: Grace Chen英文職稱: Vice President英文公司名稱: YUAN WORKSHOP CO., LTD.台北辦公室地址: 105401 台北市松山區復興北路311號3樓VAT: 28174380Certified B Corporation",
+      "estimatedValue": null,
+      "contactName": "陳玲慧",
+      "contactEmail": "grace@yuansoap.com.tw",
+      "contactPhone": "+886 2 28085316 #210",
+      "leadDate": "2026-03-18",
+      "createdAt": "2026-03-18T04:30:30.997Z",
+      "updatedAt": "2026-03-18T04:30:30.997Z",
+      "statusChangedAt": "2026-03-18T04:30:30.997Z",
+      "createdBy": "u_2"
     }
   ],
   "activities": [
@@ -1715,7 +1746,7 @@
       "id": "act_78",
       "leadId": "lead_66",
       "weekLabel": "115/01/19",
-      "content": "已確認窗口並連繫上，已知LALA尚未正式拜訪普利司通\n是否有報價以及價格仍須確認(窗口非同一人)\n會安排時間過去拜訪",
+      "content": "已確認窗口並連繫上，已知LALA尚未正式拜訪普利司通\n是否有報價以及價格���須確認(窗口非同一人)\n會安排時間過去拜訪",
       "createdAt": "2026-01-19T00:00:00.000Z",
       "createdBy": "Jerry"
     },

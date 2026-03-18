@@ -103,9 +103,13 @@ const contactStore = {
     return contacts.find(c => c.id === id) || null;
   },
 
-  getStats() {
+  getStats(filters = {}) {
     const data = readData();
-    const active = data.contacts.filter(c => c.is_active !== false);
+    let active = data.contacts.filter(c => c.is_active !== false);
+    // Filter by owner if specified
+    if (filters.created_by) {
+      active = active.filter(c => c.created_by === filters.created_by);
+    }
     const categories = data.categories.filter(c => c.is_active !== false);
     const catStats = categories.map(cat => ({
       id: cat.id,
@@ -254,9 +258,12 @@ const contactStore = {
 
   // ===== Duplicate Detection =====
 
-  findDuplicates(contactData) {
+  findDuplicates(contactData, filters = {}) {
     const data = readData();
-    const active = data.contacts.filter(c => c.is_active !== false);
+    let active = data.contacts.filter(c => c.is_active !== false);
+    if (filters.created_by) {
+      active = active.filter(c => c.created_by === filters.created_by);
+    }
     const results = [];
 
     active.forEach(existing => {

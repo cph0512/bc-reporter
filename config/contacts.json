@@ -1,5 +1,57 @@
 {
-  "contacts": [],
+  "contacts": [
+    {
+      "id": "con_1",
+      "full_name": "陳玲慧",
+      "first_name": "",
+      "last_name": "",
+      "company": "阿原工作室股份有限公司",
+      "job_title": "副總",
+      "department": "",
+      "emails": [
+        {
+          "value": "grace@yuansoap.com.tw",
+          "label": "主要",
+          "is_primary": true
+        }
+      ],
+      "phones": [
+        {
+          "value": "+886 2 28085316 #210",
+          "label": "主要",
+          "is_primary": true
+        },
+        {
+          "value": "+886 2 26242875",
+          "label": "其他",
+          "is_primary": false
+        },
+        {
+          "value": "+886 935 380688",
+          "label": "其他",
+          "is_primary": false
+        }
+      ],
+      "address": "251402 新北市淡水區中正東路二段69號7樓",
+      "website": "www.yuancare.com",
+      "social_profiles": {},
+      "category_id": "ccat_1",
+      "tags": [],
+      "source_type": "scan",
+      "source_image_url": null,
+      "ai_raw_result": null,
+      "ai_confidence": null,
+      "ai_suggested_category": null,
+      "crm_sync_status": "none",
+      "notes": "英文姓名: Grace Chen英文職稱: Vice President英文公司名稱: YUAN WORKSHOP CO., LTD.台北辦公室地址: 105401 台北市松山區復興北路311號3樓VAT: 28174380Certified B Corporation",
+      "is_active": true,
+      "is_favorite": false,
+      "created_by": "Jerry",
+      "created_at": "2026-03-18T04:30:02.604Z",
+      "updated_at": "2026-03-18T04:30:02.604Z",
+      "deleted_at": null
+    }
+  ],
   "categories": [
     {
       "id": "ccat_1",
