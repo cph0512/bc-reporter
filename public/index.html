@@ -230,13 +230,13 @@
     <div class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" style="display:none;">
       🔔<span class="notif-count" id="notifCount" style="display:none;">0</span>
       <div class="notif-panel" id="notifPanel">
-        <div class="notif-panel-header">⚠️ 停滯商機提醒</div>
+        <div class="notif-panel-header" id="notifPanelHeader"></div>
         <div id="notifList"></div>
       </div>
     </div>
-    <button class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;" onclick="openChangePw()">改密碼</button>
-    <a id="adminLink" href="/admin" class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;text-decoration:none;display:none;">帳號管理</a>
-    <button class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;" onclick="doLogout()">登出</button>
+    <button class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;" onclick="openChangePw()" id="headerChangePw"></button>
+    <a id="adminLink" href="/admin" class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;text-decoration:none;display:none;"></a>
+    <button class="btn btn-sm" style="background:#444;color:#fff;border:1px solid #666;" onclick="doLogout()" id="headerLogout"></button>
   </div>
 </div>
 
@@ -264,87 +264,61 @@
 
 <div id="dashboardView" style="display:none">
   <div class="dash-filters">
-    <div><label>起始日期</label><input type="date" id="finStartDate"></div>
-    <div><label>結束日期</label><input type="date" id="finEndDate"></div>
-    <button class="btn btn-primary btn-sm" onclick="loadDashboard()">查詢</button>
+    <div><label class="i18n-start-date"></label><input type="date" id="finStartDate"></div>
+    <div><label class="i18n-end-date"></label><input type="date" id="finEndDate"></div>
+    <button class="btn btn-primary btn-sm i18n-query-btn" onclick="loadDashboard()"></button>
   </div>
   <div class="dashboard-content">
-    <div class="loading">載入中...</div>
+    <div class="loading i18n-loading"></div>
   </div>
 </div>
 
 <div id="salesDashboardView" style="display:none">
   <div class="dash-filters">
-    <div><label>起始日期</label><input type="date" id="salesStartDate"></div>
-    <div><label>結束日期</label><input type="date" id="salesEndDate"></div>
-    <button class="btn btn-primary btn-sm" onclick="loadSalesDashboard()">查詢</button>
+    <div><label class="i18n-start-date"></label><input type="date" id="salesStartDate"></div>
+    <div><label class="i18n-end-date"></label><input type="date" id="salesEndDate"></div>
+    <button class="btn btn-primary btn-sm i18n-query-btn" onclick="loadSalesDashboard()"></button>
   </div>
   <div class="dashboard-content">
-    <div class="loading">載入中...</div>
+    <div class="loading i18n-loading"></div>
   </div>
 </div>
 
 <div id="purchasingDashboardView" style="display:none">
   <div class="dash-filters">
-    <div><label>起始日期</label><input type="date" id="purchStartDate"></div>
-    <div><label>結束日期</label><input type="date" id="purchEndDate"></div>
-    <button class="btn btn-primary btn-sm" onclick="loadPurchasingDashboard()">查詢</button>
+    <div><label class="i18n-start-date"></label><input type="date" id="purchStartDate"></div>
+    <div><label class="i18n-end-date"></label><input type="date" id="purchEndDate"></div>
+    <button class="btn btn-primary btn-sm i18n-query-btn" onclick="loadPurchasingDashboard()"></button>
   </div>
   <div class="dashboard-content">
-    <div class="loading">載入中...</div>
+    <div class="loading i18n-loading"></div>
   </div>
 </div>
 
 <!-- My Pipeline (Personal View) -->
 <div id="myPipelineView" style="display:none">
-  <div class="contacts-sub-tabs" style="padding:12px 24px 0;">
-    <button class="active" onclick="switchPlSubView('my','leads')">📊 我的商機</button>
-    <button onclick="switchPlSubView('my','contacts')">📇 名片通訊錄</button>
-  </div>
+  <div class="contacts-sub-tabs" style="padding:12px 24px 0;" id="myPlSubTabs"></div>
   <div id="myPlLeadsSubView">
   <div class="dashboard-content" id="myPlDashContent">
-    <div class="loading">載入中...</div>
+    <div class="loading i18n-loading"></div>
   </div>
   <div id="myPlLeadListSection" style="padding:0 24px 24px;max-width:1400px;margin:0 auto;">
     <div class="card">
       <div class="card-header" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <h2>我的商機列表</h2>
+        <h2 id="myPlListTitle"></h2>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <select id="myPlFilterStatus" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
-            <option value="">狀態：全部</option>
-          </select>
-          <select id="myPlFilterCat" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
-            <option value="">類別：全部</option>
-          </select>
-          <input type="month" id="myPlFilterMonth" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;" title="建檔月份">
-          <select id="myPlFilterStale" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
-            <option value="">停滯：全部</option>
-            <option value="0-14">14天以內</option>
-            <option value="14-30">14-30天</option>
-            <option value="30-45">30-45天</option>
-            <option value="45+">45天以上</option>
-          </select>
-          <label style="font-size:12px;color:#666;">週次</label>
+          <select id="myPlFilterStatus" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
+          <select id="myPlFilterCat" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
+          <input type="month" id="myPlFilterMonth" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
+          <select id="myPlFilterStale" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
+          <label style="font-size:12px;color:#666;" id="myPlWeekLabel"></label>
           <select id="myPlWeekSelect" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
-          <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()">+ 新增商機</button>
+          <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()" id="myPlAddLeadBtn"></button>
         </div>
       </div>
       <div class="card-body" style="overflow-x:auto;">
         <table>
-          <thead>
-            <tr>
-              <th>公司/客戶</th>
-              <th>窗口</th>
-              <th class="sortable" onclick="toggleMyPlSort('leadDate')">商機日期<span class="sort-arrow" id="myPlSortArrowLeadDate"></span></th>
-              <th class="sortable" onclick="toggleMyPlSort('createdAt')">建檔日期<span class="sort-arrow" id="myPlSortArrowCreatedAt"></span></th>
-              <th>狀態</th>
-              <th>類別</th>
-              <th style="text-align:right;">預估金額</th>
-              <th style="min-width:250px;">本週回顧</th>
-              <th>備註</th>
-              <th>操作</th>
-            </tr>
-          </thead>
+          <thead id="myPlTableHead"></thead>
           <tbody id="myPlLeadsTable"></tbody>
         </table>
         <div id="myPlLeadsEmpty" class="empty-msg" style="display:none;">尚無商機資料</div>
@@ -363,41 +337,36 @@
   <div id="adminPlLeadsSubView">
   <div class="dash-filters">
     <div>
-      <label>業務人員</label>
-      <select id="plFilterSP" onchange="loadPipelineDashboard()"><option value="">全部</option></select>
+      <label id="adminLabelSP"></label>
+      <select id="plFilterSP" onchange="loadPipelineDashboard()"><option value=""></option></select>
     </div>
     <div>
-      <label>狀態</label>
+      <label id="adminLabelStatus"></label>
       <select id="plFilterStatus" onchange="renderPipelineTable()">
-        <option value="">全部</option>
+        <option value=""></option>
       </select>
     </div>
     <div>
-      <label>類別</label>
+      <label id="adminLabelCat"></label>
       <select id="plFilterCat" onchange="renderPipelineTable()">
-        <option value="">全部</option>
+        <option value=""></option>
       </select>
     </div>
     <div>
-      <label>建檔月份</label>
+      <label id="adminLabelMonth"></label>
       <input type="month" id="plFilterMonth" onchange="renderPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
     </div>
     <div>
-      <label>停滯</label>
+      <label id="adminLabelStale"></label>
       <select id="plFilterStale" onchange="renderPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
-        <option value="">全部</option>
-        <option value="0-14">14天以內</option>
-        <option value="14-30">14-30天</option>
-        <option value="30-45">30-45天</option>
-        <option value="45+">45天以上</option>
       </select>
     </div>
-    <button class="btn btn-primary btn-sm" onclick="loadPipelineDashboard()">查詢</button>
-    <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()">+ 新增商機</button>
+    <button class="btn btn-primary btn-sm" onclick="loadPipelineDashboard()" id="adminQueryBtn"></button>
+    <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()" id="adminAddLeadBtn"></button>
     <button class="btn btn-sm" id="plConfigBtn" style="display:none;background:#455a64;color:white;" onclick="openPipelineConfig()">⚙ 設定</button>
   </div>
   <div class="dashboard-content" id="plDashContent">
-    <div class="loading">載入中...</div>
+    <div class="loading i18n-loading"></div>
   </div>
   <div id="plLeadListSection" style="padding:0 24px 24px;max-width:1400px;margin:0 auto;">
     <div class="card">
@@ -437,35 +406,35 @@
 <!-- Lead Modal -->
 <div id="leadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:10px;padding:28px 24px;width:100%;max-width:540px;box-shadow:0 8px 30px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto;margin:12px;">
-    <h3 id="leadModalTitle" style="font-size:16px;margin-bottom:18px;">新增商機</h3>
+    <h3 id="leadModalTitle" style="font-size:16px;margin-bottom:18px;"></h3>
     <div id="leadModalError" style="color:#c62828;font-size:12px;margin-bottom:10px;display:none;"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">公司/客戶名稱 *</label><input type="text" id="leadCompanyName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">統一編號</label><input type="text" id="leadTaxId" maxlength="8" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelCompany" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label><input type="text" id="leadCompanyName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelTaxId" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label><input type="text" id="leadTaxId" maxlength="8" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
     </div>
-    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">公司地址</label><input type="text" id="leadAddress" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelAddress" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label><input type="text" id="leadAddress" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">業務人員</label><input type="text" id="leadSalesperson" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">窗口聯絡人</label><input type="text" id="leadContactName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">Email</label><input type="email" id="leadContactEmail" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">電話</label><input type="text" id="leadContactPhone" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelSP" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label><input type="text" id="leadSalesperson" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelContact" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label><input type="text" id="leadContactName" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">狀態</label>
+      <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelEmail" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label><input type="email" id="leadContactEmail" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelPhone" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label><input type="text" id="leadContactPhone" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelStatus" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label>
         <select id="leadStatus" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select></div>
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">類別</label>
+      <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelCategory" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label>
         <select id="leadCategory" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">商機日期</label><input type="date" id="leadDate" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
-      <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">預估金額 (選填)</label><input type="number" id="leadEstValue" placeholder="" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelDate" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label><input type="date" id="leadDate" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+      <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelEstValue" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label><input type="number" id="leadEstValue" placeholder="" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
     </div>
-    <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;">備註</label><textarea id="leadNotes" rows="2" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;resize:vertical;"></textarea></div>
+    <div class="form-group" style="margin-bottom:14px;"><label id="lmLabelNotes" style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;"></label><textarea id="leadNotes" rows="2" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;resize:vertical;"></textarea></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
-      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeLeadModal()">取消</button>
-      <button class="btn btn-sm btn-primary" onclick="saveLead()">儲存</button>
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeLeadModal()" id="lmBtnCancel"></button>
+      <button class="btn btn-sm btn-primary" onclick="saveLead()" id="lmBtnSave"></button>
     </div>
   </div>
 </div>
@@ -521,51 +490,51 @@
 <div id="reportsView" style="display:none">
 <div class="controls">
   <div>
-    <label>報表</label>
+    <label id="rptLabelReport"></label>
     <select id="reportType">
-      <optgroup label="EBITDA">
-        <option value="ebitda-detailed">EBITDA — 詳細 (內部)</option>
-        <option value="ebitda-simple">EBITDA — 簡要 (外部)</option>
+      <optgroup label="EBITDA" id="rptGroupEbitda">
+        <option value="ebitda-detailed" id="rptOptEbitdaD"></option>
+        <option value="ebitda-simple" id="rptOptEbitdaS"></option>
       </optgroup>
-      <optgroup label="損益表 Income Statement">
-        <option value="is-detailed">損益表 — 詳細 (內部)</option>
-        <option value="is-simple">損益表 — 簡要 (外部)</option>
+      <optgroup id="rptGroupIS">
+        <option value="is-detailed" id="rptOptISD"></option>
+        <option value="is-simple" id="rptOptISS"></option>
       </optgroup>
-      <optgroup label="資產負債表 Balance Sheet">
-        <option value="bs-detailed">資產負債表 — 詳細 (內部)</option>
-        <option value="bs-simple">資產負債表 — 簡要 (外部)</option>
+      <optgroup id="rptGroupBS">
+        <option value="bs-detailed" id="rptOptBSD"></option>
+        <option value="bs-simple" id="rptOptBSS"></option>
       </optgroup>
     </select>
   </div>
   <div>
-    <label>期間</label>
+    <label id="rptLabelPeriod"></label>
     <select id="periodType" onchange="onPeriodChange()">
-      <option value="month">月報</option>
-      <option value="quarter">季報</option>
-      <option value="half">半年報</option>
-      <option value="year">年報</option>
-      <option value="custom">自訂</option>
+      <option value="month" id="rptOptMonth"></option>
+      <option value="quarter" id="rptOptQuarter"></option>
+      <option value="half" id="rptOptHalf"></option>
+      <option value="year" id="rptOptYear"></option>
+      <option value="custom" id="rptOptCustom"></option>
     </select>
   </div>
   <div>
-    <label>起始日期</label>
+    <label class="i18n-start-date"></label>
     <input type="date" id="startDate">
   </div>
   <div>
-    <label>結束日期</label>
+    <label class="i18n-end-date"></label>
     <input type="date" id="endDate">
   </div>
   <div>
-    <label>比較</label>
+    <label id="rptLabelCompare"></label>
     <select id="compare">
-      <option value="none">不比較</option>
-      <option value="yoy">去年同期 (YoY)</option>
-      <option value="mom">上期 (MoM)</option>
-      <option value="qoq">上一季 (QoQ)</option>
+      <option value="none" id="rptOptNoCompare"></option>
+      <option value="yoy" id="rptOptYoY"></option>
+      <option value="mom" id="rptOptMoM"></option>
+      <option value="qoq" id="rptOptQoQ"></option>
     </select>
   </div>
   <div>
-    <button class="btn btn-primary" id="fetchBtn" onclick="fetchReport()">查詢</button>
+    <button class="btn btn-primary i18n-query-btn" id="fetchBtn" onclick="fetchReport()"></button>
   </div>
 </div>
 
@@ -601,25 +570,25 @@
       <h3 id="catEditTitle" style="margin:0;font-size:16px;">分類</h3>
       <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeCatEditModal()">✕</span>
     </div>
-    <div class="ct-form-row"><div><label>名稱 *</label><input type="text" id="catEditName"></div></div>
+    <div class="ct-form-row"><div><label id="catLabelName"></label><input type="text" id="catEditName"></div></div>
     <div class="ct-form-row">
-      <div><label>顏色</label><input type="color" id="catEditColor" value="#6b7280" style="width:60px;height:32px;padding:2px;border:1px solid #d0d0d0;border-radius:6px;"></div>
-      <div><label>圖示</label>
+      <div><label id="catLabelColor"></label><input type="color" id="catEditColor" value="#6b7280" style="width:60px;height:32px;padding:2px;border:1px solid #d0d0d0;border-radius:6px;"></div>
+      <div><label id="catLabelIcon"></label>
         <select id="catEditIcon" style="width:100%;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
-          <option value="briefcase">💼 公事包</option>
-          <option value="truck">🚛 貨車</option>
-          <option value="handshake">🤝 握手</option>
-          <option value="users">👥 人群</option>
-          <option value="tag">🏷️ 標籤</option>
-          <option value="star">⭐ 星號</option>
-          <option value="building">🏢 大樓</option>
-          <option value="globe">🌐 全球</option>
+          <option value="briefcase">💼 Briefcase</option>
+          <option value="truck">🚛 Truck</option>
+          <option value="handshake">🤝 Handshake</option>
+          <option value="users">👥 Users</option>
+          <option value="tag">🏷️ Tag</option>
+          <option value="star">⭐ Star</option>
+          <option value="building">🏢 Building</option>
+          <option value="globe">🌐 Globe</option>
         </select>
       </div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
-      <button class="btn" onclick="closeCatEditModal()">取消</button>
-      <button class="btn btn-primary" onclick="saveCategory()">儲存</button>
+      <button class="btn" onclick="closeCatEditModal()" id="catBtnCancel"></button>
+      <button class="btn btn-primary" onclick="saveCategory()" id="catBtnSave"></button>
     </div>
   </div>
 </div>
@@ -627,14 +596,14 @@
 <!-- Change Password Modal -->
 <div id="pwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:10px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,0.2);">
-    <h3 style="font-size:16px;margin-bottom:18px;">變更密碼</h3>
+    <h3 id="pwTitle" style="font-size:16px;margin-bottom:18px;"></h3>
     <div id="pwError" style="color:#c62828;font-size:12px;margin-bottom:10px;display:none;"></div>
-    <div style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;">目前密碼</label><input type="password" id="pwCurrent" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
-    <div style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;">新密碼</label><input type="password" id="pwNew" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
-    <div style="margin-bottom:14px;"><label style="display:block;font-size:12px;color:#555;margin-bottom:4px;">確認新密碼</label><input type="password" id="pwConfirm" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div style="margin-bottom:14px;"><label id="pwLabelCur" style="display:block;font-size:12px;color:#555;margin-bottom:4px;"></label><input type="password" id="pwCurrent" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div style="margin-bottom:14px;"><label id="pwLabelNew" style="display:block;font-size:12px;color:#555;margin-bottom:4px;"></label><input type="password" id="pwNew" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
+    <div style="margin-bottom:14px;"><label id="pwLabelConfirm" style="display:block;font-size:12px;color:#555;margin-bottom:4px;"></label><input type="password" id="pwConfirm" style="width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closePwModal()">取消</button>
-      <button class="btn btn-sm btn-primary" onclick="submitChangePw()">儲存</button>
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closePwModal()" id="pwBtnCancel"></button>
+      <button class="btn btn-sm btn-primary" onclick="submitChangePw()" id="pwBtnSave"></button>
     </div>
   </div>
 </div>
@@ -673,6 +642,7 @@ let userDisplayName = '';
       else if (canAccessDashboard('pipeline')) currentTab = 'my-pipeline';
       // Render tabs based on permissions + init dashboard dates
       renderTabs();
+      renderPipelineLabels();
       initDashFilterDates();
       // Switch to default tab (hides other views + loads data)
       switchTab(currentTab);
@@ -750,6 +720,7 @@ document.getElementById('companySelect').addEventListener('change', () => {
 // Update tab labels + reload current dashboard on language change
 document.getElementById('lang').addEventListener('change', () => {
   renderTabs();
+  renderPipelineLabels();
   loadCurrentDashboard();
 });
 
@@ -781,8 +752,8 @@ async function submitChangePw() {
   const cur = document.getElementById('pwCurrent').value;
   const nw = document.getElementById('pwNew').value;
   const cf = document.getElementById('pwConfirm').value;
-  if (!cur || !nw) { errEl.textContent = '請填寫所有欄位'; errEl.style.display = 'block'; return; }
-  if (nw !== cf) { errEl.textContent = '新密碼與確認密碼不一致'; errEl.style.display = 'block'; return; }
+  if (!cur || !nw) { errEl.textContent = getLang() === 'en' ? 'All fields required' : '請填寫所有欄位'; errEl.style.display = 'block'; return; }
+  if (nw !== cf) { errEl.textContent = getLang() === 'en' ? 'Passwords do not match' : '新密碼與確認密碼不一致'; errEl.style.display = 'block'; return; }
   try {
     const res = await fetch('/auth/change-password', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -790,7 +761,7 @@ async function submitChangePw() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
-    alert('密碼已變更');
+    alert(getLang() === 'en' ? 'Password changed' : '密碼已變更');
     closePwModal();
   } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
 }
@@ -922,10 +893,50 @@ const LABELS = {
     plCompanyName: '公司/客戶', plSalesperson: '業務人員', plStatus: '狀態',
     plCategory: '類別', plEstValue: '預估金額', plNotes: '備註', plActions: '操作',
     plContactName: '窗口聯絡人', plContactEmail: 'Email',
-    plAddLead: '新增商機', plEditLead: '編輯商機', plAllFilter: '全部',
+    plAddLead: '+ 新增商機', plEditLead: '編輯商機', plAllFilter: '全部',
     plSave: '儲存', plCancel: '取消', plDelete: '刪除', plEdit: '編輯',
+    plLeadDate: '商機日期', plCreatedDate: '建檔日期', plContact: '窗口',
+    plMyLeadList: '我的商機列表', plStale: '停滯', plStaleAll: '停滯：全部',
+    plStatusAll: '狀態：全部', plCategoryAll: '類別：全部', plCreatedMonth: '建檔月份',
+    plFillReview: '✏️ 填寫回顧', plWriteReview: '本週回顧',
+    plMyPipelineSubTab: '📊 我的商機', plContactsSubTab: '📇 名片通訊錄',
+    plPipelineSubTab: '📊 業務管線',
+    plStaleAlert: '⚠️ 停滯商機提醒',
+    pl14days: '14天以內', pl14_30: '14-30天', pl30_45: '30-45天', pl45plus: '45天以上',
+    // Contacts module
+    ctContactList: '📇 聯絡人列表', ctScanCard: '📷 掃描名片', ctCategoryMgmt: '🏷️ 分類管理',
+    ctSearchPlaceholder: '搜尋姓名、公司、職稱、Email、電話...',
+    ctAllCategories: '全部分類', ctFavorite: '⭐ 最愛', ctAddContact: '+ 新增聯絡人',
+    ctNoContacts: '尚無聯絡人', ctTotalContacts: '聯絡人總數',
+    ctFullName: '全名', ctCompany: '公司', ctJobTitle: '職稱', ctDepartment: '部門',
+    ctEmail: 'Email', ctPhone: '電話', ctAddress: '地址', ctWebsite: '網站',
+    ctCategory: '分類', ctNotes: '備註', ctSource: '來源', ctCreatedDate: '建立日期',
+    ctScanTitle: '📷 掃描名片', ctResultTitle: '✏️ 辨識結果 / 手動輸入',
+    ctUploadHint: '點擊上傳或拖曳名片圖片', ctSupportFormat: '支援 JPEG、PNG、WebP',
+    ctSelectFile: '📁 選擇檔案', ctTakePhoto: '📷 拍照掃描',
+    ctStartScan: '🔍 開始辨識', ctScanning: 'AI 辨識中...',
+    ctSaveContact: '💾 儲存聯絡人', ctClear: '清除',
+    ctBatchScan: '📦 批量掃描', ctBatchHint: '點擊上傳多張名片（最多 10 張）',
+    ctSaveBatch: '💾 儲存已勾選', ctUncategorized: '未分類',
+    ctCatName: '名稱', ctCatColor: '顏色', ctCatIcon: '圖示', ctAddCategory: '+ 新增分類',
+    ctNoCats: '尚無分類', ctContactDetail: '聯絡人詳情', ctEditContact: '編輯聯絡人',
+    ctNewContact: '新增聯絡人', ctMultiSeparator: '多筆用分號分隔',
+    // Lead form
+    plCompanyLabel: '公司/客戶名稱 *', plTaxId: '統一編號', plAddress: '公司地址',
+    plContactPerson: '窗口聯絡人', plPhone: '電話', plLeadDateLabel: '商機日期',
+    plEstValueLabel: '預估金額 (選填)', plNotesLabel: '備註',
+    // Header & Password
+    hChangePw: '改密碼', hAdmin: '帳號管理', hLogout: '登出',
+    pwTitle: '變更密碼', pwCurrent: '目前密碼', pwNew: '新密碼', pwConfirm: '確認新密碼',
     // Filter labels
     fStartDate: '起始日期', fEndDate: '結束日期', fQuery: '查詢',
+    // Report controls
+    rptReport: '報表', rptPeriod: '期間', rptCompare: '比較',
+    rptEbitdaD: 'EBITDA — 詳細 (內部)', rptEbitdaS: 'EBITDA — 簡要 (外部)',
+    rptGroupIS: '損益表', rptISD: '損益表 — 詳細 (內部)', rptISS: '損益表 — 簡要 (外部)',
+    rptGroupBS: '資產負債表', rptBSD: '資產負債表 — 詳細 (內部)', rptBSS: '資產負債表 — 簡要 (外部)',
+    rptMonth: '月報', rptQuarter: '季報', rptHalf: '半年報', rptYear: '年報', rptCustom: '自訂',
+    rptNoCompare: '不比較', rptYoY: '去年同期 (YoY)', rptMoM: '上期 (MoM)', rptQoQ: '上一季 (QoQ)',
 
     // Period helpers
     periodRange: (s, e) => `${s} ~ ${e}`,
@@ -1044,15 +1055,205 @@ const LABELS = {
     plCompanyName: 'Company', plSalesperson: 'Salesperson', plStatus: 'Status',
     plCategory: 'Category', plEstValue: 'Est. Value', plNotes: 'Notes', plActions: 'Actions',
     plContactName: 'Contact', plContactEmail: 'Email',
-    plAddLead: 'Add Lead', plEditLead: 'Edit Lead', plAllFilter: 'All',
+    plAddLead: '+ Add Lead', plEditLead: 'Edit Lead', plAllFilter: 'All',
     plSave: 'Save', plCancel: 'Cancel', plDelete: 'Delete', plEdit: 'Edit',
+    plLeadDate: 'Lead Date', plCreatedDate: 'Created', plContact: 'Contact',
+    plMyLeadList: 'My Lead List', plStale: 'Stale', plStaleAll: 'Stale: All',
+    plStatusAll: 'Status: All', plCategoryAll: 'Category: All', plCreatedMonth: 'Created Month',
+    plFillReview: '✏️ Fill Review', plWriteReview: 'Weekly Review',
+    plMyPipelineSubTab: '📊 My Pipeline', plContactsSubTab: '📇 Contacts',
+    plPipelineSubTab: '📊 Pipeline',
+    plStaleAlert: '⚠️ Stale Lead Alerts',
+    pl14days: '< 14 days', pl14_30: '14-30 days', pl30_45: '30-45 days', pl45plus: '45+ days',
+    // Contacts module
+    ctContactList: '📇 Contacts', ctScanCard: '📷 Scan Card', ctCategoryMgmt: '🏷️ Categories',
+    ctSearchPlaceholder: 'Search name, company, title, email, phone...',
+    ctAllCategories: 'All Categories', ctFavorite: '⭐ Favorites', ctAddContact: '+ Add Contact',
+    ctNoContacts: 'No contacts yet', ctTotalContacts: 'Total Contacts',
+    ctFullName: 'Full Name', ctCompany: 'Company', ctJobTitle: 'Title', ctDepartment: 'Department',
+    ctEmail: 'Email', ctPhone: 'Phone', ctAddress: 'Address', ctWebsite: 'Website',
+    ctCategory: 'Category', ctNotes: 'Notes', ctSource: 'Source', ctCreatedDate: 'Created',
+    ctScanTitle: '📷 Scan Business Card', ctResultTitle: '✏️ Result / Manual Input',
+    ctUploadHint: 'Click to upload or drag card image', ctSupportFormat: 'Supports JPEG, PNG, WebP',
+    ctSelectFile: '📁 Browse', ctTakePhoto: '📷 Camera',
+    ctStartScan: '🔍 Start Scan', ctScanning: 'AI scanning...',
+    ctSaveContact: '💾 Save Contact', ctClear: 'Clear',
+    ctBatchScan: '📦 Batch Scan', ctBatchHint: 'Upload up to 10 cards',
+    ctSaveBatch: '💾 Save Selected', ctUncategorized: 'Uncategorized',
+    ctCatName: 'Name', ctCatColor: 'Color', ctCatIcon: 'Icon', ctAddCategory: '+ Add Category',
+    ctNoCats: 'No categories', ctContactDetail: 'Contact Details', ctEditContact: 'Edit Contact',
+    ctNewContact: 'New Contact', ctMultiSeparator: 'Separate with semicolons',
+    // Lead form
+    plCompanyLabel: 'Company/Client *', plTaxId: 'Tax ID', plAddress: 'Address',
+    plContactPerson: 'Contact Person', plPhone: 'Phone', plLeadDateLabel: 'Lead Date',
+    plEstValueLabel: 'Est. Value (optional)', plNotesLabel: 'Notes',
+    // Header & Password
+    hChangePw: 'Password', hAdmin: 'Admin', hLogout: 'Logout',
+    pwTitle: 'Change Password', pwCurrent: 'Current Password', pwNew: 'New Password', pwConfirm: 'Confirm Password',
     // Filter labels
     fStartDate: 'Start Date', fEndDate: 'End Date', fQuery: 'Query',
+    // Report controls
+    rptReport: 'Report', rptPeriod: 'Period', rptCompare: 'Compare',
+    rptEbitdaD: 'EBITDA — Detailed (Internal)', rptEbitdaS: 'EBITDA — Summary (External)',
+    rptGroupIS: 'Income Statement', rptISD: 'Income Statement — Detailed (Internal)', rptISS: 'Income Statement — Summary (External)',
+    rptGroupBS: 'Balance Sheet', rptBSD: 'Balance Sheet — Detailed (Internal)', rptBSS: 'Balance Sheet — Summary (External)',
+    rptMonth: 'Monthly', rptQuarter: 'Quarterly', rptHalf: 'Semi-Annual', rptYear: 'Annual', rptCustom: 'Custom',
+    rptNoCompare: 'None', rptYoY: 'Prior Year (YoY)', rptMoM: 'Prior Period (MoM)', rptQoQ: 'Prior Quarter (QoQ)',
 
     periodRange: (s, e) => `${s} ~ ${e}`,
     asOf: (d) => `As of ${d}`,
   }
 };
+
+// ==========================================
+//  i18n: Dynamic label rendering
+// ==========================================
+function renderPipelineLabels() {
+  const l = L();
+  // === Global class-based i18n labels ===
+  document.querySelectorAll('.i18n-start-date').forEach(el => el.textContent = l.fStartDate);
+  document.querySelectorAll('.i18n-end-date').forEach(el => el.textContent = l.fEndDate);
+  document.querySelectorAll('.i18n-query-btn').forEach(el => el.textContent = l.fQuery);
+  document.querySelectorAll('.i18n-loading').forEach(el => el.textContent = l.dLoading);
+  // === Reports View Labels ===
+  const rptMap = {
+    rptLabelReport: l.rptReport, rptLabelPeriod: l.rptPeriod, rptLabelCompare: l.rptCompare,
+    rptOptEbitdaD: l.rptEbitdaD, rptOptEbitdaS: l.rptEbitdaS,
+    rptOptISD: l.rptISD, rptOptISS: l.rptISS, rptOptBSD: l.rptBSD, rptOptBSS: l.rptBSS,
+    rptOptMonth: l.rptMonth, rptOptQuarter: l.rptQuarter, rptOptHalf: l.rptHalf, rptOptYear: l.rptYear, rptOptCustom: l.rptCustom,
+    rptOptNoCompare: l.rptNoCompare, rptOptYoY: l.rptYoY, rptOptMoM: l.rptMoM, rptOptQoQ: l.rptQoQ,
+  };
+  Object.entries(rptMap).forEach(([id, text]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  });
+  const rptGroupISEl = document.getElementById('rptGroupIS');
+  if (rptGroupISEl) rptGroupISEl.label = l.rptGroupIS;
+  const rptGroupBSEl = document.getElementById('rptGroupBS');
+  if (rptGroupBSEl) rptGroupBSEl.label = l.rptGroupBS;
+  // === Header Buttons ===
+  const headerMap = { headerChangePw: l.hChangePw, headerLogout: l.hLogout };
+  Object.entries(headerMap).forEach(([id, text]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  });
+  const adminLink = document.getElementById('adminLink');
+  if (adminLink) adminLink.textContent = l.hAdmin;
+  // === Password Modal ===
+  const pwMap = { pwTitle: l.pwTitle, pwLabelCur: l.pwCurrent, pwLabelNew: l.pwNew, pwLabelConfirm: l.pwConfirm, pwBtnCancel: l.plCancel, pwBtnSave: l.plSave };
+  Object.entries(pwMap).forEach(([id, text]) => { const el = document.getElementById(id); if (el) el.textContent = text; });
+  // === Notification Panel ===
+  const notifHeader = document.getElementById('notifPanelHeader');
+  if (notifHeader) notifHeader.textContent = l.plStaleAlert;
+  // === My Pipeline View (personal) ===
+  const mySubTabs = document.getElementById('myPlSubTabs');
+  if (mySubTabs) mySubTabs.innerHTML = `<button class="active" onclick="switchPlSubView('my','leads')">${l.plMyPipelineSubTab}</button><button onclick="switchPlSubView('my','contacts')">${l.plContactsSubTab}</button>`;
+  const myListTitle = document.getElementById('myPlListTitle');
+  if (myListTitle) myListTitle.textContent = l.plMyLeadList;
+  const myAddBtn = document.getElementById('myPlAddLeadBtn');
+  if (myAddBtn) myAddBtn.textContent = l.plAddLead;
+  const myThead = document.getElementById('myPlTableHead');
+  if (myThead) myThead.innerHTML = `<tr>
+    <th>${l.plCompanyName}</th><th>${l.plContact}</th>
+    <th class="sortable" onclick="toggleMyPlSort('leadDate')">${l.plLeadDate}<span class="sort-arrow" id="myPlSortArrowLeadDate"></span></th>
+    <th class="sortable" onclick="toggleMyPlSort('createdAt')">${l.plCreatedDate}<span class="sort-arrow" id="myPlSortArrowCreatedAt"></span></th>
+    <th>${l.plStatus}</th><th>${l.plCategory}</th><th style="text-align:right;">${l.plEstValue}</th>
+    <th>${l.plWeeklyReview}</th><th>${l.plNotes}</th><th>${l.plActions}</th>
+  </tr>`;
+  const myWeekLabel = document.getElementById('myPlWeekLabel');
+  if (myWeekLabel) myWeekLabel.textContent = l.plWeekLabel;
+  const myEmpty = document.getElementById('myPlLeadsEmpty');
+  if (myEmpty) myEmpty.textContent = l.dNoData;
+  // My pipeline stale filter
+  const myStale = document.getElementById('myPlFilterStale');
+  if (myStale) {
+    const cur = myStale.value;
+    myStale.innerHTML = `<option value="">${l.plStaleAll}</option><option value="0-14"${cur==='0-14'?' selected':''}>${l.pl14days}</option><option value="14-30"${cur==='14-30'?' selected':''}>${l.pl14_30}</option><option value="30-45"${cur==='30-45'?' selected':''}>${l.pl30_45}</option><option value="45+"${cur==='45+'?' selected':''}>${l.pl45plus}</option>`;
+  }
+
+  // === Admin Pipeline View ===
+  const adminSubTabs = document.querySelector('#pipelineDashboardView > .contacts-sub-tabs');
+  if (adminSubTabs) adminSubTabs.innerHTML = `<button class="active" onclick="switchPlSubView('admin','leads')">${l.plPipelineSubTab}</button><button onclick="switchPlSubView('admin','contacts')">${l.plContactsSubTab}</button>`;
+  // Admin filter labels by ID
+  const adminLabelMap = {
+    adminLabelSP: l.plSalesperson, adminLabelStatus: l.plStatus, adminLabelCat: l.plCategory,
+    adminLabelMonth: l.plCreatedMonth, adminLabelStale: l.plStale,
+    adminQueryBtn: l.fQuery, adminAddLeadBtn: l.plAddLead,
+  };
+  Object.entries(adminLabelMap).forEach(([id, text]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  });
+  // Admin filter selects — update "全部" option text
+  ['plFilterStatus', 'plFilterCat', 'plFilterSP'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel && sel.options[0] && sel.options[0].value === '') sel.options[0].textContent = l.plAllFilter;
+  });
+  const plFilterStale = document.getElementById('plFilterStale');
+  if (plFilterStale) {
+    const cur = plFilterStale.value;
+    plFilterStale.innerHTML = `<option value="">${l.plAllFilter}</option><option value="0-14"${cur==='0-14'?' selected':''}>${l.pl14days}</option><option value="14-30"${cur==='14-30'?' selected':''}>${l.pl14_30}</option><option value="30-45"${cur==='30-45'?' selected':''}>${l.pl30_45}</option><option value="45+"${cur==='45+'?' selected':''}>${l.pl45plus}</option>`;
+  }
+  // Admin pipeline table head
+  const plListTitle = document.getElementById('plLeadListTitle');
+  if (plListTitle) plListTitle.textContent = l.plLeadList;
+  const plThead = document.querySelector('#plLeadListSection thead');
+  if (plThead) plThead.innerHTML = `<tr>
+    <th>${l.plCompanyName}</th><th>${l.plSalesperson}</th><th>${l.plContact}</th>
+    <th>${l.plStatus}</th><th>${l.plCategory}</th><th style="text-align:right;">${l.plEstValue}</th>
+    <th class="sortable" onclick="togglePlSort('leadDate')">${l.plLeadDate}<span class="sort-arrow" id="plSortArrowLeadDate"></span></th>
+    <th class="sortable" onclick="togglePlSort('createdAt')">${l.plCreatedDate}<span class="sort-arrow" id="plSortArrowCreatedAt"></span></th>
+    <th>${l.plNotes}</th><th>${l.plWeeklyReview}</th>
+  </tr>`;
+  const plWeekLabelEl = document.querySelector('#plLeadListSection .card-header label');
+  if (plWeekLabelEl) plWeekLabelEl.textContent = l.plWeekLabel;
+  const plEmpty = document.getElementById('plLeadsEmpty');
+  if (plEmpty) plEmpty.textContent = l.dNoData;
+
+  // === Lead Modal ===
+  const leadModalClose = document.querySelector('#leadModal .btn-sm[onclick="closeLeadModal()"]');
+  if (leadModalClose) leadModalClose.textContent = l.plCancel;
+  const leadModalSave = document.querySelector('#leadModal .btn-primary[onclick="saveLead()"]');
+  if (leadModalSave) leadModalSave.textContent = l.plSave;
+
+  // === Lead Detail Modal ===
+  const ldHistory = document.querySelector('#leadDetailModal h4');
+  if (ldHistory) ldHistory.innerHTML = getLang() === 'en' ? '📋 Review History' : '📋 歷史回顧紀錄';
+  const ldClose = document.querySelector('#leadDetailModal .btn-sm[onclick="closeLeadDetail()"]');
+  if (ldClose) ldClose.textContent = getLang() === 'en' ? 'Close' : '關閉';
+  const ldEditBtn = document.getElementById('ldEditBtn');
+  if (ldEditBtn) ldEditBtn.textContent = l.plEditLead;
+
+  // === Lead Modal Form Labels ===
+  const lmMap = {
+    lmLabelCompany: l.plCompanyLabel, lmLabelTaxId: l.plTaxId, lmLabelAddress: l.plAddress,
+    lmLabelSP: l.plSalesperson, lmLabelContact: l.plContactPerson,
+    lmLabelEmail: l.plContactEmail, lmLabelPhone: l.plPhone,
+    lmLabelStatus: l.plStatus, lmLabelCategory: l.plCategory,
+    lmLabelDate: l.plLeadDateLabel, lmLabelEstValue: l.plEstValueLabel,
+    lmLabelNotes: l.plNotesLabel, lmBtnCancel: l.plCancel, lmBtnSave: l.plSave,
+  };
+  Object.entries(lmMap).forEach(([id, text]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  });
+
+  // === Category Edit Modal Labels ===
+  const catLabelMap = {
+    catLabelName: l.ctCatName + ' *', catLabelColor: l.ctCatColor, catLabelIcon: l.ctCatIcon,
+    catBtnCancel: l.plCancel, catBtnSave: l.plSave,
+  };
+  Object.entries(catLabelMap).forEach(([id, text]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  });
+
+  // Re-inject contacts UI labels (clear injection flag to force re-render with new lang)
+  ['myPlContactsSubView', 'adminPlContactsSubView'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.dataset.injected = ''; el.innerHTML = ''; }
+  });
+}
 
 // ==========================================
 //  Helpers
@@ -1222,13 +1423,13 @@ async function fetchReport() {
   const btn = document.getElementById('fetchBtn');
   const area = document.getElementById('reportArea');
 
-  if (!startDate || !endDate) { alert('請選擇日期範圍'); return; }
+  if (!startDate || !endDate) { alert(getLang() === 'en' ? 'Please select date range' : '請選擇日期範圍'); return; }
 
   const companyId = getCompanyId();
-  if (!companyId) { alert('請選擇公司'); return; }
+  if (!companyId) { alert(getLang() === 'en' ? 'Please select a company' : '請選擇公司'); return; }
 
-  btn.disabled = true; btn.textContent = '查詢中...';
-  area.innerHTML = '<div class="loading">正在從 Business Central 取得資料...</div>';
+  btn.disabled = true; btn.textContent = getLang() === 'en' ? 'Loading...' : '查詢中...';
+  area.innerHTML = `<div class="loading">${getLang() === 'en' ? 'Fetching data from Business Central...' : '正在從 Business Central 取得資料...'}</div>`;
 
   lastQuery = { type, startDate, endDate, compare, companyId };
 
@@ -1248,9 +1449,9 @@ async function fetchReport() {
     R[type](data, compare);
     document.getElementById('exportBar').classList.add('show');
   } catch (e) {
-    area.innerHTML = `<div class="error">查詢失敗：${e.message}</div>`;
+    area.innerHTML = `<div class="error">${getLang() === 'en' ? 'Query failed: ' : '查詢失敗：'}${e.message}</div>`;
     document.getElementById('exportBar').classList.remove('show');
-  } finally { btn.disabled = false; btn.textContent = '查詢'; }
+  } finally { btn.disabled = false; btn.textContent = L().fQuery; }
 }
 
 // ===== Export =====
@@ -1633,12 +1834,12 @@ async function loadDashboard() {
     if (sd && ed) url += `&startDate=${sd}&endDate=${ed}`;
     const res = await fetch(url);
     if (res.status === 401) { window.location.href = '/login'; return; }
-    if (res.status === 403) { container.innerHTML = '<div class="error">無權限</div>'; return; }
+    if (res.status === 403) { container.innerHTML = `<div class="error">${getLang() === 'en' ? 'No permission' : '無權限'}</div>`; return; }
     if (!res.ok) throw new Error((await res.json()).error || res.statusText);
     const data = await res.json();
     renderDashboard(data, container);
   } catch (e) {
-    container.innerHTML = `<div class="error">Dashboard 載入失敗：${e.message}</div>`;
+    container.innerHTML = `<div class="error">${getLang() === 'en' ? 'Dashboard failed: ' : 'Dashboard 載入失敗：'}${e.message}</div>`;
   }
 }
 
@@ -1756,13 +1957,13 @@ async function loadSalesDashboard() {
     if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
     const res = await fetch(url);
     if (res.status === 401) { window.location.href = '/login'; return; }
-    if (res.status === 403) { container.innerHTML = '<div class="error">無權限</div>'; return; }
+    if (res.status === 403) { container.innerHTML = `<div class="error">${getLang() === 'en' ? 'No permission' : '無權限'}</div>`; return; }
     if (!res.ok) throw new Error((await res.json()).error || res.statusText);
     const data = await res.json();
     if (data.error) { container.innerHTML = `<div class="error">${data.error}</div>`; return; }
     renderSalesDashboard(data, container);
   } catch (e) {
-    container.innerHTML = `<div class="error">Sales Dashboard 載入失敗：${e.message}</div>`;
+    container.innerHTML = `<div class="error">Sales ${getLang() === 'en' ? 'Dashboard failed: ' : 'Dashboard 載入失敗：'}${e.message}</div>`;
   }
 }
 
@@ -1869,13 +2070,13 @@ async function loadPurchasingDashboard() {
     if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
     const res = await fetch(url);
     if (res.status === 401) { window.location.href = '/login'; return; }
-    if (res.status === 403) { container.innerHTML = '<div class="error">無權限</div>'; return; }
+    if (res.status === 403) { container.innerHTML = `<div class="error">${getLang() === 'en' ? 'No permission' : '無權限'}</div>`; return; }
     if (!res.ok) throw new Error((await res.json()).error || res.statusText);
     const data = await res.json();
     if (data.error) { container.innerHTML = `<div class="error">${data.error}</div>`; return; }
     renderPurchasingDashboard(data, container);
   } catch (e) {
-    container.innerHTML = `<div class="error">Purchasing Dashboard 載入失敗：${e.message}</div>`;
+    container.innerHTML = `<div class="error">Purchasing ${getLang() === 'en' ? 'Dashboard failed: ' : 'Dashboard 載入失敗：'}${e.message}</div>`;
   }
 }
 
@@ -1970,7 +2171,7 @@ async function loadMyPipeline() {
     }
     await loadMyPipelineLeads();
   } catch (e) {
-    container.innerHTML = `<div class="error">載入失敗：${e.message}</div>`;
+    container.innerHTML = `<div class="error">${getLang() === 'en' ? 'Failed to load: ' : '載入失敗：'}${e.message}</div>`;
   }
   loadPipelineConfig();
 }
@@ -2039,7 +2240,7 @@ function populateMyPlWeekSelect() {
   if (!weeks.includes(thisWeek)) weeks.unshift(thisWeek);
   else { weeks.splice(weeks.indexOf(thisWeek), 1); weeks.unshift(thisWeek); }
   sel.innerHTML = weeks.map((w, i) =>
-    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(w)}${w === thisWeek ? ' (本週)' : ''}</option>`
+    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(w)}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
   ).join('');
 }
 
@@ -2132,7 +2333,7 @@ function renderMyPipelineTable() {
     const reviewCell = `<div class="pl-review-cell" data-lead-id="${lead.id}" data-week="${escHtml(weekLabel)}" data-act-id="${reviewId}">
       ${reviewText
         ? `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:32px;padding:6px 8px;border-radius:4px;background:#f0f7ff;border:1px solid #d0e3f7;" title="點擊編輯">${reviewText}</div>`
-        : `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:32px;padding:6px 8px;border-radius:4px;background:#fff3e0;border:1px dashed #e65100;color:#e65100;text-align:center;" title="點擊填寫">✏️ 填寫回顧</div>`
+        : `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:32px;padding:6px 8px;border-radius:4px;background:#fff3e0;border:1px dashed #e65100;color:#e65100;text-align:center;" title="${getLang() === 'en' ? 'Click to write' : '點擊填寫'}">${L().plFillReview}</div>`
       }
     </div>`;
     return `<tr>
@@ -2148,7 +2349,7 @@ function renderMyPipelineTable() {
         ? `<div class="pl-notes-cell" onclick="this.classList.toggle('expanded')" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-height:1.5em;" title="點擊展開">${escHtml(lead.notes)}</div>`
         : '—'}</td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-sm btn-edit" onclick="openEditLead('${lead.id}')">編輯</button>
+        <button class="btn btn-sm btn-edit" onclick="openEditLead('${lead.id}')">${L().plEdit}</button>
       </td>
     </tr>`;
   }).join('');
@@ -2179,26 +2380,27 @@ async function loadPipelineConfig() {
   // Populate filter category dropdown
   const filterCatSel = document.getElementById('plFilterCat');
   const currentCat = filterCatSel.value;
-  filterCatSel.innerHTML = '<option value="">全部</option>' +
+  const l = L();
+  filterCatSel.innerHTML = `<option value="">${l.plAllFilter}</option>` +
     [...allCats].map(c => `<option value="${escHtml(c)}"${c === currentCat ? ' selected' : ''}>${escHtml(c)}</option>`).join('');
   // Show config button for admin
   if (userRole === 'admin') document.getElementById('plConfigBtn').style.display = '';
   // Populate filter status dropdown dynamically
   const filterStatusSel = document.getElementById('plFilterStatus');
   const currentStatus = filterStatusSel.value;
-  filterStatusSel.innerHTML = '<option value="">全部</option>' +
+  filterStatusSel.innerHTML = `<option value="">${l.plAllFilter}</option>` +
     plConfig.statuses.map(s => `<option value="${escHtml(s)}"${s === currentStatus ? ' selected' : ''}>${escHtml(s)}</option>`).join('');
   // Also populate personal view (my-pipeline) filter dropdowns
   const myStatusSel = document.getElementById('myPlFilterStatus');
   if (myStatusSel) {
     const curMyS = myStatusSel.value;
-    myStatusSel.innerHTML = '<option value="">狀態：全部</option>' +
+    myStatusSel.innerHTML = `<option value="">${l.plStatusAll}</option>` +
       plConfig.statuses.map(s => `<option value="${escHtml(s)}"${s === curMyS ? ' selected' : ''}>${escHtml(s)}</option>`).join('');
   }
   const myCatSel = document.getElementById('myPlFilterCat');
   if (myCatSel) {
     const curMyC = myCatSel.value;
-    myCatSel.innerHTML = '<option value="">類別：全部</option>' +
+    myCatSel.innerHTML = `<option value="">${l.plCategoryAll}</option>` +
       [...allCats].map(c => `<option value="${escHtml(c)}"${c === curMyC ? ' selected' : ''}>${escHtml(c)}</option>`).join('');
   }
 }
@@ -2256,8 +2458,8 @@ async function savePipelineConfig() {
   document.querySelectorAll('#cfgCategoryList input').forEach((inp, i) => { cfgCategories[i] = inp.value.trim(); });
   cfgStatuses = cfgStatuses.filter(Boolean);
   cfgCategories = cfgCategories.filter(Boolean);
-  if (!cfgStatuses.length) { errEl.textContent = '至少需要一個狀態'; errEl.style.display = 'block'; return; }
-  if (!cfgCategories.length) { errEl.textContent = '至少需要一個類別'; errEl.style.display = 'block'; return; }
+  if (!cfgStatuses.length) { errEl.textContent = getLang() === 'en' ? 'At least one status required' : '至少需要一個狀態'; errEl.style.display = 'block'; return; }
+  if (!cfgCategories.length) { errEl.textContent = getLang() === 'en' ? 'At least one category required' : '至少需要一個類別'; errEl.style.display = 'block'; return; }
   try {
     const res = await fetch('/api/pipeline/config', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -2340,7 +2542,7 @@ function updateNotifBell(leads) {
       <span class="stale-dot ${cls}"></span>
       <div style="flex:1;min-width:0;">
         <div style="font-weight:500;">${escHtml(l.companyName)}</div>
-        <div style="font-size:11px;color:#999;">${escHtml(l.salesperson)} · ${l.status} · ${days}天未更新</div>
+        <div style="font-size:11px;color:#999;">${escHtml(l.salesperson)} · ${l.status} · ${getLang() === 'en' ? days + ' days stale' : days + '天未更新'}</div>
       </div>
     </div>`;
   }).join('');
@@ -2371,12 +2573,12 @@ async function loadPipelineDashboard() {
     if (sp) url += `?salesperson=${encodeURIComponent(sp)}`;
     const res = await fetch(url);
     if (res.status === 401) { window.location.href = '/login'; return; }
-    if (res.status === 403) { container.innerHTML = '<div class="error">無權限</div>'; return; }
+    if (res.status === 403) { container.innerHTML = `<div class="error">${getLang() === 'en' ? 'No permission' : '無權限'}</div>`; return; }
     if (!res.ok) throw new Error((await res.json()).error || res.statusText);
     const data = await res.json();
     renderPipelineDashboard(data, container);
   } catch (e) {
-    container.innerHTML = `<div class="error">Pipeline 載入失敗：${e.message}</div>`;
+    container.innerHTML = `<div class="error">${getLang() === 'en' ? 'Pipeline failed: ' : 'Pipeline 載入失敗：'}${e.message}</div>`;
   }
   await loadPipelineLeads();
   loadPipelineConfig();
@@ -2477,7 +2679,7 @@ function renderPipelineCharts(charts) {
         options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtShort(v) } } } }
       }));
     } else {
-      valEl.parentElement.innerHTML += '<div style="color:#999;text-align:center;padding:40px 0;">尚無預估金額資料</div>';
+      valEl.parentElement.innerHTML += `<div style="color:#999;text-align:center;padding:40px 0;">${getLang() === 'en' ? 'No estimated value data' : '尚無預估金額資料'}</div>`;
     }
   }
 }
@@ -2522,7 +2724,7 @@ function populatePlWeekSelect() {
   if (!weeks.includes(thisWeek)) weeks.unshift(thisWeek);
   else { weeks.splice(weeks.indexOf(thisWeek), 1); weeks.unshift(thisWeek); }
   sel.innerHTML = weeks.map((w, i) =>
-    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(w)}${w === thisWeek ? ' (本週)' : ''}</option>`
+    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(w)}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
   ).join('');
 }
 
@@ -2650,7 +2852,7 @@ async function quickStatusToggle(id) {
   if (!lead) return;
   const idx = statuses.indexOf(lead.status);
   const next = statuses[(idx + 1) % statuses.length];
-  if (!confirm(`將「${lead.companyName}」狀態從「${lead.status}」改為「${next}」？`)) return;
+  if (!confirm(getLang() === 'en' ? `Change "${lead.companyName}" from "${lead.status}" to "${next}"?` : `將「${lead.companyName}」狀態從「${lead.status}」改為「${next}」？`)) return;
   try {
     await fetch(`/api/pipeline/leads/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -2726,25 +2928,26 @@ function openLeadDetail(leadId) {
 
   // Basic info
   const staleHtml = staleIndicator(lead);
+  const l = L();
   document.getElementById('ldInfo').innerHTML = `<div class="ld-info-grid">
-    <div class="ld-info-item"><label>統一編號</label>${escHtml(lead.taxId || '—')}</div>
-    <div class="ld-info-item"><label>業務人員</label>${escHtml(lead.salesperson || '—')}</div>
-    ${lead.address ? `<div class="ld-info-item" style="grid-column:1/-1;"><label>地址</label>${escHtml(lead.address)}</div>` : ''}
-    <div class="ld-info-item"><label>窗口</label>${lead.contactName ? escHtml(lead.contactName) + (lead.contactPhone ? ` (${escHtml(lead.contactPhone)})` : '') : '—'}</div>
-    <div class="ld-info-item"><label>Email</label>${escHtml(lead.contactEmail || '—')}</div>
-    <div class="ld-info-item"><label>狀態</label><div class="stale-wrap"><span class="pl-badge pl-badge-${lead.status}">${lead.status}</span>${staleHtml}</div></div>
-    <div class="ld-info-item"><label>類別</label>${escHtml(lead.category || '—')}</div>
-    <div class="ld-info-item"><label>商機日期</label>${lead.leadDate ? fmtTWDate(lead.leadDate) : '—'}</div>
-    <div class="ld-info-item"><label>建檔日期</label>${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</div>
-    <div class="ld-info-item"><label>預估金額</label>${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</div>
-    <div class="ld-info-item"><label>最後更新</label>${lead.updatedAt ? fmtTWDate(lead.updatedAt) : '—'}</div>
+    <div class="ld-info-item"><label>${l.plTaxId}</label>${escHtml(lead.taxId || '—')}</div>
+    <div class="ld-info-item"><label>${l.plSalesperson}</label>${escHtml(lead.salesperson || '—')}</div>
+    ${lead.address ? `<div class="ld-info-item" style="grid-column:1/-1;"><label>${l.plAddress}</label>${escHtml(lead.address)}</div>` : ''}
+    <div class="ld-info-item"><label>${l.plContact}</label>${lead.contactName ? escHtml(lead.contactName) + (lead.contactPhone ? ` (${escHtml(lead.contactPhone)})` : '') : '—'}</div>
+    <div class="ld-info-item"><label>${l.plContactEmail}</label>${escHtml(lead.contactEmail || '—')}</div>
+    <div class="ld-info-item"><label>${l.plStatus}</label><div class="stale-wrap"><span class="pl-badge pl-badge-${lead.status}">${lead.status}</span>${staleHtml}</div></div>
+    <div class="ld-info-item"><label>${l.plCategory}</label>${escHtml(lead.category || '—')}</div>
+    <div class="ld-info-item"><label>${l.plLeadDate}</label>${lead.leadDate ? fmtTWDate(lead.leadDate) : '—'}</div>
+    <div class="ld-info-item"><label>${l.plCreatedDate}</label>${lead.createdAt ? fmtTWDate(lead.createdAt) : '—'}</div>
+    <div class="ld-info-item"><label>${l.plEstValue}</label>${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</div>
+    <div class="ld-info-item"><label>${getLang() === 'en' ? 'Last Updated' : '最後更新'}</label>${lead.updatedAt ? fmtTWDate(lead.updatedAt) : '—'}</div>
   </div>`;
 
   // Add review input
   const curWeek = getCurrentWeekLabel();
   document.getElementById('ldAddReview').innerHTML = `<div style="display:flex;gap:6px;">
-    <input type="text" id="ldReviewInput" placeholder="新增本週回顧..." style="flex:1;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" onkeydown="if(event.key==='Enter')addLeadReview()">
-    <button class="btn btn-sm btn-primary" onclick="addLeadReview()">新增</button>
+    <input type="text" id="ldReviewInput" placeholder="${getLang() === 'en' ? 'Add weekly review...' : '新增本週回顧...'}" style="flex:1;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" onkeydown="if(event.key==='Enter')addLeadReview()">
+    <button class="btn btn-sm btn-primary" onclick="addLeadReview()">${getLang() === 'en' ? 'Add' : '新增'}</button>
   </div>`;
 
   // Activities (all weeks, sorted newest first)
@@ -2761,12 +2964,12 @@ function renderLeadActivities(leadId, activitiesCache) {
   const curWeek = getCurrentWeekLabel();
   const actEl = document.getElementById('ldActivities');
   if (acts.length === 0) {
-    actEl.innerHTML = '<div class="ld-empty">尚無回顧紀錄</div>';
+    actEl.innerHTML = `<div class="ld-empty">${getLang() === 'en' ? 'No review history' : '尚無回顧紀錄'}</div>`;
   } else {
     actEl.innerHTML = acts.map(a => {
       const isThisWeek = a.weekLabel === curWeek;
       return `<div class="ld-act-card">
-        <div class="ld-act-week">${escHtml(a.weekLabel)}${isThisWeek ? ' <span style="color:#e65100;">(本週)</span>' : ''}</div>
+        <div class="ld-act-week">${escHtml(a.weekLabel)}${isThisWeek ? ` <span style="color:#e65100;">(${getLang() === 'en' ? 'This Week' : '本週'})</span>` : ''}</div>
         <div class="ld-act-content">${escHtml(a.content)}</div>
         <div class="ld-act-date">${a.createdAt ? fmtTWDate(a.createdAt) : ''}</div>
       </div>`;
@@ -2792,7 +2995,7 @@ async function addLeadReview() {
     activitiesCache.push(newAct);
     input.value = '';
     renderLeadActivities(currentDetailLeadId, activitiesCache);
-  } catch (e) { alert('新增回顧失敗：' + e.message); }
+  } catch (e) { alert((getLang() === 'en' ? 'Failed to add review: ' : '新增回顧失敗：') + e.message); }
 }
 
 function closeLeadDetail() { document.getElementById('leadDetailModal').style.display = 'none'; }
@@ -2801,7 +3004,7 @@ async function saveLead() {
   const errEl = document.getElementById('leadModalError');
   errEl.style.display = 'none';
   const companyName = document.getElementById('leadCompanyName').value.trim();
-  if (!companyName) { errEl.textContent = '公司/客戶名稱為必填'; errEl.style.display = 'block'; return; }
+  if (!companyName) { errEl.textContent = getLang() === 'en' ? 'Company name is required' : '公司/客戶名稱為必填'; errEl.style.display = 'block'; return; }
   const body = {
     companyName,
     taxId: document.getElementById('leadTaxId').value.trim(),
@@ -2857,12 +3060,11 @@ function switchPlSubView(view, sub) {
   const parent = view === 'my' ? document.getElementById('myPipelineView') : document.getElementById('pipelineDashboardView');
   const leadsDiv = document.getElementById(prefix + 'LeadsSubView');
   const contactsDiv = document.getElementById(prefix + 'ContactsSubView');
-  // Update sub-tab buttons
-  parent.querySelectorAll('.contacts-sub-tabs button').forEach(b => b.classList.remove('active'));
-  parent.querySelectorAll('.contacts-sub-tabs button').forEach(b => {
-    if ((sub === 'leads' && (b.textContent.includes('商機') || b.textContent.includes('管線'))) ||
-        (sub === 'contacts' && b.textContent.includes('通訊錄'))) b.classList.add('active');
-  });
+  // Update sub-tab buttons (position-based: 0=leads, 1=contacts)
+  const subBtns = parent.querySelector('.contacts-sub-tabs').querySelectorAll('button');
+  subBtns.forEach(b => b.classList.remove('active'));
+  if (sub === 'leads' && subBtns[0]) subBtns[0].classList.add('active');
+  if (sub === 'contacts' && subBtns[1]) subBtns[1].classList.add('active');
   if (sub === 'leads') {
     leadsDiv.style.display = '';
     contactsDiv.style.display = 'none';
@@ -2879,79 +3081,80 @@ function injectContactsUI(container) {
   // Only inject once
   if (container.dataset.injected) return;
   container.dataset.injected = '1';
+  const l = L();
   container.innerHTML = `
     <div class="contacts-sub-tabs" style="margin-bottom:12px;">
-      <button class="active" onclick="switchContactsSubTab('list')">📇 聯絡人列表</button>
-      <button onclick="switchContactsSubTab('scan')">📷 掃描名片</button>
-      <button onclick="switchContactsSubTab('categories')">🏷️ 分類管理</button>
+      <button class="active" onclick="switchContactsSubTab('list')">${l.ctContactList}</button>
+      <button onclick="switchContactsSubTab('scan')">${l.ctScanCard}</button>
+      <button onclick="switchContactsSubTab('categories')">${l.ctCategoryMgmt}</button>
     </div>
     <div id="contactsListTab">
       <div id="ctStats" class="ct-stats"></div>
       <div class="ct-toolbar">
-        <input type="text" id="ctSearch" placeholder="搜尋姓名、公司、職稱、Email、電話..." oninput="debounceContactSearch()">
-        <select id="ctFilterCat" onchange="loadContactsList()"><option value="">全部分類</option></select>
+        <input type="text" id="ctSearch" placeholder="${l.ctSearchPlaceholder}" oninput="debounceContactSearch()">
+        <select id="ctFilterCat" onchange="loadContactsList()"><option value="">${l.ctAllCategories}</option></select>
         <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
-          <input type="checkbox" id="ctFilterFav" onchange="loadContactsList()"> ⭐ 最愛
+          <input type="checkbox" id="ctFilterFav" onchange="loadContactsList()"> ${l.ctFavorite}
         </label>
         <div style="margin-left:auto;display:flex;gap:6px;">
-          <button class="btn btn-sm" onclick="openCreateContact()">+ 新增聯絡人</button>
+          <button class="btn btn-sm" onclick="openCreateContact()">${l.ctAddContact}</button>
           <button class="btn btn-sm" onclick="exportContacts('vcard')">📤 vCard</button>
           <button class="btn btn-sm" onclick="exportContacts('csv')">📤 CSV</button>
         </div>
       </div>
       <div id="ctList"></div>
-      <div id="ctEmpty" class="ld-empty" style="display:none;">尚無聯絡人</div>
+      <div id="ctEmpty" class="ld-empty" style="display:none;">${l.ctNoContacts}</div>
     </div>
     <div id="contactsScanTab" style="display:none">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
         <div>
-          <h3 style="font-size:15px;margin:0 0 12px;">📷 掃描名片</h3>
+          <h3 style="font-size:15px;margin:0 0 12px;">${l.ctScanTitle}</h3>
           <div id="ctScanZone" class="ct-scan-zone" onclick="document.getElementById('ctScanFileInput').click()">
             <div style="font-size:32px;margin-bottom:8px;">📸</div>
-            <div>點擊上傳或拖曳名片圖片</div>
-            <div style="font-size:11px;margin-top:4px;">支援 JPEG、PNG、WebP</div>
+            <div>${l.ctUploadHint}</div>
+            <div style="font-size:11px;margin-top:4px;">${l.ctSupportFormat}</div>
           </div>
           <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
-            <button class="btn btn-sm" onclick="document.getElementById('ctScanFileInput').click()">📁 選擇檔案</button>
-            <button class="btn btn-sm btn-primary" onclick="document.getElementById('ctCameraInput').click()">📷 拍照掃描</button>
+            <button class="btn btn-sm" onclick="document.getElementById('ctScanFileInput').click()">${l.ctSelectFile}</button>
+            <button class="btn btn-sm btn-primary" onclick="document.getElementById('ctCameraInput').click()">${l.ctTakePhoto}</button>
           </div>
           <input type="file" id="ctScanFileInput" accept="image/*" style="display:none" onchange="handleScanFile(this)">
           <input type="file" id="ctCameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleScanFile(this)">
           <img id="ctScanPreview" class="ct-scan-preview" style="display:none;">
           <div style="text-align:center;margin-top:8px;">
-            <button class="btn btn-primary" id="ctScanBtn" onclick="startScan()" style="display:none;">🔍 開始辨識</button>
-            <div id="ctScanLoading" style="display:none;color:#1565c0;font-size:13px;padding:12px;">AI 辨識中...</div>
+            <button class="btn btn-primary" id="ctScanBtn" onclick="startScan()" style="display:none;">${l.ctStartScan}</button>
+            <div id="ctScanLoading" style="display:none;color:#1565c0;font-size:13px;padding:12px;">${l.ctScanning}</div>
           </div>
         </div>
         <div>
-          <h3 style="font-size:15px;margin:0 0 12px;">✏️ 辨識結果 / 手動輸入</h3>
+          <h3 style="font-size:15px;margin:0 0 12px;">${l.ctResultTitle}</h3>
           <div id="ctScanForm">
-            <div class="ct-form-row"><div><label>全名 *</label><input type="text" id="ctFormName"></div><div><label>公司</label><input type="text" id="ctFormCompany"></div></div>
-            <div class="ct-form-row"><div><label>職稱</label><input type="text" id="ctFormTitle"></div><div><label>部門</label><input type="text" id="ctFormDept"></div></div>
-            <div class="ct-form-row"><div><label>Email</label><input type="text" id="ctFormEmail" placeholder="多筆用分號分隔"></div><div><label>電話</label><input type="text" id="ctFormPhone" placeholder="多筆用分號分隔"></div></div>
-            <div class="ct-form-row"><div><label>地址</label><input type="text" id="ctFormAddress"></div><div><label>網站</label><input type="text" id="ctFormWebsite"></div></div>
-            <div class="ct-form-row"><div><label>分類</label><select id="ctFormCategory"></select></div><div><label>備註</label><input type="text" id="ctFormNotes"></div></div>
+            <div class="ct-form-row"><div><label>${l.ctFullName} *</label><input type="text" id="ctFormName"></div><div><label>${l.ctCompany}</label><input type="text" id="ctFormCompany"></div></div>
+            <div class="ct-form-row"><div><label>${l.ctJobTitle}</label><input type="text" id="ctFormTitle"></div><div><label>${l.ctDepartment}</label><input type="text" id="ctFormDept"></div></div>
+            <div class="ct-form-row"><div><label>${l.ctEmail}</label><input type="text" id="ctFormEmail" placeholder="${l.ctMultiSeparator}"></div><div><label>${l.ctPhone}</label><input type="text" id="ctFormPhone" placeholder="${l.ctMultiSeparator}"></div></div>
+            <div class="ct-form-row"><div><label>${l.ctAddress}</label><input type="text" id="ctFormAddress"></div><div><label>${l.ctWebsite}</label><input type="text" id="ctFormWebsite"></div></div>
+            <div class="ct-form-row"><div><label>${l.ctCategory}</label><select id="ctFormCategory"></select></div><div><label>${l.ctNotes}</label><input type="text" id="ctFormNotes"></div></div>
             <div id="ctScanConfidence" style="margin-bottom:10px;"></div>
             <div id="ctDupWarning" style="display:none;background:#fff3e0;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:13px;"></div>
             <div style="display:flex;gap:8px;justify-content:flex-end;">
-              <button class="btn" onclick="clearScanForm()">清除</button>
-              <button class="btn btn-primary" onclick="saveScanContact()">💾 儲存聯絡人</button>
+              <button class="btn" onclick="clearScanForm()">${l.ctClear}</button>
+              <button class="btn btn-primary" onclick="saveScanContact()">${l.ctSaveContact}</button>
             </div>
           </div>
         </div>
       </div>
       <hr style="margin:20px 0;">
-      <h3 style="font-size:15px;margin:0 0 12px;">📦 批量掃描</h3>
+      <h3 style="font-size:15px;margin:0 0 12px;">${l.ctBatchScan}</h3>
       <div class="ct-scan-zone" onclick="document.getElementById('ctBatchFileInput').click()" style="padding:20px;">
-        <div>點擊上傳多張名片（最多 10 張）</div>
+        <div>${l.ctBatchHint}</div>
       </div>
       <input type="file" id="ctBatchFileInput" accept="image/*" multiple style="display:none" onchange="handleBatchScan(this)">
       <div id="ctBatchResults"></div>
     </div>
     <div id="contactsCategoriesTab" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h3 style="font-size:15px;margin:0;">🏷️ 分類管理</h3>
-        <button class="btn btn-sm" onclick="openCreateCategory()">+ 新增分類</button>
+        <h3 style="font-size:15px;margin:0;">${l.ctCategoryMgmt}</h3>
+        <button class="btn btn-sm" onclick="openCreateCategory()">${l.ctAddCategory}</button>
       </div>
       <div id="ctCategoriesList"></div>
     </div>
@@ -2976,12 +3179,10 @@ function injectContactsUI(container) {
 function switchContactsSubTab(tab) {
   ctCurrentSubTab = tab;
   if (!ctActiveContainer) return;
-  ctActiveContainer.querySelectorAll('.contacts-sub-tabs button').forEach(b => b.classList.remove('active'));
-  ctActiveContainer.querySelectorAll('.contacts-sub-tabs button').forEach(b => {
-    if ((tab === 'list' && b.textContent.includes('列表')) ||
-        (tab === 'scan' && b.textContent.includes('掃描')) ||
-        (tab === 'categories' && b.textContent.includes('分類'))) b.classList.add('active');
-  });
+  const btns = ctActiveContainer.querySelectorAll('.contacts-sub-tabs button');
+  btns.forEach(b => b.classList.remove('active'));
+  const btnArr = [...btns];
+  if (btnArr[{list:0, scan:1, categories:2}[tab]]) btnArr[{list:0, scan:1, categories:2}[tab]].classList.add('active');
   const listTab = ctActiveContainer.querySelector('#contactsListTab');
   const scanTab = ctActiveContainer.querySelector('#contactsScanTab');
   const catTab = ctActiveContainer.querySelector('#contactsCategoriesTab');
@@ -3008,11 +3209,12 @@ async function loadCategories() {
 function populateCategoryFilters() {
   const filterSel = document.getElementById('ctFilterCat');
   const cur = filterSel.value;
-  filterSel.innerHTML = '<option value="">全部分類</option>' +
+  const l = L();
+  filterSel.innerHTML = `<option value="">${l.ctAllCategories}</option>` +
     ctCategoriesCache.map(c => `<option value="${c.id}"${c.id === cur ? ' selected' : ''}>${escHtml(c.name)}</option>`).join('');
 
   const formSel = document.getElementById('ctFormCategory');
-  formSel.innerHTML = '<option value="">未分類</option>' +
+  formSel.innerHTML = `<option value="">${l.ctUncategorized}</option>` +
     ctCategoriesCache.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join('');
 }
 
@@ -3036,9 +3238,10 @@ async function loadContactsList() {
     const res = await fetch('/api/contacts/stats');
     if (res.ok) {
       const stats = await res.json();
+      const sl = L();
       document.getElementById('ctStats').innerHTML = `
-        <div class="ct-stat-card"><div class="ct-stat-val">${stats.total}</div><div class="ct-stat-label">聯絡人總數</div></div>
-        <div class="ct-stat-card"><div class="ct-stat-val">${stats.favorites}</div><div class="ct-stat-label">⭐ 最愛</div></div>
+        <div class="ct-stat-card"><div class="ct-stat-val">${stats.total}</div><div class="ct-stat-label">${sl.ctTotalContacts}</div></div>
+        <div class="ct-stat-card"><div class="ct-stat-val">${stats.favorites}</div><div class="ct-stat-label">${sl.ctFavorite}</div></div>
         ${stats.byCategory.map(c => `<div class="ct-stat-card"><div class="ct-stat-val" style="color:${c.color}">${c.count}</div><div class="ct-stat-label">${escHtml(c.name)}</div></div>`).join('')}
       `;
     }
@@ -3070,8 +3273,8 @@ function renderContactsList() {
       <div class="ct-actions">
         <span class="ct-fav ${c.is_favorite ? 'active' : ''}" onclick="event.stopPropagation();toggleCtFav('${c.id}')">★</span>
         <button class="btn btn-sm" onclick="event.stopPropagation();exportSingleVCard('${c.id}')">📤</button>
-        <button class="btn btn-sm btn-edit" onclick="event.stopPropagation();openEditContact('${c.id}')">編輯</button>
-        <button class="btn btn-sm" style="color:#c62828;" onclick="event.stopPropagation();deleteContactConfirm('${c.id}')">刪除</button>
+        <button class="btn btn-sm btn-edit" onclick="event.stopPropagation();openEditContact('${c.id}')">${L().plEdit}</button>
+        <button class="btn btn-sm" style="color:#c62828;" onclick="event.stopPropagation();deleteContactConfirm('${c.id}')">${L().plDelete}</button>
       </div>
     </div>`;
   }).join('');
@@ -3090,7 +3293,7 @@ async function toggleCtFav(id) {
 }
 
 async function deleteContactConfirm(id) {
-  if (!confirm('確定要刪除此聯絡人？')) return;
+  if (!confirm(getLang() === 'en' ? 'Delete this contact?' : '確定要刪除此聯絡人？')) return;
   try {
     await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
     loadContactsList();
@@ -3110,29 +3313,30 @@ function openContactDetail(id) {
   const c = ctContactsCache.find(x => x.id === id);
   if (!c) return;
   const cat = ctCategoriesCache.find(x => x.id === c.category_id);
-  document.getElementById('contactModalTitle').textContent = c.full_name || '聯絡人詳情';
+  const cl = L();
+  document.getElementById('contactModalTitle').textContent = c.full_name || cl.ctContactDetail;
   const emails = (c.emails || []).map(e => `<a href="mailto:${escHtml(e.value)}">${escHtml(e.value)}</a>${e.label ? ' ('+escHtml(e.label)+')' : ''}`).join('<br>') || '—';
   const phones = (c.phones || []).map(p => `<a href="tel:${escHtml(p.value)}">${escHtml(p.value)}</a>${p.label ? ' ('+escHtml(p.label)+')' : ''}`).join('<br>') || '—';
   const confHtml = c.ai_confidence != null ? `<span class="ct-confidence ${c.ai_confidence >= 0.8 ? 'high' : c.ai_confidence >= 0.5 ? 'medium' : 'low'}">${Math.round(c.ai_confidence * 100)}% AI</span>` : '';
 
   document.getElementById('contactModalBody').innerHTML = `
     <div class="ct-detail-grid">
-      <div class="ct-detail-item"><label>全名</label>${escHtml(c.full_name || '—')}</div>
-      <div class="ct-detail-item"><label>公司</label>${escHtml(c.company || '—')}</div>
-      <div class="ct-detail-item"><label>職稱</label>${escHtml(c.job_title || '—')}</div>
-      <div class="ct-detail-item"><label>部門</label>${escHtml(c.department || '—')}</div>
-      <div class="ct-detail-item"><label>Email</label>${emails}</div>
-      <div class="ct-detail-item"><label>電話</label>${phones}</div>
-      <div class="ct-detail-item" style="grid-column:1/-1;"><label>地址</label>${escHtml(c.address || '—')}</div>
-      <div class="ct-detail-item"><label>網站</label>${c.website ? `<a href="${escHtml(c.website)}" target="_blank">${escHtml(c.website)}</a>` : '—'}</div>
-      <div class="ct-detail-item"><label>分類</label>${cat ? `<span class="ct-cat-badge" style="background:${cat.color}">${escHtml(cat.name)}</span>` : '未分類'}</div>
-      <div class="ct-detail-item"><label>來源</label>${escHtml(c.source_type || 'manual')} ${confHtml}</div>
-      <div class="ct-detail-item"><label>建立日期</label>${c.created_at ? c.created_at.slice(0, 10) : '—'}</div>
-      ${c.notes ? `<div class="ct-detail-item" style="grid-column:1/-1;"><label>備註</label>${escHtml(c.notes)}</div>` : ''}
+      <div class="ct-detail-item"><label>${cl.ctFullName}</label>${escHtml(c.full_name || '—')}</div>
+      <div class="ct-detail-item"><label>${cl.ctCompany}</label>${escHtml(c.company || '—')}</div>
+      <div class="ct-detail-item"><label>${cl.ctJobTitle}</label>${escHtml(c.job_title || '—')}</div>
+      <div class="ct-detail-item"><label>${cl.ctDepartment}</label>${escHtml(c.department || '—')}</div>
+      <div class="ct-detail-item"><label>${cl.ctEmail}</label>${emails}</div>
+      <div class="ct-detail-item"><label>${cl.ctPhone}</label>${phones}</div>
+      <div class="ct-detail-item" style="grid-column:1/-1;"><label>${cl.ctAddress}</label>${escHtml(c.address || '—')}</div>
+      <div class="ct-detail-item"><label>${cl.ctWebsite}</label>${c.website ? `<a href="${escHtml(c.website)}" target="_blank">${escHtml(c.website)}</a>` : '—'}</div>
+      <div class="ct-detail-item"><label>${cl.ctCategory}</label>${cat ? `<span class="ct-cat-badge" style="background:${cat.color}">${escHtml(cat.name)}</span>` : cl.ctUncategorized}</div>
+      <div class="ct-detail-item"><label>${cl.ctSource}</label>${escHtml(c.source_type || 'manual')} ${confHtml}</div>
+      <div class="ct-detail-item"><label>${cl.ctCreatedDate}</label>${c.created_at ? c.created_at.slice(0, 10) : '—'}</div>
+      ${c.notes ? `<div class="ct-detail-item" style="grid-column:1/-1;"><label>${cl.ctNotes}</label>${escHtml(c.notes)}</div>` : ''}
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn btn-sm" onclick="exportSingleVCard('${c.id}')">📤 vCard</button>
-      <button class="btn btn-sm btn-edit" onclick="closeContactModal();openEditContact('${c.id}')">✏️ 編輯</button>
+      <button class="btn btn-sm btn-edit" onclick="closeContactModal();openEditContact('${c.id}')">✏️ ${cl.ctEditContact}</button>
     </div>
   `;
   document.getElementById('contactModal').style.display = 'flex';
@@ -3143,7 +3347,7 @@ function closeContactModal() { document.getElementById('contactModal').style.dis
 // ===== Create / Edit Contact =====
 function openCreateContact() {
   ctEditingContactId = null;
-  document.getElementById('contactModalTitle').textContent = '新增聯絡人';
+  document.getElementById('contactModalTitle').textContent = L().ctNewContact;
   renderContactForm({});
   document.getElementById('contactModal').style.display = 'flex';
 }
@@ -3152,31 +3356,32 @@ function openEditContact(id) {
   const c = ctContactsCache.find(x => x.id === id);
   if (!c) return;
   ctEditingContactId = id;
-  document.getElementById('contactModalTitle').textContent = '編輯聯絡人';
+  document.getElementById('contactModalTitle').textContent = L().ctEditContact;
   renderContactForm(c);
   document.getElementById('contactModal').style.display = 'flex';
 }
 
 function renderContactForm(c) {
-  const catOptions = '<option value="">未分類</option>' + ctCategoriesCache.map(cat =>
+  const cl = L();
+  const catOptions = `<option value="">${cl.ctUncategorized}</option>` + ctCategoriesCache.map(cat =>
     `<option value="${cat.id}"${cat.id === c.category_id ? ' selected' : ''}>${escHtml(cat.name)}</option>`
   ).join('');
 
   document.getElementById('contactModalBody').innerHTML = `
-    <div class="ct-form-row"><div><label>全名 *</label><input type="text" id="cmFullName" value="${escHtml(c.full_name || '')}"></div><div><label>公司</label><input type="text" id="cmCompany" value="${escHtml(c.company || '')}"></div></div>
-    <div class="ct-form-row"><div><label>職稱</label><input type="text" id="cmTitle" value="${escHtml(c.job_title || '')}"></div><div><label>部門</label><input type="text" id="cmDept" value="${escHtml(c.department || '')}"></div></div>
-    <div class="ct-form-row"><div><label>Email</label><input type="text" id="cmEmail" value="${escHtml((c.emails||[]).map(e=>e.value).join('; '))}" placeholder="多筆用分號分隔"></div><div><label>電話</label><input type="text" id="cmPhone" value="${escHtml((c.phones||[]).map(p=>p.value).join('; '))}" placeholder="多筆用分號分隔"></div></div>
-    <div class="ct-form-row"><div><label>地址</label><input type="text" id="cmAddress" value="${escHtml(c.address || '')}"></div><div><label>網站</label><input type="text" id="cmWebsite" value="${escHtml(c.website || '')}"></div></div>
-    <div class="ct-form-row"><div><label>分類</label><select id="cmCategory">${catOptions}</select></div><div><label>備註</label><input type="text" id="cmNotes" value="${escHtml(c.notes || '')}"></div></div>
+    <div class="ct-form-row"><div><label>${cl.ctFullName} *</label><input type="text" id="cmFullName" value="${escHtml(c.full_name || '')}"></div><div><label>${cl.ctCompany}</label><input type="text" id="cmCompany" value="${escHtml(c.company || '')}"></div></div>
+    <div class="ct-form-row"><div><label>${cl.ctJobTitle}</label><input type="text" id="cmTitle" value="${escHtml(c.job_title || '')}"></div><div><label>${cl.ctDepartment}</label><input type="text" id="cmDept" value="${escHtml(c.department || '')}"></div></div>
+    <div class="ct-form-row"><div><label>${cl.ctEmail}</label><input type="text" id="cmEmail" value="${escHtml((c.emails||[]).map(e=>e.value).join('; '))}" placeholder="${cl.ctMultiSeparator}"></div><div><label>${cl.ctPhone}</label><input type="text" id="cmPhone" value="${escHtml((c.phones||[]).map(p=>p.value).join('; '))}" placeholder="${cl.ctMultiSeparator}"></div></div>
+    <div class="ct-form-row"><div><label>${cl.ctAddress}</label><input type="text" id="cmAddress" value="${escHtml(c.address || '')}"></div><div><label>${cl.ctWebsite}</label><input type="text" id="cmWebsite" value="${escHtml(c.website || '')}"></div></div>
+    <div class="ct-form-row"><div><label>${cl.ctCategory}</label><select id="cmCategory">${catOptions}</select></div><div><label>${cl.ctNotes}</label><input type="text" id="cmNotes" value="${escHtml(c.notes || '')}"></div></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
-      <button class="btn" onclick="closeContactModal()">取消</button>
-      <button class="btn btn-primary" onclick="saveContactForm()">儲存</button>
+      <button class="btn" onclick="closeContactModal()">${cl.plCancel}</button>
+      <button class="btn btn-primary" onclick="saveContactForm()">${cl.plSave}</button>
     </div>
   `;
 }
 
 function parseMulti(val) {
-  return val.split(/[;；]/).map(v => v.trim()).filter(Boolean).map((v, i) => ({ value: v, label: i === 0 ? '主要' : '其他', is_primary: i === 0 }));
+  return val.split(/[;；]/).map(v => v.trim()).filter(Boolean).map((v, i) => ({ value: v, label: i === 0 ? (getLang() === 'en' ? 'Primary' : '主要') : (getLang() === 'en' ? 'Other' : '其他'), is_primary: i === 0 }));
 }
 
 async function saveContactForm() {
@@ -3432,21 +3637,22 @@ async function saveBatchContacts() {
 // ===== Category Management =====
 function renderCategoriesList() {
   const div = document.getElementById('ctCategoriesList');
-  if (!ctCategoriesCache.length) { div.innerHTML = '<div class="ld-empty">尚無分類</div>'; return; }
+  const cl = L();
+  if (!ctCategoriesCache.length) { div.innerHTML = `<div class="ld-empty">${cl.ctNoCats}</div>`; return; }
   div.innerHTML = ctCategoriesCache.map(c =>
     `<div class="ct-cat-mgmt-item">
       <div class="ct-color-swatch" style="background:${c.color}"></div>
       <span style="font-size:16px;">${ICON_MAP[c.icon] || '🏷️'}</span>
       <strong style="flex:1;">${escHtml(c.name)}</strong>
-      <button class="btn btn-sm btn-edit" onclick="openEditCategory('${c.id}')">編輯</button>
-      <button class="btn btn-sm" style="color:#c62828;" onclick="deleteCategoryConfirm('${c.id}')">刪除</button>
+      <button class="btn btn-sm btn-edit" onclick="openEditCategory('${c.id}')">${cl.plEdit}</button>
+      <button class="btn btn-sm" style="color:#c62828;" onclick="deleteCategoryConfirm('${c.id}')">${cl.plDelete}</button>
     </div>`
   ).join('');
 }
 
 function openCreateCategory() {
   ctEditingCatId = null;
-  document.getElementById('catEditTitle').textContent = '新增分類';
+  document.getElementById('catEditTitle').textContent = L().ctAddCategory;
   document.getElementById('catEditName').value = '';
   document.getElementById('catEditColor').value = '#6b7280';
   document.getElementById('catEditIcon').value = 'tag';
@@ -3457,7 +3663,7 @@ function openEditCategory(id) {
   const cat = ctCategoriesCache.find(c => c.id === id);
   if (!cat) return;
   ctEditingCatId = id;
-  document.getElementById('catEditTitle').textContent = '編輯分類';
+  document.getElementById('catEditTitle').textContent = getLang() === 'en' ? 'Edit Category' : '編輯分類';
   document.getElementById('catEditName').value = cat.name;
   document.getElementById('catEditColor').value = cat.color || '#6b7280';
   document.getElementById('catEditIcon').value = cat.icon || 'tag';
@@ -3472,7 +3678,7 @@ async function saveCategory() {
     color: document.getElementById('catEditColor').value,
     icon: document.getElementById('catEditIcon').value,
   };
-  if (!body.name.trim()) return alert('名稱為必填');
+  if (!body.name.trim()) return alert(getLang() === 'en' ? 'Name is required' : '名稱為必填');
   try {
     const url = ctEditingCatId ? `/api/contacts/categories/${ctEditingCatId}` : '/api/contacts/categories';
     const method = ctEditingCatId ? 'PUT' : 'POST';
@@ -3482,11 +3688,11 @@ async function saveCategory() {
     await loadCategories();
     renderCategoriesList();
     populateCategoryFilters();
-  } catch (e) { alert('儲存失敗：' + e.message); }
+  } catch (e) { alert((getLang() === 'en' ? 'Save failed: ' : '儲存失敗：') + e.message); }
 }
 
 async function deleteCategoryConfirm(id) {
-  if (!confirm('確定要刪除此分類？')) return;
+  if (!confirm(getLang() === 'en' ? 'Delete this category?' : '確定要刪除此分類？')) return;
   try {
     await fetch(`/api/contacts/categories/${id}`, { method: 'DELETE' });
     await loadCategories();
