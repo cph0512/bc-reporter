@@ -3,14 +3,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const { resolveDataFile } = require('./dataDir');
 
-const CONTACTS_SRC = path.join(__dirname, '../../config/contacts.json');
-const CONTACTS_FILE = process.env.VERCEL ? '/tmp/contacts.json' : CONTACTS_SRC;
-
-// Copy bundled data to writable location on cold start
-if (process.env.VERCEL && !fs.existsSync(CONTACTS_FILE) && fs.existsSync(CONTACTS_SRC)) {
-  fs.copyFileSync(CONTACTS_SRC, CONTACTS_FILE);
-}
+const CONTACTS_FILE = resolveDataFile('contacts.json');
 
 const DEFAULT_CATEGORIES = [
   { id: 'ccat_1', name: '客戶', color: '#1565c0', icon: 'briefcase', sort_order: 1, created_by: null, is_active: true },

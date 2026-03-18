@@ -3,14 +3,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const { resolveDataFile } = require('./dataDir');
 
-const PIPELINE_SRC = path.join(__dirname, '../../config/pipeline.json');
-const PIPELINE_FILE = process.env.VERCEL ? '/tmp/pipeline.json' : PIPELINE_SRC;
-
-// Vercel: copy bundled pipeline.json to writable /tmp on cold start
-if (process.env.VERCEL && !fs.existsSync(PIPELINE_FILE) && fs.existsSync(PIPELINE_SRC)) {
-  fs.copyFileSync(PIPELINE_SRC, PIPELINE_FILE);
-}
+const PIPELINE_FILE = resolveDataFile('pipeline.json');
 
 const DEFAULT_STATUSES = ['初步接觸', '進行中', '報價', '已完成', '擱置'];
 const DEFAULT_CATEGORIES = ['客戶', '車隊', '車隊+客戶', '合作廠商', '倉儲客戶', '戰略合作夥伴', '系統商', '系統商+潛在合作對象'];

@@ -4,15 +4,10 @@
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const { resolveDataFile } = require('./dataDir');
 
-const USERS_SRC = path.join(__dirname, '../../config/users.json');
-const USERS_FILE = process.env.VERCEL ? '/tmp/users.json' : USERS_SRC;
+const USERS_FILE = resolveDataFile('users.json');
 const COST = 10;
-
-// Vercel: copy bundled users.json to writable /tmp on cold start
-if (process.env.VERCEL && !fs.existsSync(USERS_FILE) && fs.existsSync(USERS_SRC)) {
-  fs.copyFileSync(USERS_SRC, USERS_FILE);
-}
 
 function readUsers() {
   try {
