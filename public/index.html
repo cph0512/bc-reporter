@@ -2492,7 +2492,7 @@ function fmtTWDate(isoStr) {
 
 // Stale lead helpers
 function getDaysSinceStatusChange(lead) {
-  const ref = lead.statusChangedAt || lead.updatedAt || lead.createdAt;
+  const ref = lead.lastActivityAt || lead.statusChangedAt || lead.updatedAt || lead.createdAt;
   if (!ref) return 0;
   return Math.floor((Date.now() - new Date(ref).getTime()) / 86400000);
 }

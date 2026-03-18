@@ -90,7 +90,7 @@ const pipelineStore = {
     let changed = false;
     data.leads.forEach(lead => {
       if (lead.status === '已完成' || lead.status === '擱置') return;
-      const ref = lead.statusChangedAt || lead.updatedAt || lead.createdAt;
+      const ref = lead.lastActivityAt || lead.statusChangedAt || lead.updatedAt || lead.createdAt;
       if (!ref) return;
       const days = Math.floor((now - new Date(ref).getTime()) / 86400000);
       if (days >= 60) {
@@ -242,6 +242,12 @@ const pipelineStore = {
       createdBy: createdBy || null,
     };
     data.activities.push(activity);
+    // Update lead's lastActivityAt to reset stale counter
+    const lead = data.leads.find(l => l.id === leadId);
+    if (lead) {
+      lead.lastActivityAt = now;
+      lead.updatedAt = now;
+    }
     writeData(data);
     return activity;
   },
@@ -254,6 +260,14 @@ const pipelineStore = {
     const activity = data.activities[idx];
     if (fields.content !== undefined) activity.content = (fields.content || '').trim();
     if (fields.weekLabel !== undefined) activity.weekLabel = fields.weekLabel.trim();
+
+    // Update lead's lastActivityAt to reset stale counter
+    const now = new Date().toISOString();
+    const lead = data.leads.find(l => l.id === activity.leadId);
+    if (lead) {
+      lead.lastActivityAt = now;
+      lead.updatedAt = now;
+    }
 
     writeData(data);
     return activity;
