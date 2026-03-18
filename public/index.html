@@ -3512,7 +3512,7 @@ async function saveScanContact() {
     source_type: ctScanImageData ? 'scan' : 'manual',
   };
   if (ctOverwriteId) body.overwrite_id = ctOverwriteId;
-  if (!body.full_name.trim()) return alert('全名為必填');
+  if (!body.full_name.trim()) return alert(getLang() === 'en' ? 'Full name is required' : '全名為必填');
   try {
     const res = await fetch('/api/contacts', {
       method: 'POST',
@@ -3520,12 +3520,50 @@ async function saveScanContact() {
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error((await res.json()).error);
-    alert('✅ 聯絡人已儲存');
+    alert(getLang() === 'en' ? '✅ Contact saved' : '✅ 聯絡人已儲存');
     clearScanForm();
     ctOverwriteId = null;
     switchContactsSubTab('list');
     loadContactsList();
-  } catch (e) { alert('儲存失敗：' + e.message); }
+    // Check if company exists in pipeline leads; if not, offer to create a new lead
+    if (body.company && body.company.trim()) {
+      await checkAndOfferCreateLead(body);
+    }
+  } catch (e) { alert((getLang() === 'en' ? 'Save failed: ' : '儲存失敗：') + e.message); }
+}
+
+async function checkAndOfferCreateLead(contactData) {
+  try {
+    const res = await fetch('/api/pipeline/leads');
+    if (!res.ok) return;
+    const leads = await res.json();
+    const companyName = (contactData.company || '').trim().toLowerCase();
+    const exists = leads.some(l => (l.companyName || '').trim().toLowerCase() === companyName);
+    if (!exists) {
+      const msg = getLang() === 'en'
+        ? `Company "${contactData.company}" is not in the pipeline. Create a new lead?`
+        : `公司「${contactData.company}」尚未在商機列表中，是否要建立新商機？`;
+      if (confirm(msg)) {
+        // Pre-fill and open the lead creation modal
+        editingLeadId = null;
+        document.getElementById('leadModalTitle').textContent = L().plAddLead;
+        document.getElementById('leadCompanyName').value = contactData.company || '';
+        document.getElementById('leadTaxId').value = '';
+        document.getElementById('leadAddress').value = contactData.address || '';
+        document.getElementById('leadSalesperson').value = userDisplayName || '';
+        document.getElementById('leadContactName').value = contactData.full_name || '';
+        document.getElementById('leadContactEmail').value = (contactData.emails || [])[0]?.value || '';
+        document.getElementById('leadContactPhone').value = (contactData.phones || [])[0]?.value || '';
+        document.getElementById('leadStatus').value = '初步接觸';
+        document.getElementById('leadCategory').value = '客戶';
+        document.getElementById('leadDate').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('leadEstValue').value = '';
+        document.getElementById('leadNotes').value = contactData.notes || '';
+        document.getElementById('leadModalError').style.display = 'none';
+        document.getElementById('leadModal').style.display = 'flex';
+      }
+    }
+  } catch (e) { console.error('checkAndOfferCreateLead:', e); }
 }
 
 function clearScanForm() {
@@ -3628,10 +3666,24 @@ async function saveBatchContacts() {
       saved++;
     } catch {}
   }
-  alert(`✅ 已儲存 ${saved} 筆聯絡人`);
+  alert(getLang() === 'en' ? `✅ Saved ${saved} contact(s)` : `✅ 已儲存 ${saved} 筆聯絡人`);
+  // Collect unique companies from batch to check against pipeline
+  const batchCompanies = [];
+  for (const cb of checkboxes) {
+    const idx = parseInt(cb.dataset.batchIdx);
+    const r = results[idx];
+    if (r && r.success && r.parsed?.company) batchCompanies.push(r.parsed);
+  }
   document.getElementById('ctBatchResults').innerHTML = '';
   switchContactsSubTab('list');
   loadContactsList();
+  // Check each unique company against pipeline
+  if (batchCompanies.length) {
+    const uniqueCompanies = [...new Map(batchCompanies.map(c => [c.company.toLowerCase(), c])).values()];
+    for (const c of uniqueCompanies) {
+      await checkAndOfferCreateLead(c);
+    }
+  }
 }
 
 // ===== Category Management =====
