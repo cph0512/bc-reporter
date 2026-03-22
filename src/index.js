@@ -25,6 +25,10 @@ const contactRoutes = require('./routes/contacts');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ===== Initialize BC Client & Report Engine =====
+const bcClient = new BCClient(process.env);
+const reportEngine = new ReportEngine(bcClient);
+
 // ===== Middleware =====
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
