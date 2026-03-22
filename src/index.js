@@ -9,8 +9,6 @@ const path = require('path');
 const BCClient = require('./services/bcClient');
 const ReportEngine = require('./services/reportEngine');
 const LineBotService = require('./services/lineBot');
-const TelegramBotService = require('./services/telegramBot');
-const ClaudeCodeBridge = require('./services/claudeCodeBridge');
 const userStore = require('./services/userStore');
 const createReportRoutes = require('./routes/reports');
 const docsRoutes = require('./routes/docs');
@@ -23,8 +21,6 @@ const companyStore = require('./services/companyStore');
 const pipelineStore = require('./services/pipelineStore');
 const contactStore = require('./services/contactStore');
 const contactRoutes = require('./routes/contacts');
-const conversationRoutes = require('./routes/conversations');
-const conversationStore = require('./services/conversationStore');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -69,61 +65,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ===== Telegram Gateway =====
-let telegramBot = null;
-if (process.env.TELEGRAM_BOT_TOKEN) {
-  // Claude Code Bridge 只在本地模式啟用
-  const claudeCodeBridge = process.env.VERCEL ? null : new ClaudeCodeBridge();
-  telegramBot = new TelegramBotService(process.env, reportEngine, claudeCodeBridge);
-
-  // Webhook 路由 (Vercel / Cloud)
-  app.post('/webhook/telegram', async (req, res) => {
-    try {
-      await telegramBot.handleWebhook(req.body);
-      res.status(200).json({ ok: true });
-    } catch (error) {
-      console.error('[Telegram Webhook] Error:', error.message);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Forward API — 供其他 LINE Bot 專案轉發訊息
-  const forwardKey = process.env.TELEGRAM_FORWARD_KEY;
-  app.post('/api/telegram/forward', async (req, res) => {
-    // API Key 驗證
-    if (forwardKey && req.headers['x-forward-key'] !== forwardKey) {
-      return res.status(401).json({ error: 'Invalid forward key' });
-    }
-
-    const { source, message, user } = req.body;
-    if (!message) {
-      return res.status(400).json({ error: 'message is required' });
-    }
-
-    try {
-      await telegramBot.forwardToTelegram(message, { source: source || 'Unknown', user });
-      res.json({ ok: true });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // 本地模式用 Polling
-  if (!process.env.VERCEL) {
-    telegramBot.startPolling();
-  }
-
-  console.log(`Telegram Gateway enabled (${process.env.VERCEL ? 'webhook' : 'polling'} mode)`);
-}
-
 // LINE Bot Webhook (signature-validated by LINE SDK)
 if (process.env.LINE_CHANNEL_SECRET && process.env.LINE_CHANNEL_ACCESS_TOKEN) {
-  const lineBot = new LineBotService(process.env, reportEngine, telegramBot);
-
-  // 讓 Telegram Bot 能透過 LINE Client 回覆/推播
-  if (telegramBot) {
-    telegramBot.setLineClient(lineBot.client);
-  }
+  const lineBot = new LineBotService(process.env, reportEngine);
 
   app.post('/webhook/line', lineBot.middleware, async (req, res) => {
     try {
@@ -148,7 +92,6 @@ app.get('/api/sync/export', (req, res) => {
     users: userStore.getAllRaw(),
     pipeline: pipelineStore.getRawData(),
     contacts: contactStore.getRawData(),
-    conversations: conversationStore.getRawData(),
   });
 });
 
@@ -210,7 +153,6 @@ app.get('/api/companies', requireAuth, (req, res) => {
   res.json(companies);
 });
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
-app.use('/api/admin/conversations', requireAuth, requireAdmin, conversationRoutes);
 app.use('/api/pipeline', requireAuth, pipelineRoutes);
 app.use('/api/contacts', requireAuth, contactRoutes);
 app.use('/api', requireAuth, companyAccess, createReportRoutes(reportEngine));
@@ -232,7 +174,6 @@ if (!process.env.VERCEL) {
 ║  Web:   http://localhost:${PORT}                 ║
 ║  API:   http://localhost:${PORT}/api             ║
 ║  LINE:  http://localhost:${PORT}/webhook/line    ║
-║  TG:    http://localhost:${PORT}/webhook/telegram║
 ╚══════════════════════════════════════════════╝
     `);
   });

@@ -155,7 +155,7 @@ class LineBotService {
 
   async buildIncomeStatementMessage(year, month, compare) {
     const data = compare !== 'none'
-      ? await this.reportEngine.getEbitdaComparison(year, month, compare) // Reuse EBITDA data which has all IS fields
+      ? await this.reportEngine.getEbitdaComparison(year, month, compare)
       : { current: await this.reportEngine.getEbitda(year, month), previous: null };
 
     const c = data.current;
