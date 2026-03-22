@@ -39,17 +39,6 @@ app.use(session({
   },
 }));
 
-// ===== Initialize Services =====
-const bcClient = new BCClient({
-  BC_TENANT_ID: process.env.BC_TENANT_ID,
-  BC_CLIENT_ID: process.env.BC_CLIENT_ID,
-  BC_CLIENT_SECRET: process.env.BC_CLIENT_SECRET,
-  BC_ENVIRONMENT: process.env.BC_ENVIRONMENT || 'Production',
-  BC_COMPANY_ID: process.env.BC_COMPANY_ID,
-});
-
-const reportEngine = new ReportEngine(bcClient);
-
 // ===== Public Routes (no auth) =====
 
 // Login page
@@ -95,7 +84,7 @@ app.get('/api/sync/export', (req, res) => {
   });
 });
 
-// ===== External Report API (sync-secret auth, for tg-service) =====
+// ===== External Report API (sync-secret auth, for telegram-gateway) =====
 app.get('/api/external/companies', (req, res) => {
   if (req.headers['x-sync-secret'] !== syncSecret) {
     return res.status(401).json({ error: 'Unauthorized' });
