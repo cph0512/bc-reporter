@@ -132,6 +132,60 @@ app.get('/api/external/balance', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== External: Pipeline (token-based) =====
+app.get('/api/external/pipeline/leads', (req, res) => {
+  if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
+  const { salesperson, status, category } = req.query;
+  res.json(pipelineStore.getLeads({ salesperson, status, category }));
+});
+
+app.get('/api/external/pipeline/dashboard', (req, res) => {
+  if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
+  const { salesperson } = req.query;
+  const leads = pipelineStore.getLeads(salesperson ? { salesperson } : {});
+  const totalLeads = leads.length;
+  const statusCounts = {};
+  pipelineStore.STATUSES.forEach(s => { statusCounts[s] = 0; });
+  leads.forEach(l => { statusCounts[l.status] = (statusCounts[l.status] || 0) + 1; });
+  const totalValue = leads.reduce((s, l) => s + (l.estimatedValue || 0), 0);
+  res.json({ totalLeads, statusCounts, totalValue });
+});
+
+app.get('/api/external/pipeline/activities', (req, res) => {
+  if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
+  const { leadId, weekLabel } = req.query;
+  res.json(pipelineStore.getActivities({ leadId, weekLabel }));
+});
+
+app.post('/api/external/pipeline/leads', express.json(), (req, res) => {
+  if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
+  try { res.status(201).json(pipelineStore.createLead(req.body)); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.put('/api/external/pipeline/leads/:id', express.json(), (req, res) => {
+  if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
+  try { res.json(pipelineStore.updateLead(req.params.id, req.body)); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post('/api/external/pipeline/leads/:id/notes', express.json(), (req, res) => {
+  if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
+  try { res.status(201).json(pipelineStore.addLeadNote(req.params.id, req.body.content, req.body.author || 'bot')); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ===== External: Contacts (token-based) =====
+app.get('/api/external/contacts', (req, res) => {
+  if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
+  res.json(contactStore.getAll());
+});
+
+app.get('/api/external/contacts/stats', (req, res) => {
+  if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
+  res.json(contactStore.getStats());
+});
+
 // ===== Protected: Dashboard & Admin =====
 app.get('/', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
