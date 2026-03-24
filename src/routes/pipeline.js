@@ -9,6 +9,24 @@ const { requireDashboard } = require('../middleware/auth');
 // All pipeline routes require 'pipeline' dashboard access
 router.use(requireDashboard('pipeline'));
 
+// Helper: check if user is admin
+function isAdmin(req) {
+  return req.session?.user?.role === 'admin';
+}
+
+// Helper: get current user's display name (used as salesperson/owner)
+function getUserName(req) {
+  const user = req.session?.user;
+  return user?.displayName || user?.username || null;
+}
+
+// Helper: check if user can access a lead (admin or own lead)
+function canAccessLead(req, lead) {
+  if (isAdmin(req)) return true;
+  const name = getUserName(req);
+  return lead.salesperson === name || lead.createdBy === req.session?.user?.id;
+}
+
 // ===== Config =====
 router.get('/config', (req, res) => {
   res.json(pipelineStore.getConfig());
@@ -33,7 +51,15 @@ router.put('/config', (req, res) => {
 router.get('/leads', (req, res) => {
   try {
     const { salesperson, status, category } = req.query;
-    const leads = pipelineStore.getLeads({ salesperson, status, category });
+    const filters = { status, category };
+    if (isAdmin(req)) {
+      // Admin: can filter by salesperson, or see all
+      if (salesperson) filters.salesperson = salesperson;
+    } else {
+      // Non-admin: always filter to own leads only
+      filters.salesperson = getUserName(req);
+    }
+    const leads = pipelineStore.getLeads(filters);
     res.json(leads);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -56,6 +82,9 @@ router.post('/leads', (req, res) => {
 // PUT /leads/:id — update
 router.put('/leads/:id', (req, res) => {
   try {
+    const existing = pipelineStore.getLeadById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Lead not found' });
+    if (!canAccessLead(req, existing)) return res.status(403).json({ error: 'No permission' });
     const lead = pipelineStore.updateLead(req.params.id, req.body);
     res.json(lead);
   } catch (err) {
@@ -66,6 +95,9 @@ router.put('/leads/:id', (req, res) => {
 // DELETE /leads/:id — delete
 router.delete('/leads/:id', (req, res) => {
   try {
+    const existing = pipelineStore.getLeadById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Lead not found' });
+    if (!canAccessLead(req, existing)) return res.status(403).json({ error: 'No permission' });
     pipelineStore.deleteLead(req.params.id);
     res.json({ status: 'deleted' });
   } catch (err) {
@@ -89,7 +121,15 @@ router.post('/leads/:id/notes', (req, res) => {
 router.get('/activities', (req, res) => {
   try {
     const { leadId, weekLabel } = req.query;
-    const activities = pipelineStore.getActivities({ leadId, weekLabel });
+    let activities = pipelineStore.getActivities({ leadId, weekLabel });
+    // Non-admin: only see activities for own leads
+    if (!isAdmin(req)) {
+      const name = getUserName(req);
+      const ownLeadIds = new Set(
+        pipelineStore.getLeads({ salesperson: name }).map(l => l.id)
+      );
+      activities = activities.filter(a => ownLeadIds.has(a.leadId));
+    }
     res.json(activities);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -135,7 +175,14 @@ router.delete('/activities/:id', (req, res) => {
 router.get('/dashboard', (req, res) => {
   try {
     const { salesperson } = req.query;
-    const leads = pipelineStore.getLeads(salesperson ? { salesperson } : {});
+    let filters = {};
+    if (isAdmin(req)) {
+      if (salesperson) filters.salesperson = salesperson;
+    } else {
+      // Non-admin: always scoped to own data
+      filters.salesperson = getUserName(req);
+    }
+    const leads = pipelineStore.getLeads(filters);
 
     // KPIs
     const totalLeads = leads.length;
