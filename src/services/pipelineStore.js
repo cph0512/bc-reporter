@@ -55,6 +55,10 @@ const pipelineStore = {
     return readData();
   },
 
+  setRawData(data) {
+    writeData(data);
+  },
+
   // ===== Config =====
 
   getConfig() {

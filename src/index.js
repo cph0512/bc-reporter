@@ -88,6 +88,36 @@ app.get('/api/sync/export', (req, res) => {
   });
 });
 
+// ===== Sync Import (push pipeline/contacts data to production volume) =====
+app.post('/api/sync/import-pipeline', express.json({ limit: '10mb' }), (req, res) => {
+  if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const { leads, activities } = req.body;
+    if (!leads) return res.status(400).json({ error: 'Missing leads' });
+    const current = pipelineStore.getRawData();
+    // Merge: add new leads (by id), update existing
+    const existingIds = new Set(current.leads.map(l => l.id));
+    let added = 0, updated = 0;
+    for (const lead of leads) {
+      if (!existingIds.has(lead.id)) {
+        current.leads.push(lead);
+        added++;
+      }
+    }
+    // Merge activities
+    if (activities) {
+      const existingActIds = new Set(current.activities.map(a => a.id));
+      for (const act of activities) {
+        if (!existingActIds.has(act.id)) {
+          current.activities.push(act);
+        }
+      }
+    }
+    pipelineStore.setRawData(current);
+    res.json({ success: true, added, total_leads: current.leads.length, total_activities: current.activities.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== External Report API (sync-secret auth, for telegram-gateway) =====
 app.get('/api/external/companies', (req, res) => {
   if (req.headers['x-sync-secret'] !== syncSecret) {
