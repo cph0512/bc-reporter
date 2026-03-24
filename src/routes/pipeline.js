@@ -14,17 +14,33 @@ function isAdmin(req) {
   return req.session?.user?.role === 'admin';
 }
 
+// Helper: check if user is manager
+function isManager(req) {
+  return req.session?.user?.role === 'manager';
+}
+
 // Helper: get current user's display name (used as salesperson/owner)
 function getUserName(req) {
   const user = req.session?.user;
   return user?.displayName || user?.username || null;
 }
 
-// Helper: check if user can access a lead (admin or own lead)
+// Helper: get all salespeople this user can see (self + managed)
+function getVisibleSalespeople(req) {
+  const user = req.session?.user;
+  const names = [getUserName(req)];
+  if (user?.managedSalespeople?.length) {
+    names.push(...user.managedSalespeople);
+  }
+  return [...new Set(names.filter(Boolean))];
+}
+
+// Helper: check if user can access a lead (admin, manager of salesperson, or own lead)
 function canAccessLead(req, lead) {
   if (isAdmin(req)) return true;
-  const name = getUserName(req);
-  return lead.salesperson === name || lead.createdBy === req.session?.user?.id;
+  const visible = getVisibleSalespeople(req);
+  if (visible.includes(lead.salesperson)) return true;
+  return lead.createdBy === req.session?.user?.id;
 }
 
 // ===== Config =====
@@ -55,8 +71,16 @@ router.get('/leads', (req, res) => {
     if (isAdmin(req)) {
       // Admin: can filter by salesperson, or see all
       if (salesperson) filters.salesperson = salesperson;
+    } else if (isManager(req)) {
+      // Manager: can filter within visible salespeople, or see all managed
+      const visible = getVisibleSalespeople(req);
+      if (salesperson && visible.includes(salesperson)) {
+        filters.salesperson = salesperson;
+      } else {
+        filters.salespeople = visible;
+      }
     } else {
-      // Non-admin: always filter to own leads only
+      // User: always filter to own leads only
       filters.salesperson = getUserName(req);
     }
     const leads = pipelineStore.getLeads(filters);
@@ -122,13 +146,14 @@ router.get('/activities', (req, res) => {
   try {
     const { leadId, weekLabel } = req.query;
     let activities = pipelineStore.getActivities({ leadId, weekLabel });
-    // Non-admin: only see activities for own leads
+    // Non-admin: only see activities for visible leads
     if (!isAdmin(req)) {
-      const name = getUserName(req);
-      const ownLeadIds = new Set(
-        pipelineStore.getLeads({ salesperson: name }).map(l => l.id)
-      );
-      activities = activities.filter(a => ownLeadIds.has(a.leadId));
+      const visible = getVisibleSalespeople(req);
+      const visibleLeadIds = new Set();
+      visible.forEach(sp => {
+        pipelineStore.getLeads({ salesperson: sp }).forEach(l => visibleLeadIds.add(l.id));
+      });
+      activities = activities.filter(a => visibleLeadIds.has(a.leadId));
     }
     res.json(activities);
   } catch (err) {
@@ -178,8 +203,15 @@ router.get('/dashboard', (req, res) => {
     let filters = {};
     if (isAdmin(req)) {
       if (salesperson) filters.salesperson = salesperson;
+    } else if (isManager(req)) {
+      const visible = getVisibleSalespeople(req);
+      if (salesperson && visible.includes(salesperson)) {
+        filters.salesperson = salesperson;
+      } else {
+        filters.salespeople = visible;
+      }
     } else {
-      // Non-admin: always scoped to own data
+      // User: always scoped to own data
       filters.salesperson = getUserName(req);
     }
     const leads = pipelineStore.getLeads(filters);

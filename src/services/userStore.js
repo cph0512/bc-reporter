@@ -56,7 +56,7 @@ const userStore = {
     return safe;
   },
 
-  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [] }) {
+  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [], managedSalespeople = [] }) {
     const users = readUsers();
     if (users.find(u => u.username === username)) {
       throw new Error('Username already exists');
@@ -70,6 +70,7 @@ const userStore = {
       displayName: displayName || username,
       companies,
       dashboards,
+      managedSalespeople,
       createdAt: new Date().toISOString(),
     };
     users.push(newUser);
@@ -93,6 +94,7 @@ const userStore = {
     if (fields.role) users[idx].role = fields.role;
     if (fields.companies !== undefined) users[idx].companies = fields.companies;
     if (fields.dashboards !== undefined) users[idx].dashboards = fields.dashboards;
+    if (fields.managedSalespeople !== undefined) users[idx].managedSalespeople = fields.managedSalespeople;
     if (fields.password) {
       users[idx].passwordHash = await bcrypt.hash(fields.password, COST);
     }

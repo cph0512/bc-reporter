@@ -24,11 +24,11 @@ router.get('/pipeline-export', (req, res) => {
 // POST /api/admin/users — create user
 router.post('/users', async (req, res) => {
   try {
-    const { username, password, role, displayName, companies } = req.body;
+    const { username, password, role, displayName, companies, dashboards, managedSalespeople } = req.body;
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password required' });
     }
-    const user = await userStore.create({ username, password, role, displayName, companies });
+    const user = await userStore.create({ username, password, role, displayName, companies, dashboards, managedSalespeople });
     res.status(201).json(user);
   } catch (err) {
     res.status(400).json({ error: err.message });

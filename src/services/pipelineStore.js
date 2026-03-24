@@ -106,7 +106,9 @@ const pipelineStore = {
     // Auto-shelve before returning leads
     this.autoShelve();
     let { leads } = readData();
-    if (filters.salesperson) {
+    if (filters.salespeople && Array.isArray(filters.salespeople)) {
+      leads = leads.filter(l => filters.salespeople.includes(l.salesperson));
+    } else if (filters.salesperson) {
       leads = leads.filter(l => l.salesperson === filters.salesperson);
     }
     if (filters.status) {
