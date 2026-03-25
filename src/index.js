@@ -43,6 +43,7 @@ const bcClient = new BCClient(process.env);
 const reportEngine = new ReportEngine(bcClient);
 
 // ===== Middleware =====
+app.set('trust proxy', 1); // Trust Railway/Vercel reverse proxy for secure cookies
 app.use(securityHeaders());   // Helmet: CSP, HSTS, X-Frame-Options (規範 §5.1)
 app.use(corsConfig());        // CORS: env-based whitelist or allow-all in dev (規範 §5.1)
 app.use(express.json({ limit: '10mb' }));
