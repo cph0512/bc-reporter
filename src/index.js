@@ -165,14 +165,26 @@ app.get('/api/external/balance', async (req, res) => {
 // ===== External: Pipeline (token-based) =====
 app.get('/api/external/pipeline/leads', (req, res) => {
   if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
-  const { salesperson, status, category } = req.query;
-  res.json(pipelineStore.getLeads({ salesperson, status, category }));
+  const { salesperson, salespeople, status, category } = req.query;
+  const filters = { status, category };
+  if (salespeople) {
+    filters.salespeople = salespeople.split(',').map(s => s.trim());
+  } else if (salesperson) {
+    filters.salesperson = salesperson;
+  }
+  res.json(pipelineStore.getLeads(filters));
 });
 
 app.get('/api/external/pipeline/dashboard', (req, res) => {
   if (req.headers['x-sync-secret'] !== syncSecret) return res.status(401).json({ error: 'Unauthorized' });
-  const { salesperson } = req.query;
-  const leads = pipelineStore.getLeads(salesperson ? { salesperson } : {});
+  const { salesperson, salespeople } = req.query;
+  let filters = {};
+  if (salespeople) {
+    filters.salespeople = salespeople.split(',').map(s => s.trim());
+  } else if (salesperson) {
+    filters.salesperson = salesperson;
+  }
+  const leads = pipelineStore.getLeads(filters);
   const totalLeads = leads.length;
   const statusCounts = {};
   pipelineStore.STATUSES.forEach(s => { statusCounts[s] = 0; });
