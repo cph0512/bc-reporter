@@ -33,7 +33,10 @@
   td { border-bottom: 1px solid #f5f5f5; }
   .role-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
   .role-admin { background: #fff3e0; color: #e65100; }
+  .role-manager { background: #e3f2fd; color: #1565c0; }
   .role-user { background: #e8f5e9; color: #2e7d32; }
+  .managed-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .managed-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #e3f2fd; color: #1565c0; }
   .actions { display: flex; gap: 6px; }
 
   /* Modal */
@@ -88,6 +91,7 @@
             <th>帳號</th>
             <th>顯示名稱</th>
             <th>角色</th>
+            <th>管理業務</th>
             <th>公司權限</th>
             <th>儀表板權限</th>
             <th>建立時間</th>
@@ -116,10 +120,15 @@
     </div>
     <div class="form-group">
       <label>角色</label>
-      <select id="mRole">
+      <select id="mRole" onchange="toggleManagedSection()">
         <option value="user">一般使用者</option>
+        <option value="manager">主管</option>
         <option value="admin">管理員</option>
       </select>
+    </div>
+    <div class="form-group" id="managedGroup" style="display:none;">
+      <label>管理的業務人員（勾選要管理的人）</label>
+      <div id="mManaged" class="checkbox-list" style="max-height:150px;overflow-y:auto;border:1px solid #d0d0d0;border-radius:6px;padding:8px;"></div>
     </div>
     <div class="form-group">
       <label>公司權限（不勾 = 全部）</label>
@@ -189,12 +198,13 @@ async function loadUsers() {
     return `<tr>
       <td><strong>${esc(u.username)}</strong></td>
       <td>${esc(u.displayName)}</td>
-      <td><span class="role-badge role-${u.role}">${u.role === 'admin' ? '管理員' : '使用者'}</span></td>
+      <td><span class="role-badge role-${u.role}">${u.role === 'admin' ? '管理員' : u.role === 'manager' ? '主管' : '使用者'}</span></td>
+      <td style="font-size:12px;"><div class="managed-tags">${(u.managedSalespeople||[]).map(s=>'<span class="managed-tag">'+esc(s)+'</span>').join('')||'<span style="color:#ccc;">—</span>'}</div></td>
       <td style="font-size:12px;">${comps}</td>
       <td style="font-size:12px;">${dashes}</td>
       <td>${new Date(u.createdAt).toLocaleDateString('zh-TW')}</td>
       <td class="actions">
-        <button class="btn btn-sm btn-edit" onclick='openEdit(${JSON.stringify(u.id)},${JSON.stringify(u.username)},${JSON.stringify(u.displayName)},${JSON.stringify(u.role)},${JSON.stringify(u.companies||[])},${JSON.stringify(u.dashboards||[])})'>編輯</button>
+        <button class="btn btn-sm btn-edit" onclick='openEdit(${JSON.stringify(u.id)},${JSON.stringify(u.username)},${JSON.stringify(u.displayName)},${JSON.stringify(u.role)},${JSON.stringify(u.companies||[])},${JSON.stringify(u.dashboards||[])},${JSON.stringify(u.managedSalespeople||[])})'>編輯</button>
         ${u.id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}','${esc(u.username)}')">刪除</button>` : ''}
       </td>
     </tr>`;
@@ -226,6 +236,26 @@ function getSelectedDashboards() {
   return Array.from(document.querySelectorAll('#mDashboards input[type=checkbox]:checked')).map(cb => cb.value);
 }
 
+function toggleManagedSection() {
+  const role = document.getElementById('mRole').value;
+  document.getElementById('managedGroup').style.display = role === 'manager' ? 'block' : 'none';
+}
+
+function renderManagedCheckboxes(selected = []) {
+  const container = document.getElementById('mManaged');
+  // Get all users with displayName as potential salespeople
+  const salespeople = usersData.filter(u => u.role === 'user' || u.role === 'manager').map(u => u.displayName || u.username);
+  if (!salespeople.length) { container.innerHTML = '<span style="color:#999;font-size:12px;">尚無業務人員</span>'; return; }
+  container.innerHTML = salespeople.map(sp => {
+    const checked = selected.includes(sp) ? 'checked' : '';
+    return `<label><input type="checkbox" value="${esc(sp)}" ${checked}>${esc(sp)}</label>`;
+  }).join('');
+}
+
+function getSelectedManaged() {
+  return Array.from(document.querySelectorAll('#mManaged input[type=checkbox]:checked')).map(cb => cb.value);
+}
+
 function openCreate() {
   editingId = null;
   document.getElementById('modalTitle').textContent = '新增帳號';
@@ -238,10 +268,12 @@ function openCreate() {
   document.getElementById('modalError').style.display = 'none';
   renderCompanyCheckboxes([]);
   renderDashboardCheckboxes([]);
+  renderManagedCheckboxes([]);
+  toggleManagedSection();
   document.getElementById('modal').classList.add('show');
 }
 
-function openEdit(id, username, displayName, role, companies, dashboards) {
+function openEdit(id, username, displayName, role, companies, dashboards, managedSalespeople) {
   editingId = id;
   document.getElementById('modalTitle').textContent = '編輯帳號';
   document.getElementById('mUsername').value = username;
@@ -253,6 +285,8 @@ function openEdit(id, username, displayName, role, companies, dashboards) {
   document.getElementById('modalError').style.display = 'none';
   renderCompanyCheckboxes(companies || []);
   renderDashboardCheckboxes(dashboards || []);
+  renderManagedCheckboxes(managedSalespeople || []);
+  toggleManagedSection();
   document.getElementById('modal').classList.add('show');
 }
 
@@ -271,6 +305,7 @@ async function saveUser() {
 
   const companies = getSelectedCompanies();
   const dashboards = getSelectedDashboards();
+  const managedSalespeople = role === 'manager' ? getSelectedManaged() : [];
 
   if (!editingId) {
     // Create
@@ -279,7 +314,7 @@ async function saveUser() {
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, role, displayName: displayName || username, companies, dashboards }),
+        body: JSON.stringify({ username, password, role, displayName: displayName || username, companies, dashboards, managedSalespeople }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -288,7 +323,7 @@ async function saveUser() {
     } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
   } else {
     // Update
-    const body = { displayName, role, companies, dashboards };
+    const body = { displayName, role, companies, dashboards, managedSalespeople };
     if (password) body.password = password;
     try {
       const res = await fetch(`/api/admin/users/${editingId}`, {
