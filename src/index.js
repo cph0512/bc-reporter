@@ -4,7 +4,6 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const cors = require('cors');
 const path = require('path');
 const BCClient = require('./services/bcClient');
 const ReportEngine = require('./services/reportEngine');
@@ -17,6 +16,9 @@ const adminRoutes = require('./routes/admin');
 const pipelineRoutes = require('./routes/pipeline');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 const companyAccess = require('./middleware/companyAccess');
+const { securityHeaders, corsConfig } = require('./middleware/security');
+const { loginLimiter, apiLimiter, aiLimiter } = require('./middleware/rateLimiter');
+const { auditLog, auditMiddleware } = require('./middleware/auditLog');
 const companyStore = require('./services/companyStore');
 const pipelineStore = require('./services/pipelineStore');
 const contactStore = require('./services/contactStore');
@@ -24,14 +26,27 @@ const contactRoutes = require('./routes/contacts');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL || process.env.RAILWAY_ENVIRONMENT;
+
+// ===== Validate required secrets in production (規範 §2.2) =====
+if (isProduction) {
+  const required = ['SESSION_SECRET', 'SYNC_SECRET'];
+  const missing = required.filter(k => !process.env[k]);
+  if (missing.length > 0) {
+    console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
 
 // ===== Initialize BC Client & Report Engine =====
 const bcClient = new BCClient(process.env);
 const reportEngine = new ReportEngine(bcClient);
 
 // ===== Middleware =====
-app.use(cors());
+app.use(securityHeaders());   // Helmet: CSP, HSTS, X-Frame-Options (規範 §5.1)
+app.use(corsConfig());        // CORS: env-based whitelist or allow-all in dev (規範 §5.1)
 app.use(express.json({ limit: '10mb' }));
+app.use(auditMiddleware);     // Access logging for API routes (規範 §7.1)
 app.use(session({
   secret: process.env.SESSION_SECRET || 'bc-reporter-default-secret',
   resave: false,
@@ -40,6 +55,7 @@ app.use(session({
     maxAge: 8 * 60 * 60 * 1000, // 8 hours
     httpOnly: true,
     sameSite: 'lax',
+    secure: isProduction,     // HTTPS only in production (規範 §5.1)
   },
 }));
 
@@ -50,7 +66,8 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
-// Auth API (login/logout/me)
+// Auth API (login/logout/me) — with login rate limiting (規範 §5.1)
+app.use('/auth/login', loginLimiter);
 app.use('/auth', authRoutes);
 
 // Health check
@@ -68,7 +85,7 @@ if (process.env.LINE_CHANNEL_SECRET && process.env.LINE_CHANNEL_ACCESS_TOKEN) {
       res.status(200).json({ status: 'ok' });
     } catch (error) {
       console.error('[LINE Webhook] Error:', error.message);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: 'Webhook processing failed' });
     }
   });
 
@@ -81,8 +98,11 @@ app.get('/api/sync/export', (req, res) => {
   if (req.headers['x-sync-secret'] !== syncSecret) {
     return res.status(401).json({ error: 'Invalid sync secret' });
   }
+  auditLog('sync_export', req);
+  // Strip password hashes from user data (規範 §5.2)
+  const safeUsers = userStore.getAllRaw().map(({ password, ...user }) => user);
   res.json({
-    users: userStore.getAllRaw(),
+    users: safeUsers,
     pipeline: pipelineStore.getRawData(),
     contacts: contactStore.getRawData(),
   });
@@ -115,7 +135,10 @@ app.post('/api/sync/import-pipeline', express.json({ limit: '10mb' }), (req, res
     }
     pipelineStore.setRawData(current);
     res.json({ success: true, added, total_leads: current.leads.length, total_activities: current.activities.length });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error('[Sync Import] Error:', e.message);
+    res.status(500).json({ error: 'Import failed' });
+  }
 });
 
 // ===== External Report API (sync-secret auth, for telegram-gateway) =====
@@ -135,7 +158,7 @@ app.get('/api/external/ebitda', async (req, res) => {
     const opts = companyId ? { companyId } : {};
     const data = await reportEngine.getEbitda(parseInt(year), parseInt(month), opts);
     res.json(data);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error('[API Error]', e.message); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.get('/api/external/income', async (req, res) => {
@@ -147,7 +170,7 @@ app.get('/api/external/income', async (req, res) => {
     const opts = companyId ? { companyId } : {};
     const data = await reportEngine.getEbitda(parseInt(year), parseInt(month), opts);
     res.json(data);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error('[API Error]', e.message); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.get('/api/external/balance', async (req, res) => {
@@ -159,7 +182,7 @@ app.get('/api/external/balance', async (req, res) => {
     const opts = companyId ? { companyId } : {};
     const data = await reportEngine.getBalanceSheet(parseInt(year), parseInt(month), opts);
     res.json(data);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error('[API Error]', e.message); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // ===== External: Pipeline (token-based) =====
@@ -231,7 +254,7 @@ app.get('/api/companies', requireAuth, (req, res) => {
 });
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/api/pipeline', requireAuth, pipelineRoutes);
-app.use('/api/contacts', requireAuth, contactRoutes);
+app.use('/api/contacts', requireAuth, aiLimiter, contactRoutes);
 app.use('/api', requireAuth, companyAccess, createReportRoutes(reportEngine));
 app.use('/docs', requireAuth, docsRoutes);
 
