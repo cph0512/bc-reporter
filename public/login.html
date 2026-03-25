@@ -50,7 +50,7 @@
 
 <script>
 // If already logged in, redirect to dashboard
-fetch('/auth/me').then(r => { if (r.ok) window.location.href = '/'; });
+fetch('/auth/me', { credentials: 'same-origin' }).then(r => { if (r.ok) window.location.href = '/'; });
 
 async function doLogin(e) {
   e.preventDefault();
@@ -63,6 +63,7 @@ async function doLogin(e) {
     const res = await fetch('/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({
         username: document.getElementById('username').value,
         password: document.getElementById('password').value,
