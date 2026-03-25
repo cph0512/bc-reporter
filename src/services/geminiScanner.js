@@ -62,8 +62,11 @@ async function scanCard(base64Image, mimeType = 'image/jpeg') {
     },
   };
 
-  const response = await axios.post(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, payload, {
-    headers: { 'Content-Type': 'application/json' },
+  const response = await axios.post(GEMINI_URL, payload, {
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': GEMINI_API_KEY,
+    },
     timeout: 30000,
   });
 
