@@ -129,6 +129,49 @@ router.delete('/leads/:id', (req, res) => {
   }
 });
 
+// POST /leads/:id/images — upload image to lead
+router.post('/leads/:id/images', (req, res) => {
+  try {
+    const existing = pipelineStore.getLeadById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Lead not found' });
+    if (!canAccessLead(req, existing)) return res.status(403).json({ error: 'No permission' });
+    const { dataUrl, fileName } = req.body;
+    if (!dataUrl) return res.status(400).json({ error: 'Missing image data' });
+    const img = pipelineStore.addLeadImage(req.params.id, {
+      dataUrl, fileName,
+      uploadedBy: getUserName(req),
+    });
+    res.status(201).json(img);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// DELETE /leads/:id/images/:imgId — delete image from lead
+router.delete('/leads/:id/images/:imgId', (req, res) => {
+  try {
+    const existing = pipelineStore.getLeadById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Lead not found' });
+    if (!canAccessLead(req, existing)) return res.status(403).json({ error: 'No permission' });
+    pipelineStore.deleteLeadImage(req.params.id, req.params.imgId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET /leads/:id/images — list images for lead
+router.get('/leads/:id/images', (req, res) => {
+  try {
+    const existing = pipelineStore.getLeadById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Lead not found' });
+    if (!canAccessLead(req, existing)) return res.status(403).json({ error: 'No permission' });
+    res.json(pipelineStore.getLeadImages(req.params.id));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /leads/:id/notes — add a note to lead's noteLog
 router.post('/leads/:id/notes', (req, res) => {
   try {

@@ -281,6 +281,38 @@ const pipelineStore = {
     data.activities.splice(idx, 1);
     writeData(data);
   },
+
+  // ===== Lead Images =====
+
+  addLeadImage(leadId, { dataUrl, fileName, uploadedBy }) {
+    const data = readData();
+    const lead = data.leads.find(l => l.id === leadId);
+    if (!lead) throw new Error('Lead not found');
+    if (!lead.images) lead.images = [];
+    const imgId = `img_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const img = { id: imgId, dataUrl, fileName: fileName || 'image.jpg', uploadedAt: new Date().toISOString(), uploadedBy: uploadedBy || null };
+    lead.images.push(img);
+    lead.updatedAt = new Date().toISOString();
+    writeData(data);
+    return img;
+  },
+
+  deleteLeadImage(leadId, imgId) {
+    const data = readData();
+    const lead = data.leads.find(l => l.id === leadId);
+    if (!lead || !lead.images) throw new Error('Image not found');
+    const idx = lead.images.findIndex(i => i.id === imgId);
+    if (idx === -1) throw new Error('Image not found');
+    lead.images.splice(idx, 1);
+    lead.updatedAt = new Date().toISOString();
+    writeData(data);
+  },
+
+  getLeadImages(leadId) {
+    const data = readData();
+    const lead = data.leads.find(l => l.id === leadId);
+    return lead?.images || [];
+  },
 };
 
 module.exports = pipelineStore;

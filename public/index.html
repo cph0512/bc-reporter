@@ -307,12 +307,11 @@
       <div class="card-header" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <h2 id="myPlListTitle"></h2>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <input type="text" id="myPlSearch" oninput="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;width:160px;" placeholder="">
           <select id="myPlFilterStatus" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
           <select id="myPlFilterCat" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
           <input type="month" id="myPlFilterMonth" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
           <select id="myPlFilterStale" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
-          <label style="font-size:12px;color:#666;" id="myPlWeekLabel"></label>
-          <select id="myPlWeekSelect" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
           <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()" id="myPlAddLeadBtn"></button>
         </div>
       </div>
@@ -360,6 +359,10 @@
       <label id="adminLabelStale"></label>
       <select id="plFilterStale" onchange="renderPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
       </select>
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <input type="text" id="plSearch" oninput="renderPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;width:160px;" placeholder="">
     </div>
     <button class="btn btn-primary btn-sm" onclick="loadPipelineDashboard()" id="adminQueryBtn"></button>
     <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()" id="adminAddLeadBtn"></button>
@@ -447,8 +450,18 @@
       <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeLeadDetail()">✕</span>
     </div>
     <div id="ldInfo" style="margin-bottom:18px;"></div>
+    <div style="border-top:1px solid #eee;padding-top:14px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h4 style="font-size:14px;margin:0;color:#333;" id="ldImagesTitle">📷</h4>
+        <label class="btn btn-sm" style="cursor:pointer;margin:0;">
+          <span id="ldUploadBtnText">📤</span>
+          <input type="file" id="ldImageInput" accept="image/*" multiple style="display:none" onchange="handleLeadImageUpload(this)">
+        </label>
+      </div>
+      <div id="ldImages" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
     <div style="border-top:1px solid #eee;padding-top:14px;">
-      <h4 style="font-size:14px;margin:0 0 12px;color:#333;">📋 歷史回顧紀錄</h4>
+      <h4 style="font-size:14px;margin:0 0 12px;color:#333;" id="ldReviewTitle">📋</h4>
       <div id="ldAddReview" style="margin-bottom:12px;"></div>
       <div id="ldActivities"></div>
     </div>
@@ -457,6 +470,11 @@
       <button class="btn btn-sm btn-edit" id="ldEditBtn" onclick="">編輯商機</button>
     </div>
   </div>
+</div>
+
+<!-- Image Lightbox -->
+<div id="imgLightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;cursor:pointer;" onclick="this.style.display='none'">
+  <img id="imgLightboxSrc" style="max-width:90vw;max-height:90vh;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
 </div>
 
 <!-- Pipeline Config Modal -->
@@ -898,6 +916,7 @@ const LABELS = {
     plLeadDate: '商機日期', plCreatedDate: '建檔日期', plContact: '窗口',
     plMyLeadList: '我的商機列表', plStale: '停滯', plStaleAll: '停滯：全部',
     plStatusAll: '狀態：全部', plCategoryAll: '類別：全部', plCreatedMonth: '建檔月份',
+    plSearchPlaceholder: '搜尋客戶名稱...', plLatestReview: '最新回顧', plImages: '📷 圖片附件', plUpload: '📤 上傳',
     plFillReview: '✏️ 填寫回顧', plWriteReview: '本週回顧',
     plMyPipelineSubTab: '📊 我的商機', plContactsSubTab: '📇 名片通訊錄',
     plPipelineSubTab: '📊 業務管線',
@@ -1060,6 +1079,7 @@ const LABELS = {
     plLeadDate: 'Lead Date', plCreatedDate: 'Created', plContact: 'Contact',
     plMyLeadList: 'My Lead List', plStale: 'Stale', plStaleAll: 'Stale: All',
     plStatusAll: 'Status: All', plCategoryAll: 'Category: All', plCreatedMonth: 'Created Month',
+    plSearchPlaceholder: 'Search client...', plLatestReview: 'Latest Review', plImages: '📷 Images', plUpload: '📤 Upload',
     plFillReview: '✏️ Fill Review', plWriteReview: 'Weekly Review',
     plMyPipelineSubTab: '📊 My Pipeline', plContactsSubTab: '📇 Contacts',
     plPipelineSubTab: '📊 Pipeline',
@@ -1152,16 +1172,18 @@ function renderPipelineLabels() {
   if (myListTitle) myListTitle.textContent = l.plMyLeadList;
   const myAddBtn = document.getElementById('myPlAddLeadBtn');
   if (myAddBtn) myAddBtn.textContent = l.plAddLead;
+  const mySearch = document.getElementById('myPlSearch');
+  if (mySearch) mySearch.placeholder = l.plSearchPlaceholder;
+  const plSearch = document.getElementById('plSearch');
+  if (plSearch) plSearch.placeholder = l.plSearchPlaceholder;
   const myThead = document.getElementById('myPlTableHead');
   if (myThead) myThead.innerHTML = `<tr>
     <th>${l.plCompanyName}</th><th>${l.plContact}</th>
     <th class="sortable" onclick="toggleMyPlSort('leadDate')">${l.plLeadDate}<span class="sort-arrow" id="myPlSortArrowLeadDate"></span></th>
     <th class="sortable" onclick="toggleMyPlSort('createdAt')">${l.plCreatedDate}<span class="sort-arrow" id="myPlSortArrowCreatedAt"></span></th>
     <th>${l.plStatus}</th><th>${l.plCategory}</th><th style="text-align:right;">${l.plEstValue}</th>
-    <th>${l.plWeeklyReview}</th><th>${l.plNotes}</th><th>${l.plActions}</th>
+    <th>${l.plLatestReview}</th><th>${l.plNotes}</th><th>${l.plActions}</th>
   </tr>`;
-  const myWeekLabel = document.getElementById('myPlWeekLabel');
-  if (myWeekLabel) myWeekLabel.textContent = l.plWeekLabel;
   const myEmpty = document.getElementById('myPlLeadsEmpty');
   if (myEmpty) myEmpty.textContent = l.dNoData;
   // My pipeline stale filter
@@ -1203,7 +1225,7 @@ function renderPipelineLabels() {
     <th>${l.plStatus}</th><th>${l.plCategory}</th><th style="text-align:right;">${l.plEstValue}</th>
     <th class="sortable" onclick="togglePlSort('leadDate')">${l.plLeadDate}<span class="sort-arrow" id="plSortArrowLeadDate"></span></th>
     <th class="sortable" onclick="togglePlSort('createdAt')">${l.plCreatedDate}<span class="sort-arrow" id="plSortArrowCreatedAt"></span></th>
-    <th>${l.plNotes}</th><th>${l.plWeeklyReview}</th>
+    <th>${l.plNotes}</th><th>${l.plLatestReview}</th>
   </tr>`;
   const plWeekLabelEl = document.querySelector('#plLeadListSection .card-header label');
   if (plWeekLabelEl) plWeekLabelEl.textContent = l.plWeekLabel;
@@ -1218,7 +1240,12 @@ function renderPipelineLabels() {
 
   // === Lead Detail Modal ===
   const ldHistory = document.querySelector('#leadDetailModal h4');
-  if (ldHistory) ldHistory.innerHTML = getLang() === 'en' ? '📋 Review History' : '📋 歷史回顧紀錄';
+  const ldReviewTitle = document.getElementById('ldReviewTitle');
+  if (ldReviewTitle) ldReviewTitle.textContent = getLang() === 'en' ? '📋 Review History' : '📋 歷史回顧紀錄';
+  const ldImagesTitle = document.getElementById('ldImagesTitle');
+  if (ldImagesTitle) ldImagesTitle.textContent = l.plImages;
+  const ldUploadBtnText = document.getElementById('ldUploadBtnText');
+  if (ldUploadBtnText) ldUploadBtnText.textContent = l.plUpload;
   const ldClose = document.querySelector('#leadDetailModal .btn-sm[onclick="closeLeadDetail()"]');
   if (ldClose) ldClose.textContent = getLang() === 'en' ? 'Close' : '關閉';
   const ldEditBtn = document.getElementById('ldEditBtn');
@@ -2287,12 +2314,14 @@ function updateSortArrows(prefix, sortField, sortDir) {
 function renderMyPipelineTable() {
   const tbody = document.getElementById('myPlLeadsTable');
   const empty = document.getElementById('myPlLeadsEmpty');
-  const weekLabel = document.getElementById('myPlWeekSelect').value || getCurrentWeekLabel();
+  const weekLabel = getCurrentWeekLabel();
   // Client-side filtering
+  const searchText = (document.getElementById('myPlSearch')?.value || '').trim().toLowerCase();
   const filterStatus = document.getElementById('myPlFilterStatus').value;
   const filterCat = document.getElementById('myPlFilterCat').value;
   const filterMonth = document.getElementById('myPlFilterMonth').value;
   let leads = myPlLeadsCache;
+  if (searchText) leads = leads.filter(l => (l.companyName || '').toLowerCase().includes(searchText) || (l.contactName || '').toLowerCase().includes(searchText));
   if (filterStatus) leads = leads.filter(l => l.status === filterStatus);
   if (filterCat) leads = leads.filter(l => l.category === filterCat);
   if (filterMonth) leads = leads.filter(l => l.createdAt && l.createdAt.slice(0, 7) === filterMonth);
@@ -2322,20 +2351,20 @@ function renderMyPipelineTable() {
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = leads.map(lead => {
-    const activity = myPlActivitiesCache.find(a => a.leadId === lead.id && a.weekLabel === weekLabel);
-    const reviewText = activity ? escHtml(activity.content) : '';
-    const reviewId = activity ? activity.id : '';
+    // Find latest activity for this lead (sorted by createdAt desc)
+    const latestAct = myPlActivitiesCache
+      .filter(a => a.leadId === lead.id && a.content)
+      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+    const reviewText = latestAct ? escHtml(latestAct.content) : '';
+    const reviewDate = latestAct && latestAct.createdAt ? fmtTWDate(latestAct.createdAt) : '';
     const contactDisplay = lead.contactName
       ? (lead.contactEmail
         ? `<span title="${escHtml(lead.contactEmail)}">${escHtml(lead.contactName)}</span>`
         : escHtml(lead.contactName))
       : (lead.contactEmail ? `<span style="font-size:11px;">${escHtml(lead.contactEmail)}</span>` : '—');
-    const reviewCell = `<div class="pl-review-cell" data-lead-id="${lead.id}" data-week="${escHtml(weekLabel)}" data-act-id="${reviewId}">
-      ${reviewText
-        ? `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:32px;padding:6px 8px;border-radius:4px;background:#f0f7ff;border:1px solid #d0e3f7;" title="點擊編輯">${reviewText}</div>`
-        : `<div class="pl-review-text" onclick="startEditReview(this)" style="font-size:12px;cursor:pointer;min-height:32px;padding:6px 8px;border-radius:4px;background:#fff3e0;border:1px dashed #e65100;color:#e65100;text-align:center;" title="${getLang() === 'en' ? 'Click to write' : '點擊填寫'}">${L().plFillReview}</div>`
-      }
-    </div>`;
+    const reviewCell = reviewText
+      ? `<div style="font-size:12px;max-width:220px;"><div class="pl-notes-cell" onclick="this.classList.toggle('expanded')" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-height:1.5em;padding:4px 8px;border-radius:4px;background:#f0f7ff;" title="${getLang() === 'en' ? 'Click to expand' : '點擊展開'}">${reviewText}</div>${reviewDate ? `<div style="font-size:10px;color:#999;margin-top:2px;">${reviewDate}</div>` : ''}</div>`
+      : `<span style="color:#ccc;">—</span>`;
     return `<tr>
       <td><strong class="ld-company-link" onclick="openLeadDetail('${lead.id}')">${escHtml(lead.companyName)}</strong></td>
       <td style="font-size:12px;">${contactDisplay}</td>
@@ -2344,7 +2373,7 @@ function renderMyPipelineTable() {
       <td><div class="stale-wrap"><span class="pl-badge pl-badge-${lead.status}" onclick="quickStatusToggle('${lead.id}')" title="點擊切換狀態">${lead.status}</span>${staleIndicator(lead)}</div></td>
       <td>${escHtml(lead.category)}</td>
       <td class="amount">${lead.estimatedValue ? Number(lead.estimatedValue).toLocaleString() : '—'}</td>
-      <td style="min-width:250px;">${reviewCell}</td>
+      <td style="min-width:200px;">${reviewCell}</td>
       <td style="font-size:12px;max-width:150px;">${lead.notes
         ? `<div class="pl-notes-cell" onclick="this.classList.toggle('expanded')" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-height:1.5em;" title="點擊展開">${escHtml(lead.notes)}</div>`
         : '—'}</td>
@@ -2732,11 +2761,13 @@ function renderPipelineTable() {
   const tbody = document.getElementById('plLeadsTable');
   const empty = document.getElementById('plLeadsEmpty');
   // Client-side filtering from dropdown values
+  const searchText = (document.getElementById('plSearch')?.value || '').trim().toLowerCase();
   const filterSP = document.getElementById('plFilterSP').value;
   const filterStatus = document.getElementById('plFilterStatus').value;
   const filterCat = document.getElementById('plFilterCat').value;
   const filterMonth = document.getElementById('plFilterMonth').value;
   let leads = plLeadsCache;
+  if (searchText) leads = leads.filter(l => (l.companyName || '').toLowerCase().includes(searchText) || (l.contactName || '').toLowerCase().includes(searchText) || (l.salesperson || '').toLowerCase().includes(searchText));
   if (filterSP) leads = leads.filter(l => l.salesperson === filterSP);
   if (filterStatus) leads = leads.filter(l => l.status === filterStatus);
   if (filterCat) leads = leads.filter(l => l.category === filterCat);
@@ -2771,15 +2802,20 @@ function renderPipelineTable() {
   empty.style.display = 'none';
 
   tbody.innerHTML = leads.map(lead => {
-    const activity = plActivitiesCache.find(a => a.leadId === lead.id && a.weekLabel === weekLabel);
-    const reviewText = activity ? escHtml(activity.content) : '';
-    const reviewId = activity ? activity.id : '';
+    const latestAct = plActivitiesCache
+      .filter(a => a.leadId === lead.id && a.content)
+      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+    const reviewText = latestAct ? escHtml(latestAct.content) : '';
+    const reviewDate = latestAct && latestAct.createdAt ? fmtTWDate(latestAct.createdAt) : '';
     const contactDisplay = lead.contactName
       ? (lead.contactEmail
         ? `<span title="${escHtml(lead.contactEmail)}">${escHtml(lead.contactName)}</span>`
         : escHtml(lead.contactName))
       : (lead.contactEmail ? `<span style="font-size:11px;">${escHtml(lead.contactEmail)}</span>` : '—');
     const staleHtml = staleIndicator(lead);
+    const reviewCell = reviewText
+      ? `<div style="font-size:12px;max-width:200px;"><div class="pl-notes-cell" onclick="this.classList.toggle('expanded')" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-height:1.5em;padding:4px 8px;border-radius:4px;background:#f0f7ff;">${reviewText}</div>${reviewDate ? `<div style="font-size:10px;color:#999;margin-top:2px;">${reviewDate}</div>` : ''}</div>`
+      : '<span style="color:#ccc;">—</span>';
     return `<tr>
       <td><strong class="ld-company-link" onclick="openLeadDetail('${lead.id}')">${escHtml(lead.companyName)}</strong></td>
       <td>${escHtml(lead.salesperson)}</td>
@@ -2792,9 +2828,7 @@ function renderPipelineTable() {
       <td style="font-size:12px;max-width:150px;">${lead.notes
         ? `<div class="pl-notes-cell" onclick="this.classList.toggle('expanded')" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-height:1.5em;" title="點擊展開">${escHtml(lead.notes)}</div>`
         : '—'}</td>
-      <td style="min-width:180px;">
-        <div style="font-size:12px;min-height:24px;padding:4px;border-radius:4px;background:#f8f9fa;">${reviewText || '<span style="color:#ccc;">—</span>'}</div>
-      </td>
+      <td style="min-width:180px;">${reviewCell}</td>
     </tr>`;
   }).join('');
 }
@@ -2950,10 +2984,75 @@ function openLeadDetail(leadId) {
     <button class="btn btn-sm btn-primary" onclick="addLeadReview()">${getLang() === 'en' ? 'Add' : '新增'}</button>
   </div>`;
 
+  // Images
+  loadLeadImages(leadId);
+
   // Activities (all weeks, sorted newest first)
   renderLeadActivities(leadId, activitiesCache);
 
   document.getElementById('leadDetailModal').style.display = 'flex';
+}
+
+async function loadLeadImages(leadId) {
+  const container = document.getElementById('ldImages');
+  try {
+    const res = await fetch(`/api/pipeline/leads/${leadId}/images`);
+    if (!res.ok) { container.innerHTML = ''; return; }
+    const images = await res.json();
+    if (!images.length) { container.innerHTML = `<span style="color:#ccc;font-size:12px;">${getLang() === 'en' ? 'No images' : '尚無圖片'}</span>`; return; }
+    container.innerHTML = images.map(img =>
+      `<div style="position:relative;display:inline-block;">
+        <img src="${img.dataUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid #e0e0e0;" onclick="document.getElementById('imgLightboxSrc').src=this.src;document.getElementById('imgLightbox').style.display='flex';" title="${escHtml(img.fileName)}">
+        <button onclick="deleteLeadImage('${leadId}','${img.id}')" style="position:absolute;top:-4px;right:-4px;background:#c62828;color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:18px;padding:0;">✕</button>
+      </div>`
+    ).join('');
+  } catch { container.innerHTML = ''; }
+}
+
+async function handleLeadImageUpload(input) {
+  if (!currentDetailLeadId || !input.files.length) return;
+  for (const file of input.files) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const res = await fetch(`/api/pipeline/leads/${currentDetailLeadId}/images`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dataUrl: e.target.result, fileName: file.name }),
+        });
+        if (!res.ok) throw new Error((await res.json()).error);
+        loadLeadImages(currentDetailLeadId);
+      } catch (err) { alert((getLang() === 'en' ? 'Upload failed: ' : '上傳失敗：') + err.message); }
+    };
+    reader.readAsDataURL(file);
+  }
+  input.value = '';
+}
+
+async function deleteLeadImage(leadId, imgId) {
+  if (!confirm(getLang() === 'en' ? 'Delete this image?' : '確定刪除此圖片？')) return;
+  try {
+    await fetch(`/api/pipeline/leads/${leadId}/images/${imgId}`, { method: 'DELETE' });
+    loadLeadImages(leadId);
+  } catch {}
+}
+
+function getISOWeek(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '0000-W00';
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  const days = Math.floor((d - jan1) / 86400000);
+  const wk = Math.ceil((days + jan1.getDay() + 1) / 7);
+  return `${d.getFullYear()}-W${String(wk).padStart(2, '0')}`;
+}
+
+function getWeekRange(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  const day = d.getDay() || 7;
+  const mon = new Date(d); mon.setDate(d.getDate() - day + 1);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return `${fmtTWDate(mon.toISOString())} ~ ${fmtTWDate(sun.toISOString())}`;
 }
 
 function renderLeadActivities(leadId, activitiesCache) {
@@ -2961,17 +3060,34 @@ function renderLeadActivities(leadId, activitiesCache) {
     .filter(a => a.leadId === leadId && a.content)
     .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 
-  const curWeek = getCurrentWeekLabel();
   const actEl = document.getElementById('ldActivities');
   if (acts.length === 0) {
     actEl.innerHTML = `<div class="ld-empty">${getLang() === 'en' ? 'No review history' : '尚無回顧紀錄'}</div>`;
   } else {
-    actEl.innerHTML = acts.map(a => {
-      const isThisWeek = a.weekLabel === curWeek;
-      return `<div class="ld-act-card">
-        <div class="ld-act-week">${escHtml(a.weekLabel)}${isThisWeek ? ` <span style="color:#e65100;">(${getLang() === 'en' ? 'This Week' : '本週'})</span>` : ''}</div>
-        <div class="ld-act-content">${escHtml(a.content)}</div>
-        <div class="ld-act-date">${a.createdAt ? fmtTWDate(a.createdAt) : ''}</div>
+    // Group by ISO week
+    const groups = {};
+    acts.forEach(a => {
+      const wk = a.createdAt ? getISOWeek(a.createdAt) : '0000-W00';
+      if (!groups[wk]) groups[wk] = { week: wk, range: a.createdAt ? getWeekRange(a.createdAt) : '', items: [] };
+      groups[wk].items.push(a);
+    });
+    const sortedWeeks = Object.keys(groups).sort().reverse();
+    const thisWeek = getISOWeek(new Date().toISOString());
+    actEl.innerHTML = sortedWeeks.map(wk => {
+      const g = groups[wk];
+      const isThisWeek = wk === thisWeek;
+      const header = isThisWeek
+        ? `<span style="color:#e65100;font-weight:600;">${getLang() === 'en' ? 'This Week' : '本週'}</span> <span style="color:#999;">${g.range}</span>`
+        : `<span>${g.range || wk}</span>`;
+      const items = g.items.map(a =>
+        `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:11px;color:#999;white-space:nowrap;min-width:70px;">${a.createdAt ? fmtTWDate(a.createdAt) : ''}</span>
+          <span style="font-size:13px;flex:1;">${escHtml(a.content)}</span>
+        </div>`
+      ).join('');
+      return `<div class="ld-act-card" style="margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid ${isThisWeek ? '#e65100' : '#e0e0e0'};">${header}</div>
+        ${items}
       </div>`;
     }).join('');
   }
