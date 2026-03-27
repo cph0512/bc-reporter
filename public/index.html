@@ -597,6 +597,7 @@
       <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;display:block;" id="ledgerLabelAccounts">科目篩選（可多選）</label>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
         <input type="text" id="ledgerAccountSearch" oninput="filterLedgerAccounts()" placeholder="搜尋科目編號或名稱..." style="flex:1;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <button class="btn btn-sm btn-primary" onclick="selectAllLedgerAccounts()" style="font-size:11px;white-space:nowrap;" id="ledgerBtnSelectAll">全選</button>
         <button class="btn btn-sm" onclick="clearLedgerAccounts()" style="font-size:11px;white-space:nowrap;" id="ledgerBtnClearAccounts">清除全部</button>
       </div>
       <!-- Selected chips -->
@@ -731,7 +732,7 @@ function renderTabs() {
     { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline', userOnly: true },
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
     { id: 'reports', label: l.dReports, perm: 'financial' },
-    { id: 'ledger', label: l.dLedgerTab, perm: 'financial' },
+    { id: 'ledger', label: l.dLedgerTab, perm: 'ledger' },
   ];
   const visibleTabs = allTabs.filter(t => {
     if (t.adminOnly && userRole !== 'admin') return false;
@@ -941,7 +942,7 @@ const LABELS = {
     dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dReports: '報表', dLedgerTab: '查帳',
     // Ledger labels
     ledgerType: '查詢類型', ledgerGL: '總帳分錄', ledgerTB: '試算表', ledgerJournal: '日記帳',
-    ledgerAccounts: '科目篩選（可多選）', ledgerClearAll: '清除全部', ledgerFetch: '查詢',
+    ledgerAccounts: '科目篩選（可多選）', ledgerSelectAll: '全選', ledgerClearAll: '清除全部', ledgerFetch: '查詢',
     ledgerDate: '過帳日期', ledgerDocNo: '傳票號碼', ledgerAcctNo: '科目編號', ledgerAcctName: '科目名稱',
     ledgerDesc: '說明', ledgerDebit: '借方', ledgerCredit: '貸方', ledgerAmount: '金額',
     ledgerNetChange: '淨變動', ledgerBalance: '餘額', ledgerTotalDebit: '借方合計', ledgerTotalCredit: '貸方合計',
@@ -1114,7 +1115,7 @@ const LABELS = {
     dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dReports: 'Reports', dLedgerTab: 'Ledger',
     // Ledger labels
     ledgerType: 'Query Type', ledgerGL: 'GL Entries', ledgerTB: 'Trial Balance', ledgerJournal: 'Journals',
-    ledgerAccounts: 'Account Filter (multi-select)', ledgerClearAll: 'Clear All', ledgerFetch: 'Query',
+    ledgerAccounts: 'Account Filter (multi-select)', ledgerSelectAll: 'Select All', ledgerClearAll: 'Clear All', ledgerFetch: 'Query',
     ledgerDate: 'Posting Date', ledgerDocNo: 'Document No.', ledgerAcctNo: 'Account No.', ledgerAcctName: 'Account Name',
     ledgerDesc: 'Description', ledgerDebit: 'Debit', ledgerCredit: 'Credit', ledgerAmount: 'Amount',
     ledgerNetChange: 'Net Change', ledgerBalance: 'Balance', ledgerTotalDebit: 'Total Debit', ledgerTotalCredit: 'Total Credit',
@@ -3960,6 +3961,7 @@ function initLedgerView() {
   document.getElementById('ledgerOptJournal').textContent = l.ledgerJournal;
   document.getElementById('ledgerFetchBtn').textContent = l.ledgerFetch;
   document.getElementById('ledgerLabelAccounts').textContent = l.ledgerAccounts;
+  document.getElementById('ledgerBtnSelectAll').textContent = l.ledgerSelectAll;
   document.getElementById('ledgerBtnClearAccounts').textContent = l.ledgerClearAll;
   document.getElementById('ledgerAccountSearch').placeholder = l.ledgerSearchAcct;
 
@@ -4069,6 +4071,18 @@ function removeLedgerAccount(number) {
   renderLedgerAccountList();
 }
 
+function selectAllLedgerAccounts() {
+  // Select all currently filtered (visible) accounts
+  const search = (document.getElementById('ledgerAccountSearch').value || '').toLowerCase();
+  const filtered = ledgerAccountsCache.filter(a => {
+    if (!search) return true;
+    return (a.number || '').toLowerCase().includes(search) || (a.displayName || '').toLowerCase().includes(search);
+  });
+  filtered.forEach(a => ledgerSelectedAccounts.set(a.number, a.displayName || ''));
+  renderLedgerSelectedChips();
+  renderLedgerAccountList();
+}
+
 function clearLedgerAccounts() {
   ledgerSelectedAccounts.clear();
   renderLedgerSelectedChips();
@@ -4138,43 +4152,54 @@ function renderGLEntries(entries, l) {
     if (e.creditAmount) totalCredit += e.creditAmount;
   });
 
-  const fmt = v => v != null ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
+  const fmt = v => v != null && v !== 0 ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
 
-  let html = `<div style="overflow-x:auto;">
-  <table class="report-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+  const thStyle = 'padding:8px 10px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1;';
+  const thR = thStyle + 'text-align:right;';
+  const td = 'padding:6px 10px;border-bottom:1px solid #e8e8e8;white-space:nowrap;';
+  const tdR = td + 'text-align:right;font-variant-numeric:tabular-nums;';
+
+  let html = `<div style="overflow-x:auto;max-height:70vh;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:900px;">
     <thead>
       <tr style="background:#1a1a2e;color:#fff;">
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerDate}</th>
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerDocNo}</th>
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerAcctNo}</th>
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerAcctName}</th>
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerDesc}</th>
-        <th style="padding:8px 6px;text-align:right;">${l.ledgerDebit}</th>
-        <th style="padding:8px 6px;text-align:right;">${l.ledgerCredit}</th>
+        <th style="${thStyle}min-width:90px;">${l.ledgerDate}</th>
+        <th style="${thStyle}min-width:110px;">${l.ledgerDocNo}</th>
+        <th style="${thStyle}min-width:70px;">${l.ledgerAcctNo}</th>
+        <th style="${thStyle}min-width:120px;">${l.ledgerAcctName}</th>
+        <th style="${thStyle}min-width:200px;">${l.ledgerDesc}</th>
+        <th style="${thR}min-width:100px;">${l.ledgerDebit}</th>
+        <th style="${thR}min-width:100px;">${l.ledgerCredit}</th>
       </tr>
     </thead>
     <tbody>`;
 
   entries.forEach((e, i) => {
-    const bg = i % 2 === 0 ? '' : 'background:#fafafa;';
+    const bg = i % 2 === 0 ? 'background:#fff;' : 'background:#f8f9fb;';
+    const debit = e.debitAmount ? fmt(e.debitAmount) : '';
+    const credit = e.creditAmount ? fmt(e.creditAmount) : '';
     html += `<tr style="${bg}">
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${e.postingDate || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${e.documentNumber || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;font-weight:500;">${e.accountNumber || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${e.accountName || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;color:#666;">${e.description || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:right;color:#1565c0;">${e.debitAmount ? fmt(e.debitAmount) : ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:right;color:#c62828;">${e.creditAmount ? fmt(e.creditAmount) : ''}</td>
+      <td style="${td}">${e.postingDate || ''}</td>
+      <td style="${td}font-family:monospace;font-size:12px;">${e.documentNumber || ''}</td>
+      <td style="${td}font-weight:600;color:#1a1a2e;">${e.accountNumber || ''}</td>
+      <td style="${td}">${e.accountName || ''}</td>
+      <td style="${td}color:#555;max-width:350px;overflow:hidden;text-overflow:ellipsis;" title="${(e.description || '').replace(/"/g, '&quot;')}">${e.description || ''}</td>
+      <td style="${tdR}color:${debit ? '#1565c0' : '#ccc'};">${debit || '-'}</td>
+      <td style="${tdR}color:${credit ? '#c62828' : '#ccc'};">${credit || '-'}</td>
     </tr>`;
   });
 
-  html += `<tr style="background:#f0f0f0;font-weight:bold;">
-      <td colspan="5" style="padding:8px 6px;">${l.ledgerTotalDebit} / ${l.ledgerTotalCredit}</td>
-      <td style="padding:8px 6px;text-align:right;color:#1565c0;">${fmt(totalDebit)}</td>
-      <td style="padding:8px 6px;text-align:right;color:#c62828;">${fmt(totalCredit)}</td>
-    </tr>`;
+  // Totals row
+  html += `</tbody>
+    <tfoot>
+      <tr style="background:#e8eaf6;font-weight:700;border-top:2px solid #1a1a2e;">
+        <td colspan="5" style="padding:10px;font-size:13px;">${l.ledgerTotalDebit} / ${l.ledgerTotalCredit}</td>
+        <td style="padding:10px;text-align:right;color:#1565c0;font-size:14px;font-variant-numeric:tabular-nums;">${fmt(totalDebit)}</td>
+        <td style="padding:10px;text-align:right;color:#c62828;font-size:14px;font-variant-numeric:tabular-nums;">${fmt(totalCredit)}</td>
+      </tr>
+    </tfoot>`;
 
-  html += `</tbody></table></div>`;
+  html += `</table></div>`;
   container.innerHTML = html;
 }
 
