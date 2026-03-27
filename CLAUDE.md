@@ -28,3 +28,50 @@ All AI-generated code MUST follow these rules before merge:
 - Session-based auth with bcrypt password hashing
 - JSON file storage (no SQL database)
 - Environment variables via `.env` (never committed)
+
+## Deployment (GCP VM)
+
+**Production URL:** https://reports.velopulse.io
+**GCP Project:** `velopulse-infra`
+**VM:** `velopulse-server` (asia-east1-b, 35.229.175.146)
+**Container:** `deploy-bc-reporter-1` (Docker Compose at `/home/cph/deploy/`)
+**Reverse Proxy:** Caddy (auto TLS)
+
+### Deploy Steps
+
+```bash
+# Option 1: Use deploy script
+./deploy.sh
+
+# Option 2: Manual
+gcloud compute ssh velopulse-server --project velopulse-infra --zone asia-east1-b --command "
+  cd /home/cph/deploy/bc-reporter && git pull origin main
+"
+gcloud compute ssh velopulse-server --project velopulse-infra --zone asia-east1-b --command "
+  cd /home/cph/deploy && docker compose up -d --build bc-reporter
+"
+```
+
+### Environment (.env.bc on VM)
+
+Required in production:
+- `SESSION_SECRET` — Session encryption key
+- `SYNC_SECRET` — API sync authentication key
+- `NODE_ENV=production`
+- `PORT=3000`
+
+### Other Services on Same VM
+
+| Service | Port | Env File | Domain |
+|---------|------|----------|--------|
+| bc-reporter | 3000 | .env.bc | reports.velopulse.io |
+| tg-service | 3001 | .env.tg | (internal) |
+| form-builder | 3002 | .env.fb | velopulse.io |
+| postgres | 5432 | (compose) | (internal) |
+| caddy | 80/443 | Caddyfile | (reverse proxy) |
+
+### Post-Deploy Checklist
+
+- [ ] `curl https://reports.velopulse.io/health` returns 200
+- [ ] Login page loads and login works
+- [ ] CSP header includes `script-src-attr 'unsafe-inline'`
