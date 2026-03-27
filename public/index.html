@@ -4049,18 +4049,34 @@ function toggleLedgerAccount(number, name) {
   renderLedgerAccountList();
 }
 
+const CHIP_SHOW_MAX = 8;
+let ledgerChipsExpanded = false;
+
 function renderLedgerSelectedChips() {
   const container = document.getElementById('ledgerSelectedChips');
-  if (ledgerSelectedAccounts.size === 0) {
-    container.innerHTML = '';
-    return;
-  }
-  container.innerHTML = Array.from(ledgerSelectedAccounts.entries()).map(([num, name]) =>
+  const entries = Array.from(ledgerSelectedAccounts.entries());
+  if (entries.length === 0) { container.innerHTML = ''; return; }
+
+  const makeChip = ([num, name]) =>
     `<span style="display:inline-flex;align-items:center;gap:4px;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:12px;font-size:11px;cursor:default;">
       ${num} ${name}
       <span style="cursor:pointer;font-weight:bold;margin-left:2px;" onclick="removeLedgerAccount('${num}')">&times;</span>
-    </span>`
-  ).join('');
+    </span>`;
+
+  const visible = (!ledgerChipsExpanded && entries.length > CHIP_SHOW_MAX)
+    ? entries.slice(0, CHIP_SHOW_MAX)
+    : entries;
+
+  let html = visible.map(makeChip).join('');
+
+  if (entries.length > CHIP_SHOW_MAX) {
+    if (ledgerChipsExpanded) {
+      html += `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:11px;background:#f5f5f5;color:#555;cursor:pointer;" onclick="ledgerChipsExpanded=false;renderLedgerSelectedChips();">收起</span>`;
+    } else {
+      html += `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:11px;background:#f5f5f5;color:#555;cursor:pointer;" onclick="ledgerChipsExpanded=true;renderLedgerSelectedChips();">+${entries.length - CHIP_SHOW_MAX} 個...</span>`;
+    }
+  }
+  container.innerHTML = html;
 }
 
 function removeLedgerAccount(number) {
@@ -4094,13 +4110,12 @@ async function fetchLedger() {
         return;
       }
       let url = `/api/ledger/gl-entries?companyId=${companyId}&startDate=${startDate}&endDate=${endDate}`;
-      // Only filter by accounts if <= 30 selected; more than that = query all
-      if (ledgerSelectedAccounts.size > 0 && ledgerSelectedAccounts.size <= 30) {
-        url += `&accountNumbers=${Array.from(ledgerSelectedAccounts.keys()).join(',')}`;
-      } else if (ledgerSelectedAccounts.size > 30) {
-        resultsEl.innerHTML = `<div class="loading" style="color:#e65100;">已選 ${ledgerSelectedAccounts.size} 個科目，超過上限（30）。請縮小選取範圍，或清除全部以查詢所有科目。</div>`;
-        resultsEl.querySelector ? null : null;
-        return;
+      // If > 30 accounts selected, ignore filter and query all (OData limit)
+      const acctKeys = Array.from(ledgerSelectedAccounts.keys());
+      if (acctKeys.length > 0 && acctKeys.length <= 30) {
+        url += `&accountNumbers=${acctKeys.join(',')}`;
+      } else if (acctKeys.length > 30) {
+        summaryEl.textContent = `已選 ${acctKeys.length} 個科目（超過 30 個，顯示全部分錄）`;
       }
       const res = await fetch(url);
       const json = await res.json();
@@ -4145,7 +4160,7 @@ function renderGLEntries(entries, l) {
 
   const fmt = v => v != null && v !== 0 ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
 
-  const thStyle = 'padding:8px 10px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1;';
+  const thStyle = 'padding:8px 10px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;background:#1a1a2e;color:#fff;';
   const thR = thStyle + 'text-align:right;';
   const td = 'padding:6px 10px;border-bottom:1px solid #e8e8e8;white-space:nowrap;';
   const tdR = td + 'text-align:right;font-variant-numeric:tabular-nums;';
@@ -4153,7 +4168,7 @@ function renderGLEntries(entries, l) {
   let html = `<div style="overflow-x:auto;max-height:70vh;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px;">
   <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:900px;">
     <thead>
-      <tr style="background:#1a1a2e;color:#fff;">
+      <tr>
         <th style="${thStyle}min-width:90px;">${l.ledgerDate}</th>
         <th style="${thStyle}min-width:110px;">${l.ledgerDocNo}</th>
         <th style="${thStyle}min-width:70px;">${l.ledgerAcctNo}</th>
