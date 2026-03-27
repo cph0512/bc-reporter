@@ -567,6 +567,54 @@
 </div>
 </div><!-- /reportsView -->
 
+<!-- ===== Ledger / 查帳 Module ===== -->
+<div id="ledgerView" style="display:none">
+  <div class="controls" style="flex-wrap:wrap;gap:10px;">
+    <div>
+      <label id="ledgerLabelType">查詢類型</label>
+      <select id="ledgerQueryType" onchange="onLedgerTypeChange()">
+        <option value="gl-entries" id="ledgerOptGL">總帳分錄</option>
+        <option value="trial-balance" id="ledgerOptTB">試算表</option>
+        <option value="journals" id="ledgerOptJournal">日記帳</option>
+      </select>
+    </div>
+    <div>
+      <label class="i18n-start-date"></label>
+      <input type="date" id="ledgerStartDate">
+    </div>
+    <div>
+      <label class="i18n-end-date"></label>
+      <input type="date" id="ledgerEndDate">
+    </div>
+    <div>
+      <button class="btn btn-primary" onclick="fetchLedger()" id="ledgerFetchBtn">查詢</button>
+    </div>
+  </div>
+
+  <!-- Account multi-select (only for GL entries) -->
+  <div id="ledgerAccountFilter" style="padding:0 24px;max-width:1400px;margin:0 auto;">
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:16px;">
+      <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;display:block;" id="ledgerLabelAccounts">科目篩選（可多選）</label>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input type="text" id="ledgerAccountSearch" oninput="filterLedgerAccounts()" placeholder="搜尋科目編號或名稱..." style="flex:1;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <button class="btn btn-sm" onclick="clearLedgerAccounts()" style="font-size:11px;white-space:nowrap;" id="ledgerBtnClearAccounts">清除全部</button>
+      </div>
+      <!-- Selected chips -->
+      <div id="ledgerSelectedChips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;min-height:24px;"></div>
+      <!-- Account list with checkboxes -->
+      <div id="ledgerAccountList" style="max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:6px;padding:4px;"></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div style="padding:0 24px 24px;max-width:1400px;margin:0 auto;">
+    <div id="ledgerSummary" style="margin-bottom:12px;font-size:13px;color:#666;"></div>
+    <div id="ledgerResults" class="content">
+      <div class="loading" style="color:#999;">選擇查詢條件後點擊「查詢」</div>
+    </div>
+  </div>
+</div><!-- /ledgerView -->
+
 <!-- ===== Contacts Module ===== -->
 <!-- contactsView removed — now embedded inside pipeline views -->
 
@@ -683,6 +731,7 @@ function renderTabs() {
     { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline', userOnly: true },
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
     { id: 'reports', label: l.dReports, perm: 'financial' },
+    { id: 'ledger', label: l.dLedgerTab, perm: 'financial' },
   ];
   const visibleTabs = allTabs.filter(t => {
     if (t.adminOnly && userRole !== 'admin') return false;
@@ -748,6 +797,7 @@ function loadCurrentDashboard() {
   else if (currentTab === 'purchasing-dashboard') loadPurchasingDashboard();
   else if (currentTab === 'my-pipeline') loadMyPipeline();
   else if (currentTab === 'pipeline-dashboard') loadPipelineDashboard();
+  else if (currentTab === 'ledger') initLedgerView();
 }
 
 async function doLogout() {
@@ -888,7 +938,17 @@ const LABELS = {
     sMargin: '利潤率',
 
     // Dashboard tabs
-    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dReports: '報表',
+    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dReports: '報表', dLedgerTab: '查帳',
+    // Ledger labels
+    ledgerType: '查詢類型', ledgerGL: '總帳分錄', ledgerTB: '試算表', ledgerJournal: '日記帳',
+    ledgerAccounts: '科目篩選（可多選）', ledgerClearAll: '清除全部', ledgerFetch: '查詢',
+    ledgerDate: '過帳日期', ledgerDocNo: '傳票號碼', ledgerAcctNo: '科目編號', ledgerAcctName: '科目名稱',
+    ledgerDesc: '說明', ledgerDebit: '借方', ledgerCredit: '貸方', ledgerAmount: '金額',
+    ledgerNetChange: '淨變動', ledgerBalance: '餘額', ledgerTotalDebit: '借方合計', ledgerTotalCredit: '貸方合計',
+    ledgerCode: '代碼', ledgerDisplayName: '名稱', ledgerLastModified: '最後修改',
+    ledgerClickExpand: '點擊查看明細', ledgerNoData: '無資料', ledgerLoading: '載入中...',
+    ledgerCount: '筆', ledgerSearchAcct: '搜尋科目編號或名稱...', ledgerSelectHint: '選擇查詢條件後點擊「查詢」',
+    ledgerLineNo: '行號', ledgerExtDocNo: '外部單據號',
     // Financial Dashboard
     dRevenue: '營業收入', dNetProfit: '稅後淨利', dNetProfitMargin: '淨利率',
     dTotalAssets: '總資產', dDSO: '應收帳款天數 (DSO)', dDIO: '存貨週轉天數 (DIO)', dDPO: '應付帳款天數 (DPO)',
@@ -1051,7 +1111,17 @@ const LABELS = {
     sMargin: 'Margin',
 
     // Dashboard tabs
-    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dReports: 'Reports',
+    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dReports: 'Reports', dLedgerTab: 'Ledger',
+    // Ledger labels
+    ledgerType: 'Query Type', ledgerGL: 'GL Entries', ledgerTB: 'Trial Balance', ledgerJournal: 'Journals',
+    ledgerAccounts: 'Account Filter (multi-select)', ledgerClearAll: 'Clear All', ledgerFetch: 'Query',
+    ledgerDate: 'Posting Date', ledgerDocNo: 'Document No.', ledgerAcctNo: 'Account No.', ledgerAcctName: 'Account Name',
+    ledgerDesc: 'Description', ledgerDebit: 'Debit', ledgerCredit: 'Credit', ledgerAmount: 'Amount',
+    ledgerNetChange: 'Net Change', ledgerBalance: 'Balance', ledgerTotalDebit: 'Total Debit', ledgerTotalCredit: 'Total Credit',
+    ledgerCode: 'Code', ledgerDisplayName: 'Name', ledgerLastModified: 'Last Modified',
+    ledgerClickExpand: 'Click to view details', ledgerNoData: 'No data', ledgerLoading: 'Loading...',
+    ledgerCount: 'entries', ledgerSearchAcct: 'Search account no. or name...', ledgerSelectHint: 'Select query conditions and click "Query"',
+    ledgerLineNo: 'Line No.', ledgerExtDocNo: 'Ext. Document No.',
     // Financial Dashboard
     dRevenue: 'Revenue', dNetProfit: 'Net Profit', dNetProfitMargin: 'Net Profit Margin',
     dTotalAssets: 'Total Assets', dDSO: 'Days Sales Outstanding (DSO)', dDIO: 'Days Inventory Outstanding (DIO)', dDPO: 'Days Payable Outstanding (DPO)',
@@ -1825,6 +1895,7 @@ function switchTab(tab) {
   document.getElementById('myPipelineView').style.display = 'none';
   document.getElementById('pipelineDashboardView').style.display = 'none';
   document.getElementById('reportsView').style.display = 'none';
+  document.getElementById('ledgerView').style.display = 'none';
 
   if (tab === 'dashboard') {
     document.getElementById('dashboardView').style.display = '';
@@ -1843,6 +1914,9 @@ function switchTab(tab) {
     loadPipelineDashboard();
   } else if (tab === 'reports') {
     document.getElementById('reportsView').style.display = '';
+  } else if (tab === 'ledger') {
+    document.getElementById('ledgerView').style.display = '';
+    initLedgerView();
   }
 }
 
@@ -3868,6 +3942,386 @@ async function deleteCategoryConfirm(id) {
     populateCategoryFilters();
   } catch (e) { alert(e.message); }
 }
+
+// ==========================================
+//  Ledger / 查帳 Module
+// ==========================================
+let ledgerAccountsCache = [];
+let ledgerSelectedAccounts = new Map(); // number → displayName
+let ledgerInitialized = false;
+
+function initLedgerView() {
+  const l = L();
+  // Set i18n labels
+  const qtype = document.getElementById('ledgerQueryType');
+  document.getElementById('ledgerLabelType').textContent = l.ledgerType;
+  document.getElementById('ledgerOptGL').textContent = l.ledgerGL;
+  document.getElementById('ledgerOptTB').textContent = l.ledgerTB;
+  document.getElementById('ledgerOptJournal').textContent = l.ledgerJournal;
+  document.getElementById('ledgerFetchBtn').textContent = l.ledgerFetch;
+  document.getElementById('ledgerLabelAccounts').textContent = l.ledgerAccounts;
+  document.getElementById('ledgerBtnClearAccounts').textContent = l.ledgerClearAll;
+  document.getElementById('ledgerAccountSearch').placeholder = l.ledgerSearchAcct;
+
+  // Set default dates
+  if (!ledgerInitialized) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth(); // 0-based
+    const firstDay = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const endDay = `${y}-${String(m + 1).padStart(2, '0')}-${lastDay}`;
+    document.getElementById('ledgerStartDate').value = firstDay;
+    document.getElementById('ledgerEndDate').value = endDay;
+    ledgerInitialized = true;
+  }
+
+  // Load accounts for picker
+  loadLedgerAccounts();
+  onLedgerTypeChange();
+}
+
+async function loadLedgerAccounts() {
+  if (ledgerAccountsCache.length > 0) {
+    renderLedgerAccountList();
+    return;
+  }
+  const companyId = getCompanyId();
+  try {
+    const res = await fetch(`/api/accounts?companyId=${companyId}`);
+    if (res.ok) {
+      const json = await res.json();
+      ledgerAccountsCache = (json.data || json).sort((a, b) => (a.number || '').localeCompare(b.number || ''));
+      renderLedgerAccountList();
+    }
+  } catch (e) {
+    console.error('Failed to load accounts:', e);
+  }
+}
+
+function onLedgerTypeChange() {
+  const type = document.getElementById('ledgerQueryType').value;
+  // Show account filter only for GL entries
+  document.getElementById('ledgerAccountFilter').style.display = type === 'gl-entries' ? '' : 'none';
+}
+
+function filterLedgerAccounts() {
+  renderLedgerAccountList();
+}
+
+function renderLedgerAccountList() {
+  const search = (document.getElementById('ledgerAccountSearch').value || '').toLowerCase();
+  const container = document.getElementById('ledgerAccountList');
+
+  const filtered = ledgerAccountsCache.filter(a => {
+    if (!search) return true;
+    return (a.number || '').toLowerCase().includes(search) ||
+           (a.displayName || '').toLowerCase().includes(search);
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="padding:8px;color:#999;font-size:12px;">無符合科目</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.slice(0, 100).map(a => {
+    const checked = ledgerSelectedAccounts.has(a.number) ? 'checked' : '';
+    return `<label style="display:flex;align-items:center;gap:6px;padding:3px 6px;cursor:pointer;font-size:12px;border-bottom:1px solid #f5f5f5;" onmouseenter="this.style.background='#f8f9fa'" onmouseleave="this.style.background=''">
+      <input type="checkbox" ${checked} onchange="toggleLedgerAccount('${a.number}','${(a.displayName||'').replace(/'/g, "\\'")}')">
+      <span style="color:#1a1a2e;font-weight:500;min-width:60px;">${a.number}</span>
+      <span style="color:#555;">${a.displayName || ''}</span>
+      <span style="color:#aaa;font-size:11px;margin-left:auto;">${a.category || ''}</span>
+    </label>`;
+  }).join('');
+
+  if (filtered.length > 100) {
+    container.innerHTML += `<div style="padding:6px;color:#999;font-size:11px;text-align:center;">顯示前 100 筆，請縮小搜尋範圍</div>`;
+  }
+}
+
+function toggleLedgerAccount(number, name) {
+  if (ledgerSelectedAccounts.has(number)) {
+    ledgerSelectedAccounts.delete(number);
+  } else {
+    ledgerSelectedAccounts.set(number, name);
+  }
+  renderLedgerSelectedChips();
+  renderLedgerAccountList();
+}
+
+function renderLedgerSelectedChips() {
+  const container = document.getElementById('ledgerSelectedChips');
+  if (ledgerSelectedAccounts.size === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = Array.from(ledgerSelectedAccounts.entries()).map(([num, name]) =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:12px;font-size:11px;cursor:default;">
+      ${num} ${name}
+      <span style="cursor:pointer;font-weight:bold;margin-left:2px;" onclick="removeLedgerAccount('${num}')">&times;</span>
+    </span>`
+  ).join('');
+}
+
+function removeLedgerAccount(number) {
+  ledgerSelectedAccounts.delete(number);
+  renderLedgerSelectedChips();
+  renderLedgerAccountList();
+}
+
+function clearLedgerAccounts() {
+  ledgerSelectedAccounts.clear();
+  renderLedgerSelectedChips();
+  renderLedgerAccountList();
+}
+
+async function fetchLedger() {
+  const type = document.getElementById('ledgerQueryType').value;
+  const startDate = document.getElementById('ledgerStartDate').value;
+  const endDate = document.getElementById('ledgerEndDate').value;
+  const companyId = getCompanyId();
+  const l = L();
+
+  const resultsEl = document.getElementById('ledgerResults');
+  const summaryEl = document.getElementById('ledgerSummary');
+  resultsEl.innerHTML = `<div class="loading">${l.ledgerLoading}</div>`;
+  summaryEl.textContent = '';
+
+  try {
+    if (type === 'gl-entries') {
+      if (!startDate || !endDate) {
+        resultsEl.innerHTML = '<div class="loading" style="color:#c62828;">請選擇開始和結束日期</div>';
+        return;
+      }
+      let url = `/api/ledger/gl-entries?companyId=${companyId}&startDate=${startDate}&endDate=${endDate}`;
+      if (ledgerSelectedAccounts.size > 0) {
+        url += `&accountNumbers=${Array.from(ledgerSelectedAccounts.keys()).join(',')}`;
+      }
+      const res = await fetch(url);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      renderGLEntries(json.data || [], l);
+      summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} ${l.ledgerCount}`;
+
+    } else if (type === 'trial-balance') {
+      const dateFilter = startDate && endDate ? `${startDate}..${endDate}` : undefined;
+      let url = `/api/ledger/trial-balance?companyId=${companyId}`;
+      if (dateFilter) url += `&dateFilter=${dateFilter}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      renderTrialBalance(json.data || [], l);
+      summaryEl.textContent = dateFilter ? `${startDate} ~ ${endDate}` : '';
+
+    } else if (type === 'journals') {
+      const res = await fetch(`/api/ledger/journals?companyId=${companyId}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      renderJournals(json.data || [], l, companyId);
+    }
+  } catch (e) {
+    resultsEl.innerHTML = `<div class="loading" style="color:#c62828;">Error: ${e.message}</div>`;
+  }
+}
+
+function renderGLEntries(entries, l) {
+  const container = document.getElementById('ledgerResults');
+  if (!entries || entries.length === 0) {
+    container.innerHTML = `<div class="loading" style="color:#999;">${l.ledgerNoData}</div>`;
+    return;
+  }
+
+  // Calculate totals
+  let totalDebit = 0, totalCredit = 0;
+  entries.forEach(e => {
+    if (e.debitAmount) totalDebit += e.debitAmount;
+    if (e.creditAmount) totalCredit += e.creditAmount;
+  });
+
+  const fmt = v => v != null ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
+
+  let html = `<div style="overflow-x:auto;">
+  <table class="report-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="background:#1a1a2e;color:#fff;">
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerDate}</th>
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerDocNo}</th>
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerAcctNo}</th>
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerAcctName}</th>
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerDesc}</th>
+        <th style="padding:8px 6px;text-align:right;">${l.ledgerDebit}</th>
+        <th style="padding:8px 6px;text-align:right;">${l.ledgerCredit}</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  entries.forEach((e, i) => {
+    const bg = i % 2 === 0 ? '' : 'background:#fafafa;';
+    html += `<tr style="${bg}">
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${e.postingDate || ''}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${e.documentNumber || ''}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;font-weight:500;">${e.accountNumber || ''}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${e.accountName || ''}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;color:#666;">${e.description || ''}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:right;color:#1565c0;">${e.debitAmount ? fmt(e.debitAmount) : ''}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:right;color:#c62828;">${e.creditAmount ? fmt(e.creditAmount) : ''}</td>
+    </tr>`;
+  });
+
+  html += `<tr style="background:#f0f0f0;font-weight:bold;">
+      <td colspan="5" style="padding:8px 6px;">${l.ledgerTotalDebit} / ${l.ledgerTotalCredit}</td>
+      <td style="padding:8px 6px;text-align:right;color:#1565c0;">${fmt(totalDebit)}</td>
+      <td style="padding:8px 6px;text-align:right;color:#c62828;">${fmt(totalCredit)}</td>
+    </tr>`;
+
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+function renderTrialBalance(data, l) {
+  const container = document.getElementById('ledgerResults');
+  if (!data || data.length === 0) {
+    container.innerHTML = `<div class="loading" style="color:#999;">${l.ledgerNoData}</div>`;
+    return;
+  }
+
+  const fmt = v => v != null ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0';
+
+  let html = `<div style="overflow-x:auto;">
+  <table class="report-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="background:#1a1a2e;color:#fff;">
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerAcctNo}</th>
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerAcctName}</th>
+        <th style="padding:8px 6px;text-align:right;">${l.ledgerNetChange}</th>
+        <th style="padding:8px 6px;text-align:right;">${l.ledgerBalance}</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  data.forEach((row, i) => {
+    const bg = i % 2 === 0 ? '' : 'background:#fafafa;';
+    const nc = row.netChange || 0;
+    const bal = row.balance || 0;
+    html += `<tr style="${bg}">
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;font-weight:500;">${row.number || row.accountNumber || ''}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${row.name || row.display || row.accountName || ''}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:right;color:${nc >= 0 ? '#1565c0' : '#c62828'};">${fmt(nc)}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:right;color:${bal >= 0 ? '#1565c0' : '#c62828'};">${fmt(bal)}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+function renderJournals(journals, l, companyId) {
+  const container = document.getElementById('ledgerResults');
+  if (!journals || journals.length === 0) {
+    container.innerHTML = `<div class="loading" style="color:#999;">${l.ledgerNoData}</div>`;
+    return;
+  }
+
+  let html = `<div style="overflow-x:auto;">
+  <table class="report-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="background:#1a1a2e;color:#fff;">
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerCode}</th>
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerDisplayName}</th>
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerLastModified}</th>
+        <th style="padding:8px 6px;text-align:center;">${l.ledgerClickExpand}</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  journals.forEach((j, i) => {
+    const bg = i % 2 === 0 ? '' : 'background:#fafafa;';
+    const modified = j.lastModifiedDateTime ? new Date(j.lastModifiedDateTime).toLocaleString('zh-TW') : '';
+    html += `<tr style="${bg}cursor:pointer;" onclick="toggleJournalLines('${j.id}', this, '${companyId}')">
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;font-weight:500;">${j.code || ''}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${j.displayName || ''}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;color:#888;">${modified}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:center;color:#1976d2;">▶ ${l.ledgerClickExpand}</td>
+    </tr>
+    <tr id="jlines-${j.id}" style="display:none;">
+      <td colspan="4" style="padding:0;"></td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+async function toggleJournalLines(journalId, rowEl, companyId) {
+  const l = L();
+  const linesRow = document.getElementById(`jlines-${journalId}`);
+  if (!linesRow) return;
+
+  if (linesRow.style.display !== 'none') {
+    linesRow.style.display = 'none';
+    return;
+  }
+
+  linesRow.style.display = '';
+  const cell = linesRow.querySelector('td');
+  cell.innerHTML = `<div style="padding:12px;color:#999;">${l.ledgerLoading}</div>`;
+
+  try {
+    const res = await fetch(`/api/ledger/journals/${journalId}/lines?companyId=${companyId}`);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+
+    const lines = json.data || [];
+    if (lines.length === 0) {
+      cell.innerHTML = `<div style="padding:12px;color:#999;">${l.ledgerNoData}</div>`;
+      return;
+    }
+
+    const fmt = v => v != null ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0';
+
+    let html = `<div style="padding:8px 12px;background:#f8f9fa;border-top:2px solid #1976d2;">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead>
+        <tr style="background:#e3f2fd;color:#1565c0;">
+          <th style="padding:5px 4px;text-align:left;">${l.ledgerLineNo}</th>
+          <th style="padding:5px 4px;text-align:left;">${l.ledgerDate}</th>
+          <th style="padding:5px 4px;text-align:left;">${l.ledgerDocNo}</th>
+          <th style="padding:5px 4px;text-align:left;">${l.ledgerAcctNo}</th>
+          <th style="padding:5px 4px;text-align:left;">${l.ledgerDesc}</th>
+          <th style="padding:5px 4px;text-align:right;">${l.ledgerAmount}</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+    lines.forEach((line, i) => {
+      const bg = i % 2 === 0 ? '' : 'background:#fff;';
+      const amt = line.amount || 0;
+      html += `<tr style="${bg}">
+        <td style="padding:4px;border-bottom:1px solid #eee;">${line.lineNumber || ''}</td>
+        <td style="padding:4px;border-bottom:1px solid #eee;">${line.postingDate || ''}</td>
+        <td style="padding:4px;border-bottom:1px solid #eee;">${line.documentNumber || ''}</td>
+        <td style="padding:4px;border-bottom:1px solid #eee;font-weight:500;">${line.accountNumber || ''}</td>
+        <td style="padding:4px;border-bottom:1px solid #eee;color:#666;">${line.description || ''}</td>
+        <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:${amt >= 0 ? '#1565c0' : '#c62828'};">${fmt(amt)}</td>
+      </tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+    cell.innerHTML = html;
+  } catch (e) {
+    cell.innerHTML = `<div style="padding:12px;color:#c62828;">Error: ${e.message}</div>`;
+  }
+}
+
+// Re-load accounts when company changes (for ledger tab)
+document.getElementById('companySelect').addEventListener('change', () => {
+  ledgerAccountsCache = [];
+  ledgerSelectedAccounts.clear();
+  if (currentTab === 'ledger') {
+    loadLedgerAccounts();
+    renderLedgerSelectedChips();
+  }
+});
 
 // Init
 initDates();

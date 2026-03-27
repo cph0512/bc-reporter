@@ -154,12 +154,18 @@ class BCClient {
 
   /**
    * 總帳分錄 (General Ledger Entries)
+   * options.accountNumber — 單一科目篩選
+   * options.accountNumbers — 多科目篩選 (陣列)
    */
   async getGeneralLedgerEntries(startDate, endDate, options = {}) {
     const filters = [];
     if (startDate) filters.push(`postingDate ge ${startDate}`);
     if (endDate) filters.push(`postingDate le ${endDate}`);
     if (options.accountNumber) filters.push(`accountNumber eq '${options.accountNumber}'`);
+    if (options.accountNumbers?.length > 0) {
+      const acctFilter = options.accountNumbers.map(n => `accountNumber eq '${n}'`).join(' or ');
+      filters.push(`(${acctFilter})`);
+    }
 
     if (options.fetchAll) {
       return this.requestAll(this.companyUrl('generalLedgerEntries', options.companyId), {
@@ -335,6 +341,120 @@ class BCClient {
     } catch (error) {
       if (error.response?.status === 404) {
         console.log('[BCClient] purchaseOrders API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  // ===== Ledger / Audit Read-Only Endpoints =====
+
+  /**
+   * 試算表 (Trial Balance) — 唯讀
+   */
+  async getTrialBalance(dateFilter, options = {}) {
+    try {
+      return await this.request(this.companyUrl('trialBalance', options.companyId), {
+        $filter: dateFilter ? `dateFilter eq '${dateFilter}'` : undefined,
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] trialBalance API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 日記帳列表 (Journals) — 唯讀
+   */
+  async getJournals(options = {}) {
+    try {
+      return await this.request(this.companyUrl('journals', options.companyId), {
+        $select: 'id,code,displayName,balancingAccountNumber,lastModifiedDateTime',
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] journals API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 日記帳明細行 (Journal Lines) — 唯讀
+   */
+  async getJournalLines(journalId, options = {}) {
+    try {
+      return await this.requestAll(
+        this.companyUrl(`journals(${journalId})/journalLines`, options.companyId),
+        {
+          $select: 'id,journalDisplayName,lineNumber,accountId,accountNumber,postingDate,documentNumber,externalDocumentNumber,amount,description,comment,lastModifiedDateTime',
+        }
+      );
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] journalLines API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 客戶付款日記帳 (Customer Payment Journals) — 唯讀
+   */
+  async getCustomerPaymentJournals(options = {}) {
+    try {
+      return await this.request(this.companyUrl('customerPaymentJournals', options.companyId), {
+        $select: 'id,code,displayName,balancingAccountNumber,lastModifiedDateTime',
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] customerPaymentJournals API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 供應商付款日記帳 (Vendor Payment Journals) — 唯讀
+   */
+  async getVendorPaymentJournals(options = {}) {
+    try {
+      return await this.request(this.companyUrl('vendorPaymentJournals', options.companyId), {
+        $select: 'id,code,displayName,balancingAccountNumber,lastModifiedDateTime',
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] vendorPaymentJournals API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 品項分類帳 (Item Ledger Entries) — 唯讀
+   */
+  async getItemLedgerEntries(startDate, endDate, options = {}) {
+    try {
+      const filters = [];
+      if (startDate) filters.push(`postingDate ge ${startDate}`);
+      if (endDate) filters.push(`postingDate le ${endDate}`);
+
+      return await this.requestAll(
+        this.companyUrl('itemLedgerEntries', options.companyId),
+        {
+          $filter: filters.length > 0 ? filters.join(' and ') : undefined,
+        }
+      );
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] itemLedgerEntries API not available');
         return null;
       }
       throw error;

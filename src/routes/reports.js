@@ -530,6 +530,100 @@ module.exports = function(reportEngine) {
     }
   });
 
+  // ===== Ledger / 查帳 API (Read-Only) =====
+
+  router.get('/ledger/gl-entries', requireDashboard('financial'), async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      if (!startDate || !endDate) return res.status(400).json({ error: 'startDate and endDate required' });
+
+      const co = companyOpts(req);
+      // 支援多科目篩選: accountNumbers=1100,1150,4100
+      const accountNumbers = req.query.accountNumbers
+        ? req.query.accountNumbers.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+      const entries = await reportEngine.bc.getGeneralLedgerEntries(startDate, endDate, {
+        ...co,
+        accountNumbers,
+        fetchAll: true,
+      });
+
+      res.json({ data: entries, count: entries.length });
+    } catch (error) {
+      console.error('[API] GL Entries error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.get('/ledger/trial-balance', requireDashboard('financial'), async (req, res) => {
+    try {
+      const { dateFilter } = req.query; // format: YYYY-MM-DD..YYYY-MM-DD
+      const co = companyOpts(req);
+      const data = await reportEngine.bc.getTrialBalance(dateFilter || undefined, co);
+      res.json({ data: data || [] });
+    } catch (error) {
+      console.error('[API] Trial Balance error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.get('/ledger/journals', requireDashboard('financial'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      const journals = await reportEngine.bc.getJournals(co);
+      res.json({ data: journals || [] });
+    } catch (error) {
+      console.error('[API] Journals error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.get('/ledger/journals/:journalId/lines', requireDashboard('financial'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      const lines = await reportEngine.bc.getJournalLines(req.params.journalId, co);
+      res.json({ data: lines || [] });
+    } catch (error) {
+      console.error('[API] Journal Lines error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.get('/ledger/customer-payment-journals', requireDashboard('financial'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      const data = await reportEngine.bc.getCustomerPaymentJournals(co);
+      res.json({ data: data || [] });
+    } catch (error) {
+      console.error('[API] Customer Payment Journals error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.get('/ledger/vendor-payment-journals', requireDashboard('financial'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      const data = await reportEngine.bc.getVendorPaymentJournals(co);
+      res.json({ data: data || [] });
+    } catch (error) {
+      console.error('[API] Vendor Payment Journals error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.get('/ledger/item-ledger-entries', requireDashboard('financial'), async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const co = companyOpts(req);
+      const data = await reportEngine.bc.getItemLedgerEntries(startDate, endDate, co);
+      res.json({ data: data || [] });
+    } catch (error) {
+      console.error('[API] Item Ledger Entries error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ===== Accounts =====
 
   router.get('/accounts', async (req, res) => {
