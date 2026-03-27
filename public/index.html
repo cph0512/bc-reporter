@@ -597,7 +597,6 @@
       <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;display:block;" id="ledgerLabelAccounts">科目篩選（可多選）</label>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
         <input type="text" id="ledgerAccountSearch" oninput="filterLedgerAccounts()" placeholder="搜尋科目編號或名稱..." style="flex:1;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
-        <button class="btn btn-sm btn-primary" onclick="selectAllLedgerAccounts()" style="font-size:11px;white-space:nowrap;" id="ledgerBtnSelectAll">全選</button>
         <button class="btn btn-sm" onclick="clearLedgerAccounts()" style="font-size:11px;white-space:nowrap;" id="ledgerBtnClearAccounts">清除全部</button>
       </div>
       <!-- Selected chips -->
@@ -3961,7 +3960,6 @@ function initLedgerView() {
   document.getElementById('ledgerOptJournal').textContent = l.ledgerJournal;
   document.getElementById('ledgerFetchBtn').textContent = l.ledgerFetch;
   document.getElementById('ledgerLabelAccounts').textContent = l.ledgerAccounts;
-  document.getElementById('ledgerBtnSelectAll').textContent = l.ledgerSelectAll;
   document.getElementById('ledgerBtnClearAccounts').textContent = l.ledgerClearAll;
   document.getElementById('ledgerAccountSearch').placeholder = l.ledgerSearchAcct;
 
@@ -4071,18 +4069,6 @@ function removeLedgerAccount(number) {
   renderLedgerAccountList();
 }
 
-function selectAllLedgerAccounts() {
-  // Select all currently filtered (visible) accounts
-  const search = (document.getElementById('ledgerAccountSearch').value || '').toLowerCase();
-  const filtered = ledgerAccountsCache.filter(a => {
-    if (!search) return true;
-    return (a.number || '').toLowerCase().includes(search) || (a.displayName || '').toLowerCase().includes(search);
-  });
-  filtered.forEach(a => ledgerSelectedAccounts.set(a.number, a.displayName || ''));
-  renderLedgerSelectedChips();
-  renderLedgerAccountList();
-}
-
 function clearLedgerAccounts() {
   ledgerSelectedAccounts.clear();
   renderLedgerSelectedChips();
@@ -4108,8 +4094,13 @@ async function fetchLedger() {
         return;
       }
       let url = `/api/ledger/gl-entries?companyId=${companyId}&startDate=${startDate}&endDate=${endDate}`;
-      if (ledgerSelectedAccounts.size > 0) {
+      // Only filter by accounts if <= 30 selected; more than that = query all
+      if (ledgerSelectedAccounts.size > 0 && ledgerSelectedAccounts.size <= 30) {
         url += `&accountNumbers=${Array.from(ledgerSelectedAccounts.keys()).join(',')}`;
+      } else if (ledgerSelectedAccounts.size > 30) {
+        resultsEl.innerHTML = `<div class="loading" style="color:#e65100;">已選 ${ledgerSelectedAccounts.size} 個科目，超過上限（30）。請縮小選取範圍，或清除全部以查詢所有科目。</div>`;
+        resultsEl.querySelector ? null : null;
+        return;
       }
       const res = await fetch(url);
       const json = await res.json();
