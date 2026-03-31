@@ -379,7 +379,7 @@
         <h2 id="plLeadListTitle">商機列表</h2>
         <div style="display:flex;align-items:center;gap:10px;">
           <label style="font-size:12px;color:#666;">週次</label>
-          <select id="plWeekSelect" onchange="loadPipelineLeads()" style="padding:5px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
+          <select id="plWeekSelect" onchange="renderPipelineTable()" style="padding:5px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;"></select>
         </div>
       </div>
       <div class="card-body" style="overflow-x:auto;">
@@ -2339,11 +2339,16 @@ function renderMyPipelineKpis(data, container) {
 
 function populateMyPlWeekSelect() {
   const sel = document.getElementById('myPlWeekSelect');
+  if (!sel) return;
   const current = sel.value;
   const thisWeek = getCurrentWeekLabel();
-  const weeks = [...new Set(myPlActivitiesCache.map(a => a.weekLabel))].sort().reverse();
-  if (!weeks.includes(thisWeek)) weeks.unshift(thisWeek);
-  else { weeks.splice(weeks.indexOf(thisWeek), 1); weeks.unshift(thisWeek); }
+  // Build week labels from activity dates (Tuesday-based)
+  const weekSet = new Set();
+  weekSet.add(thisWeek);
+  myPlActivitiesCache.forEach(a => {
+    if (a.createdAt) weekSet.add(getTueWeekKey(a.createdAt));
+  });
+  const weeks = [...weekSet].sort().reverse();
   sel.innerHTML = weeks.map((w, i) =>
     `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(w)}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
   ).join('');
@@ -2428,13 +2433,22 @@ function renderMyPipelineTable() {
   updateSortArrows('myPl', myPlSortField, myPlSortDir);
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
+  const selectedWeek = document.getElementById('myPlWeekSelect')?.value || '';
   tbody.innerHTML = leads.map(lead => {
-    // Find latest activity for this lead (sorted by createdAt desc)
-    const latestAct = myPlActivitiesCache
-      .filter(a => a.leadId === lead.id && a.content)
-      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
-    const reviewText = latestAct ? escHtml(latestAct.content) : '';
-    const reviewDate = latestAct && latestAct.createdAt ? fmtTWDate(latestAct.createdAt) : '';
+    // Find activity for selected week, or latest if no week selected
+    let matchAct;
+    if (selectedWeek) {
+      // Find activities whose createdAt falls within the selected week
+      matchAct = myPlActivitiesCache
+        .filter(a => a.leadId === lead.id && a.content && activityMatchesWeek(a, selectedWeek))
+        .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+    } else {
+      matchAct = myPlActivitiesCache
+        .filter(a => a.leadId === lead.id && a.content)
+        .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+    }
+    const reviewText = matchAct ? escHtml(matchAct.content) : '';
+    const reviewDate = matchAct && matchAct.createdAt ? fmtTWDate(matchAct.createdAt) : '';
     const contactDisplay = lead.contactName
       ? (lead.contactEmail
         ? `<span title="${escHtml(lead.contactEmail)}">${escHtml(lead.contactName)}</span>`
@@ -2610,6 +2624,13 @@ function fmtWeekLabel(tue, mon) {
 function getCurrentWeekLabel() {
   const { tue, mon } = getWeekTuesday(new Date());
   return fmtWeekLabel(tue, mon);
+}
+
+// Check if an activity's createdAt falls within a week label like "114/03/25-03/31"
+function activityMatchesWeek(activity, weekLabel) {
+  if (!activity.createdAt) return false;
+  const actWeek = getTueWeekKey(activity.createdAt);
+  return actWeek === weekLabel;
 }
 
 function fmtTWDate(isoStr) {
@@ -2845,12 +2866,15 @@ function populatePlSPFilter(leads) {
 
 function populatePlWeekSelect() {
   const sel = document.getElementById('plWeekSelect');
+  if (!sel) return;
   const current = sel.value;
   const thisWeek = getCurrentWeekLabel();
-  // Get unique weeks from activities
-  const weeks = [...new Set(plActivitiesCache.map(a => a.weekLabel))].sort().reverse();
-  if (!weeks.includes(thisWeek)) weeks.unshift(thisWeek);
-  else { weeks.splice(weeks.indexOf(thisWeek), 1); weeks.unshift(thisWeek); }
+  const weekSet = new Set();
+  weekSet.add(thisWeek);
+  plActivitiesCache.forEach(a => {
+    if (a.createdAt) weekSet.add(getTueWeekKey(a.createdAt));
+  });
+  const weeks = [...weekSet].sort().reverse();
   sel.innerHTML = weeks.map((w, i) =>
     `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(w)}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
   ).join('');
@@ -2900,12 +2924,20 @@ function renderPipelineTable() {
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
+  const selectedWeek = document.getElementById('plWeekSelect')?.value || '';
   tbody.innerHTML = leads.map(lead => {
-    const latestAct = plActivitiesCache
-      .filter(a => a.leadId === lead.id && a.content)
-      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
-    const reviewText = latestAct ? escHtml(latestAct.content) : '';
-    const reviewDate = latestAct && latestAct.createdAt ? fmtTWDate(latestAct.createdAt) : '';
+    let matchAct;
+    if (selectedWeek) {
+      matchAct = plActivitiesCache
+        .filter(a => a.leadId === lead.id && a.content && activityMatchesWeek(a, selectedWeek))
+        .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+    } else {
+      matchAct = plActivitiesCache
+        .filter(a => a.leadId === lead.id && a.content)
+        .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+    }
+    const reviewText = matchAct ? escHtml(matchAct.content) : '';
+    const reviewDate = matchAct && matchAct.createdAt ? fmtTWDate(matchAct.createdAt) : '';
     const contactDisplay = lead.contactName
       ? (lead.contactEmail
         ? `<span title="${escHtml(lead.contactEmail)}">${escHtml(lead.contactName)}</span>`
