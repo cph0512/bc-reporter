@@ -312,6 +312,8 @@
           <select id="myPlFilterCat" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
           <input type="month" id="myPlFilterMonth" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
           <select id="myPlFilterStale" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
+          <label style="font-size:12px;color:#666;" id="myPlWeekLabel"></label>
+          <select id="myPlWeekSelect" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
           <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()" id="myPlAddLeadBtn"></button>
         </div>
       </div>
@@ -1244,6 +1246,8 @@ function renderPipelineLabels() {
   if (myAddBtn) myAddBtn.textContent = l.plAddLead;
   const mySearch = document.getElementById('myPlSearch');
   if (mySearch) mySearch.placeholder = l.plSearchPlaceholder;
+  const myWeekLabel = document.getElementById('myPlWeekLabel');
+  if (myWeekLabel) myWeekLabel.textContent = l.plWeekLabel;
   const plSearch = document.getElementById('plSearch');
   if (plSearch) plSearch.placeholder = l.plSearchPlaceholder;
   const myThead = document.getElementById('myPlTableHead');
@@ -2579,12 +2583,33 @@ function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// Week runs Tuesday(start) ~ Monday(end). Returns label for the week containing `date`.
+function getWeekTuesday(date) {
+  const d = new Date(date);
+  // day: 0=Sun,1=Mon,2=Tue,...6=Sat → offset to find this week's Tuesday
+  const day = d.getDay(); // 0-6
+  // offset: how many days back to reach Tuesday
+  // Tue=0, Wed=1, Thu=2, Fri=3, Sat=4, Sun=5, Mon=6
+  const offset = (day + 5) % 7; // Tue→0, Wed→1, ..., Mon→6
+  const tue = new Date(d);
+  tue.setDate(d.getDate() - offset);
+  const mon = new Date(tue);
+  mon.setDate(tue.getDate() + 6);
+  return { tue, mon };
+}
+
+function fmtWeekLabel(tue, mon) {
+  const yt = tue.getFullYear() - 1911;
+  const mt = String(tue.getMonth() + 1).padStart(2, '0');
+  const dt = String(tue.getDate()).padStart(2, '0');
+  const mm = String(mon.getMonth() + 1).padStart(2, '0');
+  const dm = String(mon.getDate()).padStart(2, '0');
+  return `${yt}/${mt}/${dt}-${mm}/${dm}`;
+}
+
 function getCurrentWeekLabel() {
-  const now = new Date();
-  const y = now.getFullYear() - 1911;
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}/${m}/${d}`;
+  const { tue, mon } = getWeekTuesday(new Date());
+  return fmtWeekLabel(tue, mon);
 }
 
 function fmtTWDate(isoStr) {
@@ -3111,22 +3136,19 @@ async function deleteLeadImage(leadId, imgId) {
   } catch {}
 }
 
-function getISOWeek(dateStr) {
+// Get Tuesday-based week key for grouping (uses getWeekTuesday)
+function getTueWeekKey(dateStr) {
   const d = new Date(dateStr);
   if (isNaN(d)) return '0000-W00';
-  const jan1 = new Date(d.getFullYear(), 0, 1);
-  const days = Math.floor((d - jan1) / 86400000);
-  const wk = Math.ceil((days + jan1.getDay() + 1) / 7);
-  return `${d.getFullYear()}-W${String(wk).padStart(2, '0')}`;
+  const { tue } = getWeekTuesday(d);
+  return fmtWeekLabel(tue, new Date(tue.getTime() + 6 * 86400000));
 }
 
-function getWeekRange(dateStr) {
+function getTueWeekRange(dateStr) {
   const d = new Date(dateStr);
   if (isNaN(d)) return '';
-  const day = d.getDay() || 7;
-  const mon = new Date(d); mon.setDate(d.getDate() - day + 1);
-  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-  return `${fmtTWDate(mon.toISOString())} ~ ${fmtTWDate(sun.toISOString())}`;
+  const { tue, mon } = getWeekTuesday(d);
+  return `${fmtTWDate(tue.toISOString())} ~ ${fmtTWDate(mon.toISOString())}`;
 }
 
 function renderLeadActivities(leadId, activitiesCache) {
@@ -3138,15 +3160,15 @@ function renderLeadActivities(leadId, activitiesCache) {
   if (acts.length === 0) {
     actEl.innerHTML = `<div class="ld-empty">${getLang() === 'en' ? 'No review history' : '尚無回顧紀錄'}</div>`;
   } else {
-    // Group by ISO week
+    // Group by Tuesday-based week
     const groups = {};
     acts.forEach(a => {
-      const wk = a.createdAt ? getISOWeek(a.createdAt) : '0000-W00';
-      if (!groups[wk]) groups[wk] = { week: wk, range: a.createdAt ? getWeekRange(a.createdAt) : '', items: [] };
+      const wk = a.createdAt ? getTueWeekKey(a.createdAt) : '0000/00/00';
+      if (!groups[wk]) groups[wk] = { week: wk, range: a.createdAt ? getTueWeekRange(a.createdAt) : '', items: [] };
       groups[wk].items.push(a);
     });
     const sortedWeeks = Object.keys(groups).sort().reverse();
-    const thisWeek = getISOWeek(new Date().toISOString());
+    const thisWeek = getCurrentWeekLabel();
     actEl.innerHTML = sortedWeeks.map(wk => {
       const g = groups[wk];
       const isThisWeek = wk === thisWeek;
