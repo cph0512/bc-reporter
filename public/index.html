@@ -609,9 +609,9 @@
   </div>
 
   <!-- Results -->
-  <div style="padding:0 24px 24px;max-width:1400px;margin:0 auto;">
+  <div style="padding:0 24px 24px;margin:0 auto;">
     <div id="ledgerSummary" style="margin-bottom:12px;font-size:13px;color:#666;"></div>
-    <div id="ledgerResults" class="content">
+    <div id="ledgerResults" class="content" style="max-width:100%;">
       <div class="loading" style="color:#999;">選擇查詢條件後點擊「查詢」</div>
     </div>
   </div>
@@ -4222,17 +4222,25 @@ function renderGLEntries(entries, l) {
 
   const fmt = v => v != null ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
 
-  let html = `<div style="overflow-x:auto;">
-  <table class="report-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;">
+    <colgroup>
+      <col style="width:90px;">
+      <col style="width:120px;">
+      <col style="width:70px;">
+      <col style="width:140px;">
+      <col>
+      <col style="width:100px;">
+      <col style="width:100px;">
+    </colgroup>
     <thead>
       <tr style="background:#1a1a2e;color:#fff;">
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerDate}</th>
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerDocNo}</th>
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerAcctNo}</th>
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerAcctName}</th>
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerDesc}</th>
-        <th style="padding:8px 6px;text-align:right;">${l.ledgerDebit}</th>
-        <th style="padding:8px 6px;text-align:right;">${l.ledgerCredit}</th>
+        <th style="padding:6px 4px;text-align:left;">${l.ledgerDate}</th>
+        <th style="padding:6px 4px;text-align:left;">${l.ledgerDocNo}</th>
+        <th style="padding:6px 4px;text-align:left;">${l.ledgerAcctNo}</th>
+        <th style="padding:6px 4px;text-align:left;">${l.ledgerAcctName}</th>
+        <th style="padding:6px 4px;text-align:left;">${l.ledgerDesc}</th>
+        <th style="padding:6px 4px;text-align:right;">${l.ledgerDebit}</th>
+        <th style="padding:6px 4px;text-align:right;">${l.ledgerCredit}</th>
       </tr>
     </thead>
     <tbody>`;
@@ -4240,23 +4248,23 @@ function renderGLEntries(entries, l) {
   entries.forEach((e, i) => {
     const bg = i % 2 === 0 ? '' : 'background:#fafafa;';
     html += `<tr style="${bg}">
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${e.postingDate || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${e.documentNumber || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;font-weight:500;">${e.accountNumber || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${e.accountName || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;color:#666;">${e.description || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:right;color:#1565c0;">${e.debitAmount ? fmt(e.debitAmount) : ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:right;color:#c62828;">${e.creditAmount ? fmt(e.creditAmount) : ''}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;white-space:nowrap;">${e.postingDate || ''}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;font-size:11px;overflow:hidden;text-overflow:ellipsis;">${e.documentNumber || ''}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;font-weight:500;">${e.accountNumber || ''}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;overflow:hidden;text-overflow:ellipsis;">${e.accountName || ''}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;color:#666;overflow:hidden;text-overflow:ellipsis;">${e.description || ''}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:#1565c0;white-space:nowrap;">${e.debitAmount ? fmt(e.debitAmount) : ''}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:#c62828;white-space:nowrap;">${e.creditAmount ? fmt(e.creditAmount) : ''}</td>
     </tr>`;
   });
 
   html += `<tr style="background:#f0f0f0;font-weight:bold;">
-      <td colspan="5" style="padding:8px 6px;">${l.ledgerTotalDebit} / ${l.ledgerTotalCredit}</td>
-      <td style="padding:8px 6px;text-align:right;color:#1565c0;">${fmt(totalDebit)}</td>
-      <td style="padding:8px 6px;text-align:right;color:#c62828;">${fmt(totalCredit)}</td>
+      <td colspan="5" style="padding:6px 4px;">${l.ledgerTotalDebit} / ${l.ledgerTotalCredit}</td>
+      <td style="padding:6px 4px;text-align:right;color:#1565c0;">${fmt(totalDebit)}</td>
+      <td style="padding:6px 4px;text-align:right;color:#c62828;">${fmt(totalCredit)}</td>
     </tr>`;
 
-  html += `</tbody></table></div>`;
+  html += `</tbody></table>`;
   container.innerHTML = html;
 }
 
@@ -4269,31 +4277,44 @@ function renderTrialBalance(data, l) {
 
   const fmt = v => v != null ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0';
 
-  let html = `<div style="overflow-x:auto;">
-  <table class="report-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+  // Filter out zero-balance accounts for cleaner view
+  const filtered = data.filter(row => (row.netChange || 0) !== 0 || (row.balance || 0) !== 0);
+  const display = filtered.length > 0 ? filtered : data;
+
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;">
+    <colgroup>
+      <col style="width:80px;">
+      <col>
+      <col style="width:100px;">
+      <col style="width:120px;">
+      <col style="width:120px;">
+    </colgroup>
     <thead>
       <tr style="background:#1a1a2e;color:#fff;">
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerAcctNo}</th>
-        <th style="padding:8px 6px;text-align:left;">${l.ledgerAcctName}</th>
-        <th style="padding:8px 6px;text-align:right;">${l.ledgerNetChange}</th>
-        <th style="padding:8px 6px;text-align:right;">${l.ledgerBalance}</th>
+        <th style="padding:6px 4px;text-align:left;">${l.ledgerAcctNo}</th>
+        <th style="padding:6px 4px;text-align:left;">${l.ledgerAcctName}</th>
+        <th style="padding:6px 4px;text-align:left;">${getLang() === 'en' ? 'Category' : '分類'}</th>
+        <th style="padding:6px 4px;text-align:right;">${l.ledgerNetChange}</th>
+        <th style="padding:6px 4px;text-align:right;">${l.ledgerBalance}</th>
       </tr>
     </thead>
     <tbody>`;
 
-  data.forEach((row, i) => {
+  display.forEach((row, i) => {
     const bg = i % 2 === 0 ? '' : 'background:#fafafa;';
     const nc = row.netChange || 0;
     const bal = row.balance || 0;
+    const cat = row.accountCategory || row.category || '';
     html += `<tr style="${bg}">
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;font-weight:500;">${row.number || row.accountNumber || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${row.name || row.display || row.accountName || ''}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:right;color:${nc >= 0 ? '#1565c0' : '#c62828'};">${fmt(nc)}</td>
-      <td style="padding:5px 6px;border-bottom:1px solid #eee;text-align:right;color:${bal >= 0 ? '#1565c0' : '#c62828'};">${fmt(bal)}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;font-weight:500;">${row.number || row.accountNumber || ''}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;">${row.displayName || row.name || row.display || row.accountName || ''}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;font-size:11px;color:#888;">${cat}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:${nc >= 0 ? '#1565c0' : '#c62828'};">${fmt(nc)}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:${bal >= 0 ? '#1565c0' : '#c62828'};">${fmt(bal)}</td>
     </tr>`;
   });
 
-  html += `</tbody></table></div>`;
+  html += `</tbody></table>`;
   container.innerHTML = html;
 }
 
