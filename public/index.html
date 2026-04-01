@@ -2420,6 +2420,15 @@ function renderMyPipelineTable() {
   });
   // Update notification bell with ALL leads (not filtered)
   updateNotifBell(myPlLeadsCache);
+  // Week filter: only show leads that were created this week OR have a review this week
+  const selectedWeek = document.getElementById('myPlWeekSelect')?.value || '';
+  if (selectedWeek) {
+    leads = leads.filter(l => {
+      const createdInWeek = l.createdAt && getTueWeekKey(l.createdAt) === selectedWeek;
+      const hasReviewInWeek = myPlActivitiesCache.some(a => a.leadId === l.id && a.content && activityMatchesWeek(a, selectedWeek));
+      return createdInWeek || hasReviewInWeek;
+    });
+  }
   // Sort — default: newest first by createdAt
   {
     const sf = myPlSortField || 'createdAt';
@@ -2433,7 +2442,6 @@ function renderMyPipelineTable() {
   updateSortArrows('myPl', myPlSortField, myPlSortDir);
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-  const selectedWeek = document.getElementById('myPlWeekSelect')?.value || '';
   tbody.innerHTML = leads.map(lead => {
     // Find activity for selected week, or latest if no week selected
     let matchAct;
@@ -2909,6 +2917,15 @@ function renderPipelineTable() {
 
   // Update notification bell with ALL leads (not filtered)
   updateNotifBell(plLeadsCache);
+  // Week filter: only show leads created this week OR with review this week
+  const selectedWeek = document.getElementById('plWeekSelect')?.value || '';
+  if (selectedWeek) {
+    leads = leads.filter(l => {
+      const createdInWeek = l.createdAt && getTueWeekKey(l.createdAt) === selectedWeek;
+      const hasReviewInWeek = plActivitiesCache.some(a => a.leadId === l.id && a.content && activityMatchesWeek(a, selectedWeek));
+      return createdInWeek || hasReviewInWeek;
+    });
+  }
   // Sort — default: newest first by createdAt
   {
     const sf = plSortField || 'createdAt';
@@ -2923,8 +2940,6 @@ function renderPipelineTable() {
 
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-
-  const selectedWeek = document.getElementById('plWeekSelect')?.value || '';
   tbody.innerHTML = leads.map(lead => {
     let matchAct;
     if (selectedWeek) {
