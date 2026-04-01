@@ -4276,12 +4276,21 @@ function renderTrialBalance(data, l) {
   }
 
   const fmt = v => v != null ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0';
+  const isEn = getLang() === 'en';
 
-  // Filter out zero-balance accounts for cleaner view
-  const filtered = data.filter(row => (row.netChange || 0) !== 0 || (row.balance || 0) !== 0);
-  const display = filtered.length > 0 ? filtered : data;
+  // Sort by account number
+  const display = [...data].sort((a, b) => {
+    const na = (a.number || a.accountNumber || '').toString();
+    const nb = (b.number || b.accountNumber || '').toString();
+    return na.localeCompare(nb);
+  });
 
-  let html = `<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;">
+  // Totals
+  const totalNC = display.reduce((s, r) => s + (r.netChange || 0), 0);
+  const totalBal = display.reduce((s, r) => s + (r.balance || 0), 0);
+
+  let html = `<div style="font-size:12px;color:#666;margin-bottom:6px;">${isEn ? 'Total accounts' : '科目總數'}：${display.length}</div>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;">
     <colgroup>
       <col style="width:80px;">
       <col>
@@ -4293,7 +4302,7 @@ function renderTrialBalance(data, l) {
       <tr style="background:#1a1a2e;color:#fff;">
         <th style="padding:6px 4px;text-align:left;">${l.ledgerAcctNo}</th>
         <th style="padding:6px 4px;text-align:left;">${l.ledgerAcctName}</th>
-        <th style="padding:6px 4px;text-align:left;">${getLang() === 'en' ? 'Category' : '分類'}</th>
+        <th style="padding:6px 4px;text-align:left;">${isEn ? 'Category' : '分類'}</th>
         <th style="padding:6px 4px;text-align:right;">${l.ledgerNetChange}</th>
         <th style="padding:6px 4px;text-align:right;">${l.ledgerBalance}</th>
       </tr>
@@ -4305,16 +4314,26 @@ function renderTrialBalance(data, l) {
     const nc = row.netChange || 0;
     const bal = row.balance || 0;
     const cat = row.accountCategory || row.category || '';
-    html += `<tr style="${bg}">
+    const isZero = nc === 0 && bal === 0;
+    html += `<tr style="${bg}${isZero ? 'color:#bbb;' : ''}">
       <td style="padding:4px;border-bottom:1px solid #eee;font-weight:500;">${row.number || row.accountNumber || ''}</td>
       <td style="padding:4px;border-bottom:1px solid #eee;">${row.displayName || row.name || row.display || row.accountName || ''}</td>
-      <td style="padding:4px;border-bottom:1px solid #eee;font-size:11px;color:#888;">${cat}</td>
-      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:${nc >= 0 ? '#1565c0' : '#c62828'};">${fmt(nc)}</td>
-      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:${bal >= 0 ? '#1565c0' : '#c62828'};">${fmt(bal)}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;font-size:11px;color:${isZero ? '#ccc' : '#888'};">${cat}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:${isZero ? '#ccc' : nc >= 0 ? '#1565c0' : '#c62828'};">${fmt(nc)}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:${isZero ? '#ccc' : bal >= 0 ? '#1565c0' : '#c62828'};">${fmt(bal)}</td>
     </tr>`;
   });
 
-  html += `</tbody></table>`;
+  // Totals row
+  html += `</tbody>
+    <tfoot>
+      <tr style="background:#e8eaf6;font-weight:700;border-top:2px solid #3f51b5;">
+        <td colspan="3" style="padding:6px 4px;text-align:right;">${isEn ? 'Total' : '合計'}</td>
+        <td style="padding:6px 4px;text-align:right;color:${totalNC >= 0 ? '#1565c0' : '#c62828'};">${fmt(totalNC)}</td>
+        <td style="padding:6px 4px;text-align:right;color:${totalBal >= 0 ? '#1565c0' : '#c62828'};">${fmt(totalBal)}</td>
+      </tr>
+    </tfoot>
+  </table>`;
   container.innerHTML = html;
 }
 

@@ -369,10 +369,25 @@ class BCClient {
       if (dateFilter && dateFilter.includes('..')) {
         [startDate, endDate] = dateFilter.split('..');
       }
-      const entries = await this.getGeneralLedgerEntries(startDate, endDate, {
+
+      // Fetch period entries (for netChange within the selected range)
+      const periodEntries = await this.getGeneralLedgerEntries(startDate, endDate, {
         ...options, fetchAll: true,
       });
-      if (!entries || !entries.length) return [];
+      if (!periodEntries || !periodEntries.length) return [];
+
+      // Fetch cumulative entries (for balance: all entries up to endDate)
+      // If no date filter, balance = netChange (all-time totals are the same)
+      let balanceEntries = periodEntries;
+      if (startDate && endDate) {
+        try {
+          balanceEntries = await this.getGeneralLedgerEntries(null, endDate, {
+            ...options, fetchAll: true,
+          });
+        } catch {
+          balanceEntries = periodEntries; // fallback: use period entries
+        }
+      }
 
       // Also get chart of accounts for display names and categories
       let accountMap = {};
@@ -381,9 +396,9 @@ class BCClient {
         if (accounts) accounts.forEach(a => { accountMap[a.number] = a; });
       } catch {}
 
-      // Aggregate by account
+      // Aggregate netChange from period entries
       const agg = {};
-      entries.forEach(e => {
+      periodEntries.forEach(e => {
         const num = e.accountNumber || '';
         if (!agg[num]) {
           const acct = accountMap[num] || {};
@@ -396,6 +411,22 @@ class BCClient {
           };
         }
         agg[num].netChange += (e.debitAmount || 0) - (e.creditAmount || 0);
+      });
+
+      // Aggregate balance from cumulative entries (up to endDate)
+      balanceEntries.forEach(e => {
+        const num = e.accountNumber || '';
+        if (!agg[num]) {
+          const acct = accountMap[num] || {};
+          agg[num] = {
+            number: num,
+            displayName: acct.displayName || e.accountName || num,
+            accountCategory: acct.category || '',
+            netChange: 0,
+            balance: 0,
+          };
+        }
+        agg[num].balance += (e.debitAmount || 0) - (e.creditAmount || 0);
       });
 
       // Sort by account number
