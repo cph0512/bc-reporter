@@ -354,15 +354,55 @@ class BCClient {
    */
   async getTrialBalance(dateFilter, options = {}) {
     try {
-      return await this.request(this.companyUrl('trialBalance', options.companyId), {
+      const result = await this.request(this.companyUrl('trialBalance', options.companyId), {
         $filter: dateFilter ? `dateFilter eq '${dateFilter}'` : undefined,
       });
+      if (result && result.length > 0) return result;
     } catch (error) {
-      if (error.response?.status === 404) {
-        console.log('[BCClient] trialBalance API not available');
-        return null;
+      if (error.response?.status !== 404) throw error;
+      console.log('[BCClient] trialBalance API not available, building from GL entries');
+    }
+
+    // Fallback: build trial balance from GL entries
+    try {
+      let startDate, endDate;
+      if (dateFilter && dateFilter.includes('..')) {
+        [startDate, endDate] = dateFilter.split('..');
       }
-      throw error;
+      const entries = await this.getGeneralLedgerEntries(startDate, endDate, {
+        ...options, fetchAll: true,
+      });
+      if (!entries || !entries.length) return [];
+
+      // Also get chart of accounts for display names and categories
+      let accountMap = {};
+      try {
+        const accounts = await this.getAccounts(options);
+        if (accounts) accounts.forEach(a => { accountMap[a.number] = a; });
+      } catch {}
+
+      // Aggregate by account
+      const agg = {};
+      entries.forEach(e => {
+        const num = e.accountNumber || '';
+        if (!agg[num]) {
+          const acct = accountMap[num] || {};
+          agg[num] = {
+            number: num,
+            displayName: acct.displayName || e.accountName || num,
+            accountCategory: acct.category || '',
+            netChange: 0,
+            balance: 0,
+          };
+        }
+        agg[num].netChange += (e.debitAmount || 0) - (e.creditAmount || 0);
+      });
+
+      // Sort by account number
+      return Object.values(agg).sort((a, b) => a.number.localeCompare(b.number));
+    } catch (fallbackErr) {
+      console.error('[BCClient] Trial balance fallback failed:', fallbackErr.message);
+      return [];
     }
   }
 

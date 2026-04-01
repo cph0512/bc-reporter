@@ -4093,19 +4093,32 @@ function renderLedgerAccountList() {
     return;
   }
 
-  container.innerHTML = filtered.slice(0, 100).map(a => {
-    const checked = ledgerSelectedAccounts.has(a.number) ? 'checked' : '';
-    return `<label style="display:flex;align-items:center;gap:6px;padding:3px 6px;cursor:pointer;font-size:12px;border-bottom:1px solid #f5f5f5;" onmouseenter="this.style.background='#f8f9fa'" onmouseleave="this.style.background=''">
-      <input type="checkbox" ${checked} onchange="toggleLedgerAccount('${a.number}','${(a.displayName||'').replace(/'/g, "\\'")}')">
-      <span style="color:#1a1a2e;font-weight:500;min-width:60px;">${a.number}</span>
-      <span style="color:#555;">${a.displayName || ''}</span>
-      <span style="color:#aaa;font-size:11px;margin-left:auto;">${a.category || ''}</span>
-    </label>`;
-  }).join('');
-
-  if (filtered.length > 100) {
-    container.innerHTML += `<div style="padding:6px;color:#999;font-size:11px;text-align:center;">顯示前 100 筆，請縮小搜尋範圍</div>`;
+  // Group by category for easier navigation
+  const groups = {};
+  filtered.forEach(a => {
+    const cat = a.category || 'Other';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(a);
+  });
+  const catOrder = ['Assets', 'Liabilities', 'Equity', 'Income', 'Cost of Goods Sold', 'Expense', 'Other'];
+  const sortedCats = Object.keys(groups).sort((a, b) => {
+    const ia = catOrder.indexOf(a), ib = catOrder.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+  let html = '';
+  for (const cat of sortedCats) {
+    html += `<div style="padding:4px 6px;font-size:11px;font-weight:600;color:#1a1a2e;background:#f0f2f5;border-bottom:1px solid #e0e0e0;position:sticky;top:0;z-index:1;">${cat} (${groups[cat].length})</div>`;
+    html += groups[cat].map(a => {
+      const checked = ledgerSelectedAccounts.has(a.number) ? 'checked' : '';
+      return `<label style="display:flex;align-items:center;gap:6px;padding:3px 6px;cursor:pointer;font-size:12px;border-bottom:1px solid #f5f5f5;" onmouseenter="this.style.background='#f8f9fa'" onmouseleave="this.style.background=''">
+        <input type="checkbox" ${checked} onchange="toggleLedgerAccount('${a.number}','${(a.displayName||'').replace(/'/g, "\\'")}')">
+        <span style="color:#1a1a2e;font-weight:500;min-width:60px;">${a.number}</span>
+        <span style="color:#555;">${a.displayName || ''}</span>
+      </label>`;
+    }).join('');
   }
+  container.innerHTML = html;
+  container.style.maxHeight = '350px'; // taller to see more
 }
 
 function toggleLedgerAccount(number, name) {
