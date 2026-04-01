@@ -56,12 +56,14 @@ const userStore = {
     return safe;
   },
 
-  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [], managedSalespeople = [] }) {
+  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [], managedSalespeople = [], canExport }) {
     const users = readUsers();
     if (users.find(u => u.username === username)) {
       throw new Error('Username already exists');
     }
     const passwordHash = await bcrypt.hash(password, COST);
+    // Default canExport: admin/manager → true, user → false
+    const exportAllowed = canExport !== undefined ? Boolean(canExport) : (role === 'admin' || role === 'manager');
     const newUser = {
       id: nextId(users),
       username,
@@ -71,6 +73,7 @@ const userStore = {
       companies,
       dashboards,
       managedSalespeople,
+      canExport: exportAllowed,
       createdAt: new Date().toISOString(),
     };
     users.push(newUser);
@@ -95,6 +98,7 @@ const userStore = {
     if (fields.companies !== undefined) users[idx].companies = fields.companies;
     if (fields.dashboards !== undefined) users[idx].dashboards = fields.dashboards;
     if (fields.managedSalespeople !== undefined) users[idx].managedSalespeople = fields.managedSalespeople;
+    if (fields.canExport !== undefined) users[idx].canExport = Boolean(fields.canExport);
     if (fields.password) {
       users[idx].passwordHash = await bcrypt.hash(fields.password, COST);
     }

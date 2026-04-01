@@ -269,9 +269,18 @@ module.exports = function(reportEngine) {
     }
   });
 
+  // ===== Export permission helper =====
+  function canExport(req) {
+    const u = req.session?.user;
+    if (!u) return false;
+    if (u.role === 'admin') return true;
+    return u.canExport === true;
+  }
+
   // ===== Excel Export =====
 
   router.get('/export/excel', async (req, res) => {
+    if (!canExport(req)) return res.status(403).json({ error: '您沒有匯出權限，請聯絡管理員' });
     try {
       const ExcelJS = require('exceljs');
       const { type, view = 'detailed', compare = 'none', lang = 'zh' } = req.query;
@@ -620,6 +629,161 @@ module.exports = function(reportEngine) {
       res.json({ data: data || [] });
     } catch (error) {
       console.error('[API] Item Ledger Entries error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ===== Ledger Excel Export =====
+
+  router.get('/export/ledger/excel', requireDashboard('financial'), async (req, res) => {
+    if (!canExport(req)) return res.status(403).json({ error: '您沒有匯出權限，請聯絡管理員' });
+    try {
+      const ExcelJS = require('exceljs');
+      const { type, dateFilter, startDate, endDate, accountNumbers, lang = 'zh', companyId } = req.query;
+      const co = companyOpts(req);
+      const isEn = lang === 'en';
+
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'BC Financial Reporter';
+      wb.created = new Date();
+
+      const headerFont = { size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A2E' } };
+      const titleFont = { size: 13, bold: true };
+      const numFmt = '#,##0';
+
+      // Company name
+      const companyStore = require('../services/companyStore');
+      const allCos = companyStore.getAll();
+      const coObj = allCos.find(c => c.id === (companyId || co.companyId));
+      const companyName = coObj ? (isEn ? coObj.nameEn : coObj.name) : '';
+
+      if (type === 'trial-balance') {
+        const data = await reportEngine.bc.getTrialBalance(dateFilter || undefined, co);
+        const ws = wb.addWorksheet(isEn ? 'Trial Balance' : '試算表');
+
+        // Title
+        ws.addRow([companyName]);
+        ws.getRow(1).font = titleFont;
+        ws.addRow([isEn ? 'Trial Balance' : '試算表']);
+        ws.getRow(2).font = { size: 11, bold: true };
+        if (dateFilter) ws.addRow([`${isEn ? 'Period' : '期間'}：${dateFilter.replace('..', ' ~ ')}`]);
+        ws.addRow([`${isEn ? 'Generated' : '產出時間'}：${new Date().toLocaleString(isEn ? 'en-US' : 'zh-TW')}`]);
+        ws.addRow([]);
+
+        // Columns
+        ws.getColumn(1).width = 12;
+        ws.getColumn(2).width = 35;
+        ws.getColumn(3).width = 20;
+        ws.getColumn(4).width = 18;
+        ws.getColumn(5).width = 18;
+
+        // Header
+        const hdr = ws.addRow([
+          isEn ? 'Account No.' : '科目編號',
+          isEn ? 'Account Name' : '科目名稱',
+          isEn ? 'Category' : '分類',
+          isEn ? 'Net Change' : '本期發生額',
+          isEn ? 'Balance' : '期末餘額',
+        ]);
+        hdr.eachCell(c => { c.font = headerFont; c.fill = headerFill; c.alignment = { horizontal: 'center' }; });
+
+        // Data rows (sorted by account number)
+        const sorted = [...(data || [])].sort((a, b) => (a.number || '').localeCompare(b.number || ''));
+        let totalNC = 0, totalBal = 0;
+        sorted.forEach((row, i) => {
+          const nc = row.netChange || 0;
+          const bal = row.balance || 0;
+          totalNC += nc; totalBal += bal;
+          const r = ws.addRow([
+            row.number || '',
+            row.displayName || row.name || '',
+            row.accountCategory || '',
+            nc, bal,
+          ]);
+          r.getCell(4).numFmt = numFmt;
+          r.getCell(5).numFmt = numFmt;
+          if (i % 2 !== 0) r.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+        });
+
+        // Total row
+        const totalRow = ws.addRow([isEn ? 'Total' : '合計', '', '', totalNC, totalBal]);
+        totalRow.font = { bold: true };
+        totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EAF6' } };
+        totalRow.getCell(4).numFmt = numFmt;
+        totalRow.getCell(5).numFmt = numFmt;
+
+        const filename = `trial-balance_${dateFilter || 'all'}_${companyId || ''}.xlsx`;
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        await wb.xlsx.write(res);
+        return res.end();
+
+      } else if (type === 'gl-entries') {
+        if (!startDate || !endDate) return res.status(400).json({ error: 'startDate and endDate required' });
+        const accts = accountNumbers ? accountNumbers.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const entries = await reportEngine.bc.getGeneralLedgerEntries(startDate, endDate, { ...co, accountNumbers: accts, fetchAll: true });
+        const ws = wb.addWorksheet(isEn ? 'GL Entries' : '總帳分錄');
+
+        ws.addRow([companyName]);
+        ws.getRow(1).font = titleFont;
+        ws.addRow([isEn ? 'General Ledger Entries' : '總帳分錄']);
+        ws.getRow(2).font = { size: 11, bold: true };
+        ws.addRow([`${isEn ? 'Period' : '期間'}：${startDate} ~ ${endDate}`]);
+        ws.addRow([`${isEn ? 'Generated' : '產出時間'}：${new Date().toLocaleString(isEn ? 'en-US' : 'zh-TW')}`]);
+        ws.addRow([]);
+
+        ws.getColumn(1).width = 12;
+        ws.getColumn(2).width = 12;
+        ws.getColumn(3).width = 35;
+        ws.getColumn(4).width = 30;
+        ws.getColumn(5).width = 16;
+        ws.getColumn(6).width = 16;
+
+        const hdr = ws.addRow([
+          isEn ? 'Account No.' : '科目編號',
+          isEn ? 'Date' : '日期',
+          isEn ? 'Account Name' : '科目名稱',
+          isEn ? 'Description' : '說明',
+          isEn ? 'Debit' : '借方',
+          isEn ? 'Credit' : '貸方',
+        ]);
+        hdr.eachCell(c => { c.font = headerFont; c.fill = headerFill; c.alignment = { horizontal: 'center' }; });
+
+        let totalDebit = 0, totalCredit = 0;
+        (entries || []).forEach((e, i) => {
+          const d = e.debitAmount || 0;
+          const cr = e.creditAmount || 0;
+          totalDebit += d; totalCredit += cr;
+          const r = ws.addRow([
+            e.accountNumber || '',
+            e.postingDate || '',
+            e.accountName || e.displayName || '',
+            e.description || '',
+            d, cr,
+          ]);
+          r.getCell(5).numFmt = numFmt;
+          r.getCell(6).numFmt = numFmt;
+          if (i % 2 !== 0) r.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+        });
+
+        const totalRow = ws.addRow([isEn ? 'Total' : '合計', '', '', '', totalDebit, totalCredit]);
+        totalRow.font = { bold: true };
+        totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EAF6' } };
+        totalRow.getCell(5).numFmt = numFmt;
+        totalRow.getCell(6).numFmt = numFmt;
+
+        const filename = `gl-entries_${startDate}_${endDate}_${companyId || ''}.xlsx`;
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        await wb.xlsx.write(res);
+        return res.end();
+
+      } else {
+        return res.status(400).json({ error: 'type must be trial-balance or gl-entries' });
+      }
+    } catch (error) {
+      console.error('[API] Ledger Excel export error:', error.message);
       res.status(500).json({ error: error.message });
     }
   });

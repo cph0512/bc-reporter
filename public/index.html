@@ -608,6 +608,13 @@
     </div>
   </div>
 
+  <!-- Ledger Export Bar -->
+  <div class="export-bar" id="ledgerExportBar">
+    <span>匯出：</span>
+    <button class="btn btn-export btn-sm" onclick="exportLedgerExcel()">Excel (.xlsx)</button>
+    <button class="btn btn-pdf btn-sm" onclick="exportPDF()">PDF (列印)</button>
+  </div>
+
   <!-- Results -->
   <div style="padding:0 24px 24px;margin:0 auto;">
     <div id="ledgerSummary" style="margin-bottom:12px;font-size:13px;color:#666;"></div>
@@ -684,6 +691,7 @@ let companiesList = [];
 let userDashboards = []; // empty = all dashboards
 let userRole = 'user';
 let userDisplayName = '';
+let userCanExport = false;
 
 (async () => {
   try {
@@ -696,6 +704,7 @@ let userDisplayName = '';
 
     userRole = user.role;
     userDashboards = user.role === 'admin' ? [] : (user.dashboards || []);
+    userCanExport = user.role === 'admin' || user.canExport === true;
 
     // Load companies
     const cRes = await fetch('/api/companies');
@@ -1548,7 +1557,7 @@ async function fetchReport() {
       'bs-detailed': renderBSDetailed, 'bs-simple': renderBSSimple,
     };
     R[type](data, compare);
-    document.getElementById('exportBar').classList.add('show');
+    if (userCanExport) document.getElementById('exportBar').classList.add('show');
   } catch (e) {
     area.innerHTML = `<div class="error">${getLang() === 'en' ? 'Query failed: ' : '查詢失敗：'}${e.message}</div>`;
     document.getElementById('exportBar').classList.remove('show');
@@ -1565,6 +1574,24 @@ function exportExcel() {
 }
 
 function exportPDF() { window.print(); }
+
+function exportLedgerExcel() {
+  const type = document.getElementById('ledgerQueryType').value;
+  const startDate = document.getElementById('ledgerStartDate').value;
+  const endDate = document.getElementById('ledgerEndDate').value;
+  const companyId = getCompanyId();
+  const lang = getLang();
+  let url = `/api/export/ledger/excel?type=${type}&companyId=${companyId}&lang=${lang}`;
+  if (type === 'trial-balance') {
+    if (startDate && endDate) url += `&dateFilter=${startDate}..${endDate}`;
+  } else if (type === 'gl-entries') {
+    url += `&startDate=${startDate}&endDate=${endDate}`;
+    if (ledgerSelectedAccounts.size > 0) {
+      url += `&accountNumbers=${Array.from(ledgerSelectedAccounts.keys()).join(',')}`;
+    }
+  }
+  window.location.href = url;
+}
 
 // ==========================================
 //  EBITDA Detailed (Internal)
@@ -4201,7 +4228,15 @@ async function fetchLedger() {
       if (!res.ok) throw new Error(json.error);
       renderJournals(json.data || [], l, companyId);
     }
+    // Show export bar only for types that support Excel export (not journals) and only if user can export
+    const ledgerExportBar = document.getElementById('ledgerExportBar');
+    if (userCanExport && (type === 'trial-balance' || type === 'gl-entries')) {
+      ledgerExportBar.classList.add('show');
+    } else {
+      ledgerExportBar.classList.remove('show');
+    }
   } catch (e) {
+    document.getElementById('ledgerExportBar').classList.remove('show');
     resultsEl.innerHTML = `<div class="loading" style="color:#c62828;">Error: ${e.message}</div>`;
   }
 }
