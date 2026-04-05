@@ -50,6 +50,7 @@ const userStore = {
   async verifyPassword(username, password) {
     const user = this.findByUsername(username);
     if (!user) return null;
+    if (user.disabled) return null;
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return null;
     const { passwordHash, ...safe } = user;
@@ -99,6 +100,7 @@ const userStore = {
     if (fields.dashboards !== undefined) users[idx].dashboards = fields.dashboards;
     if (fields.managedSalespeople !== undefined) users[idx].managedSalespeople = fields.managedSalespeople;
     if (fields.canExport !== undefined) users[idx].canExport = Boolean(fields.canExport);
+    if (fields.disabled !== undefined) users[idx].disabled = fields.disabled;
     if (fields.password) {
       users[idx].passwordHash = await bcrypt.hash(fields.password, COST);
     }
