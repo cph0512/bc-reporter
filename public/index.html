@@ -452,6 +452,7 @@
       <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeLeadDetail()">✕</span>
     </div>
     <div id="ldInfo" style="margin-bottom:18px;"></div>
+    <div id="ldNotes" style="margin-bottom:14px;"></div>
     <div style="border-top:1px solid #eee;padding-top:14px;margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <h4 style="font-size:14px;margin:0;color:#333;" id="ldImagesTitle">📷</h4>
@@ -3150,6 +3151,14 @@ function openLeadDetail(leadId) {
     <div class="ld-info-item"><label>${getLang() === 'en' ? 'Last Updated' : '最後更新'}</label>${lead.updatedAt ? fmtTWDate(lead.updatedAt) : '—'}</div>
   </div>`;
 
+  // Notes section (inline editable)
+  const notesLabel = getLang() === 'en' ? 'Notes' : '備註';
+  document.getElementById('ldNotes').innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+    <label style="font-weight:600;font-size:13px;">${notesLabel}</label>
+    <button onclick="startEditLeadNotes('${leadId}')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#1a73e8;" title="${getLang() === 'en' ? 'Edit' : '編輯'}">&#9998;</button>
+  </div>
+  <div id="ldNotesContent" style="font-size:13px;white-space:pre-wrap;padding:8px 10px;background:#f8f9fa;border-radius:6px;min-height:32px;">${escHtml(lead.notes || (getLang() === 'en' ? '(empty)' : '（無）'))}</div>`;
+
   // Add review input
   const curWeek = getCurrentWeekLabel();
   document.getElementById('ldAddReview').innerHTML = `<div style="display:flex;gap:6px;">
@@ -3250,9 +3259,13 @@ function renderLeadActivities(leadId, activitiesCache) {
         ? `<span style="color:#e65100;font-weight:600;">${getLang() === 'en' ? 'This Week' : '本週'}</span> <span style="color:#999;">${g.range}</span>`
         : `<span>${g.range || wk}</span>`;
       const items = g.items.map(a =>
-        `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5;">
+        `<div id="ld-act-${a.id}" style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5;align-items:flex-start;">
           <span style="font-size:11px;color:#999;white-space:nowrap;min-width:70px;">${a.createdAt ? fmtTWDate(a.createdAt) : ''}</span>
-          <span style="font-size:13px;flex:1;">${escHtml(a.content)}</span>
+          <span style="font-size:13px;flex:1;" id="ld-act-text-${a.id}">${escHtml(a.content)}</span>
+          <span style="white-space:nowrap;display:flex;gap:2px;">
+            <button onclick="startEditActivity('${a.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#1a73e8;padding:2px 4px;" title="${getLang() === 'en' ? 'Edit' : '編輯'}">&#9998;</button>
+            <button onclick="deleteActivity('${a.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#d32f2f;padding:2px 4px;" title="${getLang() === 'en' ? 'Delete' : '刪除'}">&times;</button>
+          </span>
         </div>`
       ).join('');
       return `<div class="ld-act-card" style="margin-bottom:12px;">
@@ -3261,6 +3274,53 @@ function renderLeadActivities(leadId, activitiesCache) {
       </div>`;
     }).join('');
   }
+}
+
+// Inline edit for a single activity in Lead Detail Modal
+function startEditActivity(actId) {
+  const activitiesCache = currentTab === 'my-pipeline' ? myPlActivitiesCache : plActivitiesCache;
+  const act = activitiesCache.find(a => a.id === actId);
+  if (!act) return;
+  const row = document.getElementById('ld-act-' + actId);
+  if (!row) return;
+  const textEl = row.querySelector(`#ld-act-text-${actId}`);
+  const btnEl = row.querySelector('span:last-child');
+  textEl.innerHTML = `<textarea id="ld-act-edit-${actId}" rows="2" style="width:100%;font-size:13px;padding:4px 6px;border:1px solid #1a1a2e;border-radius:4px;resize:vertical;">${escHtml(act.content)}</textarea>`;
+  btnEl.innerHTML = `<button onclick="saveEditActivity('${actId}')" class="btn btn-sm btn-primary" style="font-size:11px;padding:2px 8px;">${getLang() === 'en' ? 'Save' : '存'}</button>
+    <button onclick="renderLeadActivities(currentDetailLeadId, ${currentTab === 'my-pipeline' ? 'myPlActivitiesCache' : 'plActivitiesCache'})" class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:#eee;color:#333;">${getLang() === 'en' ? 'Cancel' : '取消'}</button>`;
+  document.getElementById('ld-act-edit-' + actId).focus();
+}
+
+async function saveEditActivity(actId) {
+  const textarea = document.getElementById('ld-act-edit-' + actId);
+  if (!textarea) return;
+  const content = textarea.value.trim();
+  if (!content) return;
+  try {
+    const res = await fetch(`/api/pipeline/activities/${actId}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    // Update cache
+    const activitiesCache = currentTab === 'my-pipeline' ? myPlActivitiesCache : plActivitiesCache;
+    const act = activitiesCache.find(a => a.id === actId);
+    if (act) act.content = content;
+    renderLeadActivities(currentDetailLeadId, activitiesCache);
+  } catch (e) { alert((getLang() === 'en' ? 'Edit failed: ' : '編輯失敗：') + e.message); }
+}
+
+async function deleteActivity(actId) {
+  if (!confirm(getLang() === 'en' ? 'Delete this review?' : '確定刪除這則回顧？')) return;
+  try {
+    const res = await fetch(`/api/pipeline/activities/${actId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error((await res.json()).error);
+    // Remove from cache
+    const activitiesCache = currentTab === 'my-pipeline' ? myPlActivitiesCache : plActivitiesCache;
+    const idx = activitiesCache.findIndex(a => a.id === actId);
+    if (idx !== -1) activitiesCache.splice(idx, 1);
+    renderLeadActivities(currentDetailLeadId, activitiesCache);
+  } catch (e) { alert((getLang() === 'en' ? 'Delete failed: ' : '刪除失敗：') + e.message); }
 }
 
 async function addLeadReview() {
@@ -3282,6 +3342,37 @@ async function addLeadReview() {
     input.value = '';
     renderLeadActivities(currentDetailLeadId, activitiesCache);
   } catch (e) { alert((getLang() === 'en' ? 'Failed to add review: ' : '新增回顧失敗：') + e.message); }
+}
+
+function startEditLeadNotes(leadId) {
+  const leadsCache = currentTab === 'my-pipeline' ? myPlLeadsCache : plLeadsCache;
+  const lead = leadsCache.find(l => l.id === leadId);
+  if (!lead) return;
+  const container = document.getElementById('ldNotesContent');
+  container.innerHTML = `<textarea id="ldNotesEdit" rows="3" style="width:100%;font-size:13px;padding:6px;border:1px solid #1a1a2e;border-radius:4px;resize:vertical;">${escHtml(lead.notes || '')}</textarea>
+    <div style="margin-top:4px;display:flex;gap:4px;">
+      <button class="btn btn-sm btn-primary" onclick="saveLeadNotes('${leadId}')">${getLang() === 'en' ? 'Save' : '存'}</button>
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="openLeadDetail('${leadId}')">${getLang() === 'en' ? 'Cancel' : '取消'}</button>
+    </div>`;
+  document.getElementById('ldNotesEdit').focus();
+}
+
+async function saveLeadNotes(leadId) {
+  const textarea = document.getElementById('ldNotesEdit');
+  if (!textarea) return;
+  const notes = textarea.value.trim();
+  try {
+    const res = await fetch(`/api/pipeline/leads/${leadId}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    // Update cache
+    const leadsCache = currentTab === 'my-pipeline' ? myPlLeadsCache : plLeadsCache;
+    const lead = leadsCache.find(l => l.id === leadId);
+    if (lead) lead.notes = notes;
+    openLeadDetail(leadId);
+  } catch (e) { alert((getLang() === 'en' ? 'Save failed: ' : '儲存失敗：') + e.message); }
 }
 
 function closeLeadDetail() { document.getElementById('leadDetailModal').style.display = 'none'; }
