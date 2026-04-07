@@ -49,7 +49,8 @@
     "dashboards": [
       "pipeline"
     ],
-    "createdAt": "2026-03-12T06:00:00.000Z"
+    "createdAt": "2026-03-12T06:00:00.000Z",
+    "disabled": false
   },
   {
     "id": "u_5",
