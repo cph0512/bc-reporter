@@ -202,18 +202,18 @@
 
   /* Print styles for PDF export */
   @media print {
-    .header, .controls, .export-bar, .summary-grid, .btn, .card-header, .tab-bar, #dashboardView, #salesDashboardView, #purchasingDashboardView, #pipelineDashboardView, .dash-filters { display: none !important; }
-    body { background: white; }
+    .header, .controls, .export-bar, .summary-grid, .btn, .card-header, .tab-bar, #dashboardView, #salesDashboardView, #purchasingDashboardView, #pipelineDashboardView, .dash-filters, #ledgerFilterSection, #ledgerSelectedChips, #ledgerAccountSearch, #ledgerBtnClearAccounts { display: none !important; }
+    body { background: white; margin: 0; }
     .content { padding: 0; max-width: 100%; }
     .card { box-shadow: none; border: none; }
     .card-body { overflow: visible !important; padding: 0 10px; }
     .report-title { margin-top: 10px; margin-bottom: 10px; }
     .report-title .company { font-size: 16px; }
     .report-title .report-name { font-size: 14px; }
-    table { width: 100%; font-size: 11px; }
-    th, td { padding: 4px 8px; white-space: normal; }
-    th:first-child, td:first-child { min-width: 180px; }
-    @page { margin: 1.5cm; }
+    table { width: 100%; font-size: 10px; table-layout: auto !important; }
+    th, td { padding: 3px 6px; white-space: nowrap; overflow: visible !important; text-overflow: unset !important; }
+    td.ledger-desc { white-space: normal; word-break: break-all; max-width: 300px; }
+    @page { margin: 1cm; size: landscape; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
@@ -4257,25 +4257,16 @@ function renderGLEntries(entries, l) {
 
   const fmt = v => v != null ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
 
-  let html = `<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;">
-    <colgroup>
-      <col style="width:90px;">
-      <col style="width:120px;">
-      <col style="width:70px;">
-      <col style="width:140px;">
-      <col>
-      <col style="width:100px;">
-      <col style="width:100px;">
-    </colgroup>
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:auto;">
     <thead>
       <tr style="background:#1a1a2e;color:#fff;">
-        <th style="padding:6px 4px;text-align:left;">${l.ledgerDate}</th>
-        <th style="padding:6px 4px;text-align:left;">${l.ledgerDocNo}</th>
-        <th style="padding:6px 4px;text-align:left;">${l.ledgerAcctNo}</th>
-        <th style="padding:6px 4px;text-align:left;">${l.ledgerAcctName}</th>
-        <th style="padding:6px 4px;text-align:left;">${l.ledgerDesc}</th>
-        <th style="padding:6px 4px;text-align:right;">${l.ledgerDebit}</th>
-        <th style="padding:6px 4px;text-align:right;">${l.ledgerCredit}</th>
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerDate}</th>
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerDocNo}</th>
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerAcctNo}</th>
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerAcctName}</th>
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerDesc}</th>
+        <th style="padding:6px 8px;text-align:right;white-space:nowrap;">${l.ledgerDebit}</th>
+        <th style="padding:6px 8px;text-align:right;white-space:nowrap;">${l.ledgerCredit}</th>
       </tr>
     </thead>
     <tbody>`;
@@ -4283,20 +4274,20 @@ function renderGLEntries(entries, l) {
   entries.forEach((e, i) => {
     const bg = i % 2 === 0 ? '' : 'background:#fafafa;';
     html += `<tr style="${bg}">
-      <td style="padding:4px;border-bottom:1px solid #eee;white-space:nowrap;">${e.postingDate || ''}</td>
-      <td style="padding:4px;border-bottom:1px solid #eee;font-size:11px;overflow:hidden;text-overflow:ellipsis;">${e.documentNumber || ''}</td>
-      <td style="padding:4px;border-bottom:1px solid #eee;font-weight:500;">${e.accountNumber || ''}</td>
-      <td style="padding:4px;border-bottom:1px solid #eee;overflow:hidden;text-overflow:ellipsis;">${e.accountName || ''}</td>
-      <td style="padding:4px;border-bottom:1px solid #eee;color:#666;overflow:hidden;text-overflow:ellipsis;">${e.description || ''}</td>
-      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:#1565c0;white-space:nowrap;">${e.debitAmount ? fmt(e.debitAmount) : ''}</td>
-      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:#c62828;white-space:nowrap;">${e.creditAmount ? fmt(e.creditAmount) : ''}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;white-space:nowrap;">${e.postingDate || ''}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:11px;white-space:nowrap;">${e.documentNumber || ''}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;font-weight:500;white-space:nowrap;">${e.accountNumber || ''}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;white-space:nowrap;">${e.accountName || ''}</td>
+      <td class="ledger-desc" style="padding:4px 8px;border-bottom:1px solid #eee;color:#666;">${e.description || ''}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right;color:#1565c0;white-space:nowrap;">${e.debitAmount ? fmt(e.debitAmount) : ''}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right;color:#c62828;white-space:nowrap;">${e.creditAmount ? fmt(e.creditAmount) : ''}</td>
     </tr>`;
   });
 
   html += `<tr style="background:#f0f0f0;font-weight:bold;">
-      <td colspan="5" style="padding:6px 4px;">${l.ledgerTotalDebit} / ${l.ledgerTotalCredit}</td>
-      <td style="padding:6px 4px;text-align:right;color:#1565c0;">${fmt(totalDebit)}</td>
-      <td style="padding:6px 4px;text-align:right;color:#c62828;">${fmt(totalCredit)}</td>
+      <td colspan="5" style="padding:6px 8px;">${l.ledgerTotalDebit} / ${l.ledgerTotalCredit}</td>
+      <td style="padding:6px 8px;text-align:right;color:#1565c0;">${fmt(totalDebit)}</td>
+      <td style="padding:6px 8px;text-align:right;color:#c62828;">${fmt(totalCredit)}</td>
     </tr>`;
 
   html += `</tbody></table>`;
