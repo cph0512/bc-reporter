@@ -586,7 +586,7 @@ module.exports = function(reportEngine) {
 
   // ===== Ledger / 查帳 API (Read-Only) =====
 
-  router.get('/ledger/gl-entries', requireDashboard('financial'), async (req, res) => {
+  router.get('/ledger/gl-entries', requireDashboard('reports'), async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
       if (!startDate || !endDate) return res.status(400).json({ error: 'startDate and endDate required' });
@@ -610,7 +610,7 @@ module.exports = function(reportEngine) {
     }
   });
 
-  router.get('/ledger/trial-balance', requireDashboard('financial'), async (req, res) => {
+  router.get('/ledger/trial-balance', requireDashboard('reports'), async (req, res) => {
     try {
       const { dateFilter } = req.query; // format: YYYY-MM-DD..YYYY-MM-DD
       const co = companyOpts(req);
@@ -622,7 +622,7 @@ module.exports = function(reportEngine) {
     }
   });
 
-  router.get('/ledger/journals', requireDashboard('financial'), async (req, res) => {
+  router.get('/ledger/journals', requireDashboard('reports'), async (req, res) => {
     try {
       const co = companyOpts(req);
       const journals = await reportEngine.bc.getJournals(co);
@@ -633,7 +633,7 @@ module.exports = function(reportEngine) {
     }
   });
 
-  router.get('/ledger/journals/:journalId/lines', requireDashboard('financial'), async (req, res) => {
+  router.get('/ledger/journals/:journalId/lines', requireDashboard('reports'), async (req, res) => {
     try {
       const co = companyOpts(req);
       const lines = await reportEngine.bc.getJournalLines(req.params.journalId, co);
@@ -644,7 +644,7 @@ module.exports = function(reportEngine) {
     }
   });
 
-  router.get('/ledger/customer-payment-journals', requireDashboard('financial'), async (req, res) => {
+  router.get('/ledger/customer-payment-journals', requireDashboard('reports'), async (req, res) => {
     try {
       const co = companyOpts(req);
       const data = await reportEngine.bc.getCustomerPaymentJournals(co);
@@ -655,7 +655,7 @@ module.exports = function(reportEngine) {
     }
   });
 
-  router.get('/ledger/vendor-payment-journals', requireDashboard('financial'), async (req, res) => {
+  router.get('/ledger/vendor-payment-journals', requireDashboard('reports'), async (req, res) => {
     try {
       const co = companyOpts(req);
       const data = await reportEngine.bc.getVendorPaymentJournals(co);
@@ -666,7 +666,7 @@ module.exports = function(reportEngine) {
     }
   });
 
-  router.get('/ledger/item-ledger-entries', requireDashboard('financial'), async (req, res) => {
+  router.get('/ledger/item-ledger-entries', requireDashboard('reports'), async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
       const co = companyOpts(req);
@@ -680,7 +680,7 @@ module.exports = function(reportEngine) {
 
   // ===== Ledger Excel Export =====
 
-  router.get('/export/ledger/excel', requireDashboard('financial'), async (req, res) => {
+  router.get('/export/ledger/excel', requireDashboard('reports'), async (req, res) => {
     if (!canExport(req)) return res.status(403).json({ error: '您沒有匯出權限，請聯絡管理員' });
     try {
       const ExcelJS = require('exceljs');
