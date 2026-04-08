@@ -780,7 +780,7 @@ function renderTabs() {
     { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline', userOnly: true },
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
     { id: 'reports', label: l.dReports, perm: 'reports' },
-    { id: 'ledger', label: l.dLedgerTab, perm: 'financial' },
+    { id: 'ledger', label: l.dLedgerTab, perm: 'ledger' },
   ];
   const visibleTabs = allTabs.filter(t => {
     if (t.adminOnly && userRole !== 'admin') return false;
