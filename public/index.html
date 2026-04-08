@@ -567,11 +567,26 @@
   <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
     <label style="font-weight:600;" id="ecModeLabel">比較模式</label>
     <select id="ecMode" onchange="onEcModeChange()" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <option value="custom" id="ecOptCustomRange">自訂區間</option>
       <option value="mom" id="ecOptMom">月 vs 月</option>
       <option value="yoy" id="ecOptYoy">年 vs 年</option>
     </select>
   </div>
-  <div id="ecMomPanel">
+  <div id="ecCustomPanel">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:13px;font-weight:500;" id="ecCustomLabel">新增比較區間（至少 2 段）</label>
+    </div>
+    <div id="ecCustomChips" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;"></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:12px;color:#666;" id="ecCustomStartLabel">起</label>
+      <input type="date" id="ecCustomStart" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <label style="font-size:12px;color:#666;" id="ecCustomEndLabel">迄</label>
+      <input type="date" id="ecCustomEnd" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <input type="text" id="ecCustomRangeLabel" placeholder="標籤（選填）" style="width:120px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+      <button class="btn btn-sm btn-primary" onclick="addEcCustomRange()">+</button>
+    </div>
+  </div>
+  <div id="ecMomPanel" style="display:none;">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <label style="font-size:13px;font-weight:500;" id="ecMonthsLabel">選擇月份（至少 2 個）</label>
     </div>
@@ -1066,7 +1081,8 @@ const LABELS = {
     rptMonth: '月報', rptQuarter: '季報', rptHalf: '半年報', rptYear: '年報', rptCustom: '自訂',
     rptNoCompare: '不比較', rptYoY: '去年同期 (YoY)', rptMoM: '上期 (MoM)', rptQoQ: '上一季 (QoQ)',
     rptGroupExpense: '費用比較', rptExpCompare: '費用比較報表',
-    ecMode: '比較模式', ecMom: '月 vs 月', ecYoy: '年 vs 年',
+    ecMode: '比較模式', ecCustomRange: '自訂區間', ecMom: '月 vs 月', ecYoy: '年 vs 年',
+    ecCustom: '新增比較區間（至少 2 段）', ecCustomStart: '起', ecCustomEnd: '迄', ecCustomLabelPh: '標籤（選填）',
     ecMonths: '選擇月份（至少 2 個）', ecYears: '選擇年份（至少 2 年）',
     ecFetch: '查詢費用比較', ecTotal: '費用合計', ecAccount: '科目', ecCategory: '分類',
     ecChange: '變化', ecAmount: '金額',
@@ -1244,7 +1260,8 @@ const LABELS = {
     rptMonth: 'Monthly', rptQuarter: 'Quarterly', rptHalf: 'Semi-Annual', rptYear: 'Annual', rptCustom: 'Custom',
     rptNoCompare: 'None', rptYoY: 'Prior Year (YoY)', rptMoM: 'Prior Period (MoM)', rptQoQ: 'Prior Quarter (QoQ)',
     rptGroupExpense: 'Expense Comparison', rptExpCompare: 'Expense Comparison Report',
-    ecMode: 'Compare Mode', ecMom: 'Month vs Month', ecYoy: 'Year vs Year',
+    ecMode: 'Compare Mode', ecCustomRange: 'Custom Range', ecMom: 'Month vs Month', ecYoy: 'Year vs Year',
+    ecCustom: 'Add comparison ranges (at least 2)', ecCustomStart: 'From', ecCustomEnd: 'To', ecCustomLabelPh: 'Label (optional)',
     ecMonths: 'Select months (at least 2)', ecYears: 'Select years (at least 2)',
     ecFetch: 'Query Expense Comparison', ecTotal: 'Total Expenses', ecAccount: 'Account', ecCategory: 'Category',
     ecChange: 'Change', ecAmount: 'Amount',
@@ -1272,13 +1289,16 @@ function renderPipelineLabels() {
     rptOptExpCompare: l.rptExpCompare,
     rptOptMonth: l.rptMonth, rptOptQuarter: l.rptQuarter, rptOptHalf: l.rptHalf, rptOptYear: l.rptYear, rptOptCustom: l.rptCustom,
     rptOptNoCompare: l.rptNoCompare, rptOptYoY: l.rptYoY, rptOptMoM: l.rptMoM, rptOptQoQ: l.rptQoQ,
-    ecModeLabel: l.ecMode, ecOptMom: l.ecMom, ecOptYoy: l.ecYoy,
+    ecModeLabel: l.ecMode, ecOptCustomRange: l.ecCustomRange, ecOptMom: l.ecMom, ecOptYoy: l.ecYoy,
+    ecCustomLabel: l.ecCustom, ecCustomStartLabel: l.ecCustomStart, ecCustomEndLabel: l.ecCustomEnd,
     ecMonthsLabel: l.ecMonths, ecYearsLabel: l.ecYears, ecFetchBtn: l.ecFetch,
   };
   Object.entries(rptMap).forEach(([id, text]) => {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
   });
+  const ecLabelInput = document.getElementById('ecCustomRangeLabel');
+  if (ecLabelInput) ecLabelInput.placeholder = l.ecCustomLabelPh;
   const rptGroupISEl = document.getElementById('rptGroupIS');
   if (rptGroupISEl) rptGroupISEl.label = l.rptGroupIS;
   const rptGroupBSEl = document.getElementById('rptGroupBS');
@@ -4620,6 +4640,7 @@ document.getElementById('companySelect').addEventListener('change', () => {
 // ==========================================
 let ecMonths = [];
 let ecYears = [];
+let ecCustomRanges = []; // [{start, end, label}]
 let ecChartInstance = null;
 
 function onReportTypeChange() {
@@ -4649,11 +4670,15 @@ function onReportTypeChange() {
 
 function onEcModeChange() {
   const mode = document.getElementById('ecMode').value;
+  document.getElementById('ecCustomPanel').style.display = mode === 'custom' ? '' : 'none';
   document.getElementById('ecMomPanel').style.display = mode === 'mom' ? '' : 'none';
   document.getElementById('ecYoyPanel').style.display = mode === 'yoy' ? '' : 'none';
 }
 
 function renderEcChips() {
+  document.getElementById('ecCustomChips').innerHTML = ecCustomRanges.map((r, i) =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#dce8f7;border-radius:12px;font-size:13px;">${r.label}<span style="cursor:pointer;color:#c62828;font-weight:bold;" onclick="removeEcCustomRange(${i})">✕</span></span>`
+  ).join('');
   document.getElementById('ecMonthChips').innerHTML = ecMonths.map(m =>
     `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#e3e8f0;border-radius:12px;font-size:13px;">${m}<span style="cursor:pointer;color:#c62828;font-weight:bold;" onclick="removeEcMonth('${m}')">✕</span></span>`
   ).join('');
@@ -4688,6 +4713,25 @@ function removeEcYear(y) {
   renderEcChips();
 }
 
+function addEcCustomRange() {
+  const s = document.getElementById('ecCustomStart').value;
+  const e = document.getElementById('ecCustomEnd').value;
+  const lbl = document.getElementById('ecCustomRangeLabel').value.trim();
+  if (!s || !e) return;
+  if (s > e) { alert(getLang() === 'en' ? 'Start date must be before end date' : '起始日須在結束日之前'); return; }
+  const dup = ecCustomRanges.some(r => r.start === s && r.end === e);
+  if (dup) return;
+  ecCustomRanges.push({ start: s, end: e, label: lbl || `${s} ~ ${e}` });
+  ecCustomRanges.sort((a, b) => a.start.localeCompare(b.start));
+  document.getElementById('ecCustomRangeLabel').value = '';
+  renderEcChips();
+}
+
+function removeEcCustomRange(idx) {
+  ecCustomRanges.splice(idx, 1);
+  renderEcChips();
+}
+
 const EC_COLORS = ['#1a1a2e','#e94560','#0f3460','#16c79a','#f5a623','#7b61ff','#00b8d4','#ff6b6b'];
 
 async function fetchExpenseComparison() {
@@ -4700,7 +4744,11 @@ async function fetchExpenseComparison() {
   if (!companyId) { alert(getLang() === 'en' ? 'Please select a company' : '請選擇公司'); return; }
 
   let url = `/api/expense-comparison?mode=${mode}&companyId=${companyId}`;
-  if (mode === 'mom') {
+  if (mode === 'custom') {
+    if (ecCustomRanges.length < 2) { alert(getLang() === 'en' ? 'Add at least 2 ranges' : '請至少新增 2 段區間'); return; }
+    const customVal = ecCustomRanges.map(r => `${r.start},${r.end},${r.label}`).join(';');
+    url += `&custom=${encodeURIComponent(customVal)}`;
+  } else if (mode === 'mom') {
     if (ecMonths.length < 2) { alert(getLang() === 'en' ? 'Select at least 2 months' : '請至少選擇 2 個月份'); return; }
     url += ecMonths.map(m => `&periods[]=${m}`).join('');
   } else {
