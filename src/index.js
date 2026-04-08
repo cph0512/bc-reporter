@@ -12,6 +12,7 @@ const userStore = require('./services/userStore');
 const createReportRoutes = require('./routes/reports');
 const docsRoutes = require('./routes/docs');
 const authRoutes = require('./routes/auth');
+const botAuthRoutes = require('./routes/botAuth');
 const adminRoutes = require('./routes/admin');
 const pipelineRoutes = require('./routes/pipeline');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
@@ -70,6 +71,12 @@ app.get('/login', (req, res) => {
 // Auth API (login/logout/me) — with login rate limiting (規範 §5.1)
 app.use('/auth/login', loginLimiter);
 app.use('/auth', authRoutes);
+
+// Bot auth page (LINE users bind their account via web)
+app.get('/bot-auth', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/bot-auth.html'));
+});
+app.use('/api/bot-auth', botAuthRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
