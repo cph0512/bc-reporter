@@ -516,6 +516,95 @@ class ReportEngine {
     return { year, month };
   }
 
+  // ===== 費用比較報表 (Expense Comparison) =====
+
+  /**
+   * 取得多期間費用明細，支援月vs月、年vs年比較
+   * @param {Array<{startDate, endDate, label}>} periods - 要比較的期間列表
+   * @param {string} expenseRange - 科目範圍，如 "510100-631038"
+   * @param {Object} opts - companyId, accountsMapping
+   * @returns {Object} { periods, accounts, totals }
+   */
+  async getExpenseComparison(periods, expenseRange = '510100-631038', opts = {}) {
+    const cid = opts.companyId;
+    const [rangeStart, rangeEnd] = expenseRange.split('-');
+
+    // Fetch GL entries + accounts map for all periods in parallel
+    const accountsMapPromise = this.bc.getAccountsMap({ companyId: cid });
+    const glPromises = periods.map(p =>
+      this.bc.getGeneralLedgerEntries(p.startDate, p.endDate, { fetchAll: true, companyId: cid })
+    );
+
+    const [accountsMap, ...glResults] = await Promise.all([accountsMapPromise, ...glPromises]);
+
+    // Build per-period expense breakdown
+    const periodData = glResults.map((glEntries, idx) => {
+      const accountTotals = {};
+      for (const entry of glEntries) {
+        const accNum = entry.accountNumber;
+        if (accNum < rangeStart || accNum > rangeEnd) continue;
+        const info = accountsMap[accNum];
+        if (!info || info.accountType !== 'Posting') continue;
+        if (!accountTotals[accNum]) accountTotals[accNum] = 0;
+        accountTotals[accNum] += Math.abs((entry.debitAmount || 0) - (entry.creditAmount || 0));
+      }
+      return accountTotals;
+    });
+
+    // Collect all unique accounts across periods
+    const allAccounts = new Set();
+    for (const pt of periodData) {
+      for (const acc of Object.keys(pt)) allAccounts.add(acc);
+    }
+    const sortedAccounts = [...allAccounts].sort();
+
+    // Build account rows with per-period amounts
+    const accounts = sortedAccounts.map(accNum => {
+      const info = accountsMap[accNum] || {};
+      const amounts = periodData.map(pt => pt[accNum] || 0);
+      return {
+        accountNumber: accNum,
+        displayName: info.displayName || accNum,
+        subCategory: info.subCategory || '',
+        amounts,
+      };
+    });
+
+    // Group by subCategory
+    const categoryMap = {};
+    for (const acc of accounts) {
+      const cat = acc.subCategory || acc.displayName;
+      if (!categoryMap[cat]) categoryMap[cat] = { name: cat, amounts: periods.map(() => 0), accounts: [] };
+      categoryMap[cat].accounts.push(acc);
+      acc.amounts.forEach((a, i) => { categoryMap[cat].amounts[i] += a; });
+    }
+    const categories = Object.values(categoryMap).sort((a, b) => {
+      const aMin = a.accounts[0]?.accountNumber || '';
+      const bMin = b.accounts[0]?.accountNumber || '';
+      return aMin.localeCompare(bMin);
+    });
+
+    // Totals per period
+    const totals = periods.map((_, i) => accounts.reduce((sum, acc) => sum + acc.amounts[i], 0));
+
+    // Changes between periods (each vs first period)
+    const changes = totals.map((t, i) => {
+      if (i === 0) return null;
+      const diff = t - totals[0];
+      const pct = totals[0] !== 0 ? diff / Math.abs(totals[0]) : null;
+      return { diff, pct };
+    });
+
+    return {
+      periods: periods.map((p, i) => ({ ...p, total: totals[i] })),
+      accounts,
+      categories,
+      totals,
+      changes,
+      expenseRange,
+    };
+  }
+
   // ===== YTD =====
 
   async getEbitdaYTD(year, upToMonth) {

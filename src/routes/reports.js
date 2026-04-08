@@ -539,6 +539,51 @@ module.exports = function(reportEngine) {
     }
   });
 
+  // ===== Expense Comparison =====
+
+  router.get('/expense-comparison', requireDashboard('reports'), async (req, res) => {
+    try {
+      const { mode, companyId: qcid } = req.query;
+      const co = companyOpts(req);
+
+      let periods = [];
+
+      if (req.query.custom) {
+        periods = req.query.custom.split(';').map(seg => {
+          const [startDate, endDate, label] = seg.split(',');
+          return { startDate, endDate, label: label || `${startDate} ~ ${endDate}` };
+        });
+      } else if (mode === 'yoy') {
+        const years = [].concat(req.query.periods || []).map(Number).sort();
+        if (years.length < 2) return res.status(400).json({ error: 'At least 2 years required' });
+        periods = years.map(y => ({
+          startDate: `${y}-01-01`,
+          endDate: `${y}-12-31`,
+          label: `${y}`,
+        }));
+      } else {
+        const months = [].concat(req.query.periods || []).sort();
+        if (months.length < 2) return res.status(400).json({ error: 'At least 2 periods required' });
+        periods = months.map(m => {
+          const [y, mon] = m.split('-').map(Number);
+          const lastDay = new Date(y, mon, 0).getDate();
+          return {
+            startDate: `${y}-${String(mon).padStart(2, '0')}-01`,
+            endDate: `${y}-${String(mon).padStart(2, '0')}-${lastDay}`,
+            label: `${y}/${mon}`,
+          };
+        });
+      }
+
+      const expenseRange = req.query.range || '510100-631038';
+      const data = await reportEngine.getExpenseComparison(periods, expenseRange, co);
+      res.json(data);
+    } catch (error) {
+      console.error('[API] Expense Comparison error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ===== Ledger / 查帳 API (Read-Only) =====
 
   router.get('/ledger/gl-entries', requireDashboard('financial'), async (req, res) => {

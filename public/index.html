@@ -512,7 +512,7 @@
 <div class="controls">
   <div>
     <label id="rptLabelReport"></label>
-    <select id="reportType">
+    <select id="reportType" onchange="onReportTypeChange()">
       <optgroup label="EBITDA" id="rptGroupEbitda">
         <option value="ebitda-detailed" id="rptOptEbitdaD"></option>
         <option value="ebitda-simple" id="rptOptEbitdaS"></option>
@@ -524,6 +524,9 @@
       <optgroup id="rptGroupBS">
         <option value="bs-detailed" id="rptOptBSD"></option>
         <option value="bs-simple" id="rptOptBSS"></option>
+      </optgroup>
+      <optgroup id="rptGroupExpense">
+        <option value="expense-compare" id="rptOptExpCompare"></option>
       </optgroup>
     </select>
   </div>
@@ -556,6 +559,40 @@
   </div>
   <div>
     <button class="btn btn-primary i18n-query-btn" id="fetchBtn" onclick="fetchReport()"></button>
+  </div>
+</div>
+
+<!-- Expense Comparison Controls -->
+<div id="expenseCompareControls" style="display:none;margin-top:12px;padding:16px;background:#f9f9fb;border-radius:8px;border:1px solid #e0e0e0;">
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+    <label style="font-weight:600;" id="ecModeLabel">比較模式</label>
+    <select id="ecMode" onchange="onEcModeChange()" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <option value="mom" id="ecOptMom">月 vs 月</option>
+      <option value="yoy" id="ecOptYoy">年 vs 年</option>
+    </select>
+  </div>
+  <div id="ecMomPanel">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:13px;font-weight:500;" id="ecMonthsLabel">選擇月份（至少 2 個）</label>
+    </div>
+    <div id="ecMonthChips" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;"></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="month" id="ecAddMonth" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <button class="btn btn-sm btn-primary" onclick="addEcMonth()">+</button>
+    </div>
+  </div>
+  <div id="ecYoyPanel" style="display:none;">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:13px;font-weight:500;" id="ecYearsLabel">選擇年份（至少 2 年）</label>
+    </div>
+    <div id="ecYearChips" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;"></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="number" id="ecAddYear" min="2020" max="2030" style="width:100px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <button class="btn btn-sm btn-primary" onclick="addEcYear()">+</button>
+    </div>
+  </div>
+  <div style="margin-top:12px;">
+    <button class="btn btn-primary" onclick="fetchExpenseComparison()" id="ecFetchBtn">查詢費用比較</button>
   </div>
 </div>
 
@@ -742,7 +779,7 @@ function renderTabs() {
     { id: 'purchasing-dashboard', label: l.dPurchasingTab, perm: 'purchasing' },
     { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline', userOnly: true },
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
-    { id: 'reports', label: l.dReports, perm: 'financial' },
+    { id: 'reports', label: l.dReports, perm: 'reports' },
     { id: 'ledger', label: l.dLedgerTab, perm: 'financial' },
   ];
   const visibleTabs = allTabs.filter(t => {
@@ -1028,6 +1065,11 @@ const LABELS = {
     rptGroupBS: '資產負債表', rptBSD: '資產負債表 — 詳細 (內部)', rptBSS: '資產負債表 — 簡要 (外部)',
     rptMonth: '月報', rptQuarter: '季報', rptHalf: '半年報', rptYear: '年報', rptCustom: '自訂',
     rptNoCompare: '不比較', rptYoY: '去年同期 (YoY)', rptMoM: '上期 (MoM)', rptQoQ: '上一季 (QoQ)',
+    rptGroupExpense: '費用比較', rptExpCompare: '費用比較報表',
+    ecMode: '比較模式', ecMom: '月 vs 月', ecYoy: '年 vs 年',
+    ecMonths: '選擇月份（至少 2 個）', ecYears: '選擇年份（至少 2 年）',
+    ecFetch: '查詢費用比較', ecTotal: '費用合計', ecAccount: '科目', ecCategory: '分類',
+    ecChange: '變化', ecAmount: '金額',
 
     // Period helpers
     periodRange: (s, e) => `${s} ~ ${e}`,
@@ -1201,6 +1243,11 @@ const LABELS = {
     rptGroupBS: 'Balance Sheet', rptBSD: 'Balance Sheet — Detailed (Internal)', rptBSS: 'Balance Sheet — Summary (External)',
     rptMonth: 'Monthly', rptQuarter: 'Quarterly', rptHalf: 'Semi-Annual', rptYear: 'Annual', rptCustom: 'Custom',
     rptNoCompare: 'None', rptYoY: 'Prior Year (YoY)', rptMoM: 'Prior Period (MoM)', rptQoQ: 'Prior Quarter (QoQ)',
+    rptGroupExpense: 'Expense Comparison', rptExpCompare: 'Expense Comparison Report',
+    ecMode: 'Compare Mode', ecMom: 'Month vs Month', ecYoy: 'Year vs Year',
+    ecMonths: 'Select months (at least 2)', ecYears: 'Select years (at least 2)',
+    ecFetch: 'Query Expense Comparison', ecTotal: 'Total Expenses', ecAccount: 'Account', ecCategory: 'Category',
+    ecChange: 'Change', ecAmount: 'Amount',
 
     periodRange: (s, e) => `${s} ~ ${e}`,
     asOf: (d) => `As of ${d}`,
@@ -1222,8 +1269,11 @@ function renderPipelineLabels() {
     rptLabelReport: l.rptReport, rptLabelPeriod: l.rptPeriod, rptLabelCompare: l.rptCompare,
     rptOptEbitdaD: l.rptEbitdaD, rptOptEbitdaS: l.rptEbitdaS,
     rptOptISD: l.rptISD, rptOptISS: l.rptISS, rptOptBSD: l.rptBSD, rptOptBSS: l.rptBSS,
+    rptOptExpCompare: l.rptExpCompare,
     rptOptMonth: l.rptMonth, rptOptQuarter: l.rptQuarter, rptOptHalf: l.rptHalf, rptOptYear: l.rptYear, rptOptCustom: l.rptCustom,
     rptOptNoCompare: l.rptNoCompare, rptOptYoY: l.rptYoY, rptOptMoM: l.rptMoM, rptOptQoQ: l.rptQoQ,
+    ecModeLabel: l.ecMode, ecOptMom: l.ecMom, ecOptYoy: l.ecYoy,
+    ecMonthsLabel: l.ecMonths, ecYearsLabel: l.ecYears, ecFetchBtn: l.ecFetch,
   };
   Object.entries(rptMap).forEach(([id, text]) => {
     const el = document.getElementById(id);
@@ -1233,6 +1283,8 @@ function renderPipelineLabels() {
   if (rptGroupISEl) rptGroupISEl.label = l.rptGroupIS;
   const rptGroupBSEl = document.getElementById('rptGroupBS');
   if (rptGroupBSEl) rptGroupBSEl.label = l.rptGroupBS;
+  const rptGroupExpEl = document.getElementById('rptGroupExpense');
+  if (rptGroupExpEl) rptGroupExpEl.label = l.rptGroupExpense;
   // === Header Buttons ===
   const headerMap = { headerChangePw: l.hChangePw, headerLogout: l.hLogout };
   Object.entries(headerMap).forEach(([id, text]) => {
@@ -1528,6 +1580,7 @@ function getReport(data, compare) {
 // ===== Fetch =====
 async function fetchReport() {
   const type = document.getElementById('reportType').value;
+  if (type === 'expense-compare') { fetchExpenseComparison(); return; }
   const startDate = document.getElementById('startDate').value;
   const endDate = document.getElementById('endDate').value;
   const compare = document.getElementById('compare').value;
@@ -4561,6 +4614,237 @@ document.getElementById('companySelect').addEventListener('change', () => {
     renderLedgerSelectedChips();
   }
 });
+
+// ==========================================
+//  Expense Comparison Report
+// ==========================================
+let ecMonths = [];
+let ecYears = [];
+let ecChartInstance = null;
+
+function onReportTypeChange() {
+  const type = document.getElementById('reportType').value;
+  const isExpense = type === 'expense-compare';
+  document.getElementById('expenseCompareControls').style.display = isExpense ? '' : 'none';
+  // Hide standard date/compare controls for expense mode
+  const controls = document.querySelectorAll('#reportsView > .controls > div');
+  controls.forEach((div, i) => {
+    if (i === 0) return; // report type selector always visible
+    div.style.display = isExpense ? 'none' : '';
+  });
+  // Seed default months/years
+  if (isExpense && ecMonths.length === 0 && ecYears.length === 0) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const prev = m === 0 ? 12 : m;
+    const prevY = m === 0 ? y - 1 : y;
+    ecMonths = [`${prevY}-${String(prev).padStart(2,'0')}`, `${y}-${String(m+1).padStart(2,'0')}`];
+    ecYears = [y - 1, y];
+    document.getElementById('ecAddMonth').value = `${y}-${String(m+1).padStart(2,'0')}`;
+    document.getElementById('ecAddYear').value = y;
+    renderEcChips();
+  }
+}
+
+function onEcModeChange() {
+  const mode = document.getElementById('ecMode').value;
+  document.getElementById('ecMomPanel').style.display = mode === 'mom' ? '' : 'none';
+  document.getElementById('ecYoyPanel').style.display = mode === 'yoy' ? '' : 'none';
+}
+
+function renderEcChips() {
+  document.getElementById('ecMonthChips').innerHTML = ecMonths.map(m =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#e3e8f0;border-radius:12px;font-size:13px;">${m}<span style="cursor:pointer;color:#c62828;font-weight:bold;" onclick="removeEcMonth('${m}')">✕</span></span>`
+  ).join('');
+  document.getElementById('ecYearChips').innerHTML = ecYears.map(y =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#e3e8f0;border-radius:12px;font-size:13px;">${y}<span style="cursor:pointer;color:#c62828;font-weight:bold;" onclick="removeEcYear(${y})">✕</span></span>`
+  ).join('');
+}
+
+function addEcMonth() {
+  const v = document.getElementById('ecAddMonth').value;
+  if (!v || ecMonths.includes(v)) return;
+  ecMonths.push(v);
+  ecMonths.sort();
+  renderEcChips();
+}
+
+function removeEcMonth(m) {
+  ecMonths = ecMonths.filter(x => x !== m);
+  renderEcChips();
+}
+
+function addEcYear() {
+  const v = parseInt(document.getElementById('ecAddYear').value);
+  if (!v || ecYears.includes(v)) return;
+  ecYears.push(v);
+  ecYears.sort();
+  renderEcChips();
+}
+
+function removeEcYear(y) {
+  ecYears = ecYears.filter(x => x !== y);
+  renderEcChips();
+}
+
+const EC_COLORS = ['#1a1a2e','#e94560','#0f3460','#16c79a','#f5a623','#7b61ff','#00b8d4','#ff6b6b'];
+
+async function fetchExpenseComparison() {
+  const mode = document.getElementById('ecMode').value;
+  const companyId = getCompanyId();
+  const l = L();
+  const btn = document.getElementById('ecFetchBtn');
+  const area = document.getElementById('reportArea');
+
+  if (!companyId) { alert(getLang() === 'en' ? 'Please select a company' : '請選擇公司'); return; }
+
+  let url = `/api/expense-comparison?mode=${mode}&companyId=${companyId}`;
+  if (mode === 'mom') {
+    if (ecMonths.length < 2) { alert(getLang() === 'en' ? 'Select at least 2 months' : '請至少選擇 2 個月份'); return; }
+    url += ecMonths.map(m => `&periods[]=${m}`).join('');
+  } else {
+    if (ecYears.length < 2) { alert(getLang() === 'en' ? 'Select at least 2 years' : '請至少選擇 2 個年份'); return; }
+    url += ecYears.map(y => `&periods[]=${y}`).join('');
+  }
+
+  btn.disabled = true; btn.textContent = getLang() === 'en' ? 'Loading...' : '查詢中...';
+  area.innerHTML = `<div class="loading">${getLang() === 'en' ? 'Fetching expense data from Business Central...' : '正在從 Business Central 取得費用資料...'}</div>`;
+
+  try {
+    const res = await fetch(url);
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    const data = await res.json();
+    renderExpenseComparison(data);
+    document.getElementById('exportBar').classList.add('show');
+  } catch (e) {
+    area.innerHTML = `<div class="error">${getLang() === 'en' ? 'Query failed: ' : '查詢失敗：'}${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = l.ecFetch;
+  }
+}
+
+function renderExpenseComparison(data) {
+  const l = L();
+  const { periods, categories, totals, changes } = data;
+  const pCount = periods.length;
+
+  // Summary cards
+  let summaryHtml = '<div class="summary-grid">';
+  periods.forEach((p, i) => {
+    const badge = changes[i] ? (() => {
+      const d = changes[i].diff;
+      const cls = d > 0 ? 'change-up' : d < 0 ? 'change-down' : 'change-zero';
+      const arrow = d > 0 ? '↑' : d < 0 ? '↓' : '';
+      return `<div class="change-info ${cls}">${arrow} ${fmt(Math.abs(d))} (${changes[i].pct != null ? (Math.abs(changes[i].pct) * 100).toFixed(1) + '%' : '—'}) vs ${periods[0].label}</div>`;
+    })() : '';
+    summaryHtml += `<div class="summary-item"><div class="label">${p.label}</div><div class="value">${fmt(p.total)}</div>${badge}</div>`;
+  });
+  summaryHtml += '</div>';
+
+  // Chart canvas
+  const chartHtml = '<div style="margin:20px 0;max-height:350px;"><canvas id="ecChart"></canvas></div>';
+
+  // Table
+  const periodHeaders = periods.map(p => `<th class="amount">${p.label}</th>`).join('');
+  const changeHeader = pCount === 2 ? '<th class="amount">' + l.ecChange + '</th>' : '';
+
+  let tableRows = '';
+  for (const cat of categories) {
+    let catRow = `<tr class="section-total"><td style="font-weight:600;cursor:pointer;" onclick="toggleEcCategory(this)">${cat.name}</td>`;
+    cat.amounts.forEach((a, i) => { catRow += `<td class="amount" style="font-weight:600;">${fmt(a)}</td>`; });
+    if (pCount === 2) {
+      const diff = cat.amounts[1] - cat.amounts[0];
+      const pct = cat.amounts[0] !== 0 ? diff / Math.abs(cat.amounts[0]) : null;
+      catRow += changeCell(diff, pct);
+    }
+    catRow += '</tr>';
+    tableRows += catRow;
+
+    for (const acc of cat.accounts) {
+      let accRow = `<tr class="ec-detail-row" style="display:none;"><td style="padding-left:24px;">${acc.accountNumber} ${acc.displayName}</td>`;
+      acc.amounts.forEach(a => { accRow += `<td class="amount">${fmt(a)}</td>`; });
+      if (pCount === 2) {
+        const diff = acc.amounts[1] - acc.amounts[0];
+        const pct = acc.amounts[0] !== 0 ? diff / Math.abs(acc.amounts[0]) : null;
+        accRow += changeCell(diff, pct);
+      }
+      accRow += '</tr>';
+      tableRows += accRow;
+    }
+  }
+
+  let totalRow = `<tr class="grand-total" style="font-weight:700;border-top:2px solid #333;"><td>${l.ecTotal}</td>`;
+  totals.forEach(t => { totalRow += `<td class="amount">${fmt(t)}</td>`; });
+  if (pCount === 2 && changes[1]) {
+    totalRow += changeCell(changes[1].diff, changes[1].pct);
+  }
+  totalRow += '</tr>';
+
+  const area = document.getElementById('reportArea');
+  area.innerHTML = `
+    ${reportHeader(getCompanyName(), l.rptExpCompare, getLang() === 'en' ? 'Amounts in NTD' : '金額單位：新台幣元')}
+    ${summaryHtml}
+    ${chartHtml}
+    <div class="card">
+      <table class="report-table">
+        <thead><tr><th>${l.ecCategory}</th>${periodHeaders}${changeHeader}</tr></thead>
+        <tbody>${tableRows}${totalRow}</tbody>
+      </table>
+    </div>`;
+
+  renderEcChart(data);
+}
+
+function toggleEcCategory(td) {
+  const row = td.closest('tr');
+  let next = row.nextElementSibling;
+  while (next && next.classList.contains('ec-detail-row')) {
+    next.style.display = next.style.display === 'none' ? '' : 'none';
+    next = next.nextElementSibling;
+  }
+}
+
+function renderEcChart(data) {
+  const ctx = document.getElementById('ecChart');
+  if (!ctx) return;
+  if (ecChartInstance) { ecChartInstance.destroy(); ecChartInstance = null; }
+
+  const labels = data.categories.map(c => c.name);
+  const datasets = data.periods.map((p, i) => ({
+    label: p.label,
+    data: data.categories.map(c => c.amounts[i]),
+    backgroundColor: EC_COLORS[i % EC_COLORS.length] + '99',
+    borderColor: EC_COLORS[i % EC_COLORS.length],
+    borderWidth: 1,
+  }));
+
+  ecChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: v => v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : v }
+        },
+        x: { ticks: { maxRotation: 45 } }
+      }
+    }
+  });
+}
 
 // Init
 initDates();
