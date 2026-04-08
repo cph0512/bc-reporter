@@ -3,16 +3,28 @@
 
 const rateLimit = require('express-rate-limit');
 
+const SYNC_SECRET = process.env.SYNC_SECRET || '';
+
 /**
  * Login rate limiter — prevent brute-force attacks
- * 5 attempts per 15 minutes per IP
+ * 10 attempts per 15 minutes per username (fallback to IP)
+ * Internal bot calls with X-Internal-Key header bypass rate limiting
  */
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
+  max: 10,
   message: { error: '登入嘗試次數過多，請 15 分鐘後再試' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Rate limit by username instead of IP so different users don't block each other
+    return (req.body?.username || req.ip || 'unknown').toLowerCase();
+  },
+  skip: (req) => {
+    // Internal bot calls bypass rate limiting
+    const key = req.headers['x-internal-key'];
+    return !!(key && SYNC_SECRET && key === SYNC_SECRET);
+  },
 });
 
 /**
