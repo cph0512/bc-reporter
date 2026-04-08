@@ -637,10 +637,10 @@ class ReportEngine {
 
     const [accountsMap, ...glResults] = await Promise.all([accountsMapPromise, ...glPromises]);
 
-    // 銷售成本科目: 611010~611038 (銷售費用) + 510100 (勞務成本-理貨) + 510102 (直接人工)
-    const cogsAcctSet = new Set(['510100', '510102']);
+    // 銷售成本科目: BC category = Cost of Goods Sold (510100~510145)
+    const cogsAcctSet = new Set();
     for (const [accNum, info] of Object.entries(accountsMap)) {
-      if (accNum >= '611010' && accNum <= '611038' && info.accountType === 'Posting') {
+      if (info.category === 'Cost_x0020_of_x0020_Goods_x0020_Sold' && info.accountType === 'Posting') {
         cogsAcctSet.add(accNum);
       }
     }
