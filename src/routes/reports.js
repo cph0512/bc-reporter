@@ -585,6 +585,52 @@ module.exports = function(reportEngine) {
     }
   });
 
+  // ===== Sales Comparison =====
+
+  router.get('/sales-comparison', requireDashboard('reports'), async (req, res) => {
+    try {
+      const { mode } = req.query;
+      const co = companyOpts(req);
+
+      let periods = [];
+
+      if (req.query.custom) {
+        periods = req.query.custom.split(';').map(seg => {
+          const [startDate, endDate, label] = seg.split(',');
+          return { startDate, endDate, label: label || `${startDate} ~ ${endDate}` };
+        });
+      } else if (mode === 'yoy') {
+        const years = [].concat(req.query.periods || []).map(Number).sort();
+        if (years.length < 2) return res.status(400).json({ error: 'At least 2 years required' });
+        periods = years.map(y => ({
+          startDate: `${y}-01-01`,
+          endDate: `${y}-12-31`,
+          label: `${y}`,
+        }));
+      } else {
+        const months = [].concat(req.query.periods || []).sort();
+        if (months.length < 2) return res.status(400).json({ error: 'At least 2 periods required' });
+        periods = months.map(m => {
+          const [y, mon] = m.split('-').map(Number);
+          const lastDay = new Date(y, mon, 0).getDate();
+          return {
+            startDate: `${y}-${String(mon).padStart(2, '0')}-01`,
+            endDate: `${y}-${String(mon).padStart(2, '0')}-${lastDay}`,
+            label: `${y}/${mon}`,
+          };
+        });
+      }
+
+      const accounts = (req.query.accounts || '411111,411112,411113').split(',').map(s => s.trim());
+      if (req.query.department) co.department = req.query.department;
+      const data = await reportEngine.getSalesComparison(periods, accounts, co);
+      res.json(data);
+    } catch (error) {
+      console.error('[API] Sales Comparison error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ===== Departments (部門列表) =====
 
   router.get('/departments', requireDashboard('reports'), async (req, res) => {

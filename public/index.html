@@ -528,6 +528,9 @@
       <optgroup id="rptGroupExpense">
         <option value="expense-compare" id="rptOptExpCompare"></option>
       </optgroup>
+      <optgroup id="rptGroupSales">
+        <option value="sales-compare" id="rptOptSalesCompare"></option>
+      </optgroup>
     </select>
   </div>
   <div>
@@ -612,6 +615,66 @@
       <option value="" id="ecDeptAll">全部</option>
     </select>
     <button class="btn btn-primary" onclick="fetchExpenseComparison()" id="ecFetchBtn">查詢費用比較</button>
+  </div>
+</div>
+
+<div id="salesCompareControls" style="display:none;margin-top:12px;padding:16px;background:#f9f9fb;border-radius:8px;border:1px solid #e0e0e0;">
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+    <label style="font-weight:600;" id="scModeLabel">比較模式</label>
+    <select id="scMode" onchange="onScModeChange()" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <option value="custom" id="scOptCustomRange">自訂區間</option>
+      <option value="mom" id="scOptMom">月 vs 月</option>
+      <option value="yoy" id="scOptYoy">年 vs 年</option>
+    </select>
+  </div>
+  <div style="margin-bottom:12px;">
+    <label style="font-size:13px;font-weight:500;" id="scAccountsLabel">選擇銷售科目</label>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
+      <label style="font-size:13px;cursor:pointer;"><input type="checkbox" value="411111" checked class="scAcctCb"> 411111 銷貨收入-理貨</label>
+      <label style="font-size:13px;cursor:pointer;"><input type="checkbox" value="411112" checked class="scAcctCb"> 411112 銷貨收入-軟體</label>
+      <label style="font-size:13px;cursor:pointer;"><input type="checkbox" value="411113" checked class="scAcctCb"> 411113 銷貨收入-運費</label>
+    </div>
+  </div>
+  <div id="scCustomPanel">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:13px;font-weight:500;" id="scCustomLabel">新增比較區間（至少 2 段）</label>
+    </div>
+    <div id="scCustomChips" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;"></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:12px;color:#666;" id="scCustomStartLabel">起</label>
+      <input type="date" id="scCustomStart" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <label style="font-size:12px;color:#666;" id="scCustomEndLabel">迄</label>
+      <input type="date" id="scCustomEnd" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <input type="text" id="scCustomRangeLabel" placeholder="標籤（選填）" style="width:120px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+      <button class="btn btn-sm btn-primary" onclick="addScCustomRange()">+</button>
+    </div>
+  </div>
+  <div id="scMomPanel" style="display:none;">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:13px;font-weight:500;" id="scMonthsLabel">選擇月份（至少 2 個）</label>
+    </div>
+    <div id="scMonthChips" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;"></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="month" id="scAddMonth" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <button class="btn btn-sm btn-primary" onclick="addScMonth()">+</button>
+    </div>
+  </div>
+  <div id="scYoyPanel" style="display:none;">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:13px;font-weight:500;" id="scYearsLabel">選擇年份（至少 2 年）</label>
+    </div>
+    <div id="scYearChips" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;"></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="number" id="scAddYear" min="2020" max="2030" style="width:100px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;">
+      <button class="btn btn-sm btn-primary" onclick="addScYear()">+</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+    <label style="font-weight:500;font-size:13px;" id="scDeptLabel">部門</label>
+    <select id="scDeptSelect" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+      <option value="" id="scDeptAll">全部</option>
+    </select>
+    <button class="btn btn-primary" onclick="fetchSalesComparison()" id="scFetchBtn">查詢銷售比較</button>
   </div>
 </div>
 
@@ -1085,6 +1148,13 @@ const LABELS = {
     rptMonth: '月報', rptQuarter: '季報', rptHalf: '半年報', rptYear: '年報', rptCustom: '自訂',
     rptNoCompare: '不比較', rptYoY: '去年同期 (YoY)', rptMoM: '上期 (MoM)', rptQoQ: '上一季 (QoQ)',
     rptGroupExpense: '費用比較', rptExpCompare: '費用比較報表',
+    rptGroupSales: '銷售比較', rptSalesCompare: '銷售比較報表',
+    scMode: '比較模式', scCustomRange: '自訂區間', scMom: '月 vs 月', scYoy: '年 vs 年',
+    scAccounts: '選擇銷售科目',
+    scCustom: '新增比較區間（至少 2 段）', scCustomStart: '起', scCustomEnd: '迄', scCustomLabelPh: '標籤（選填）',
+    scMonths: '選擇月份（至少 2 個）', scYears: '選擇年份（至少 2 年）',
+    scDept: '部門', scDeptAll: '全部',
+    scFetch: '查詢銷售比較', scTotal: '銷售合計',
     ecMode: '比較模式', ecCustomRange: '自訂區間', ecMom: '月 vs 月', ecYoy: '年 vs 年',
     ecCustom: '新增比較區間（至少 2 段）', ecCustomStart: '起', ecCustomEnd: '迄', ecCustomLabelPh: '標籤（選填）',
     ecMonths: '選擇月份（至少 2 個）', ecYears: '選擇年份（至少 2 年）',
@@ -1265,6 +1335,13 @@ const LABELS = {
     rptMonth: 'Monthly', rptQuarter: 'Quarterly', rptHalf: 'Semi-Annual', rptYear: 'Annual', rptCustom: 'Custom',
     rptNoCompare: 'None', rptYoY: 'Prior Year (YoY)', rptMoM: 'Prior Period (MoM)', rptQoQ: 'Prior Quarter (QoQ)',
     rptGroupExpense: 'Expense Comparison', rptExpCompare: 'Expense Comparison Report',
+    rptGroupSales: 'Sales Comparison', rptSalesCompare: 'Sales Comparison Report',
+    scMode: 'Compare Mode', scCustomRange: 'Custom Range', scMom: 'Month vs Month', scYoy: 'Year vs Year',
+    scAccounts: 'Select Sales Accounts',
+    scCustom: 'Add comparison ranges (at least 2)', scCustomStart: 'From', scCustomEnd: 'To', scCustomLabelPh: 'Label (optional)',
+    scMonths: 'Select months (at least 2)', scYears: 'Select years (at least 2)',
+    scDept: 'Department', scDeptAll: 'All',
+    scFetch: 'Query Sales Comparison', scTotal: 'Total Sales',
     ecMode: 'Compare Mode', ecCustomRange: 'Custom Range', ecMom: 'Month vs Month', ecYoy: 'Year vs Year',
     ecCustom: 'Add comparison ranges (at least 2)', ecCustomStart: 'From', ecCustomEnd: 'To', ecCustomLabelPh: 'Label (optional)',
     ecMonths: 'Select months (at least 2)', ecYears: 'Select years (at least 2)',
@@ -1292,13 +1369,18 @@ function renderPipelineLabels() {
     rptLabelReport: l.rptReport, rptLabelPeriod: l.rptPeriod, rptLabelCompare: l.rptCompare,
     rptOptEbitdaD: l.rptEbitdaD, rptOptEbitdaS: l.rptEbitdaS,
     rptOptISD: l.rptISD, rptOptISS: l.rptISS, rptOptBSD: l.rptBSD, rptOptBSS: l.rptBSS,
-    rptOptExpCompare: l.rptExpCompare,
+    rptOptExpCompare: l.rptExpCompare, rptOptSalesCompare: l.rptSalesCompare,
     rptOptMonth: l.rptMonth, rptOptQuarter: l.rptQuarter, rptOptHalf: l.rptHalf, rptOptYear: l.rptYear, rptOptCustom: l.rptCustom,
     rptOptNoCompare: l.rptNoCompare, rptOptYoY: l.rptYoY, rptOptMoM: l.rptMoM, rptOptQoQ: l.rptQoQ,
     ecModeLabel: l.ecMode, ecOptCustomRange: l.ecCustomRange, ecOptMom: l.ecMom, ecOptYoy: l.ecYoy,
     ecCustomLabel: l.ecCustom, ecCustomStartLabel: l.ecCustomStart, ecCustomEndLabel: l.ecCustomEnd,
     ecDeptLabel: l.ecDept, ecDeptAll: l.ecDeptAll,
     ecMonthsLabel: l.ecMonths, ecYearsLabel: l.ecYears, ecFetchBtn: l.ecFetch,
+    scModeLabel: l.scMode, scOptCustomRange: l.scCustomRange, scOptMom: l.scMom, scOptYoy: l.scYoy,
+    scAccountsLabel: l.scAccounts,
+    scCustomLabel: l.scCustom, scCustomStartLabel: l.scCustomStart, scCustomEndLabel: l.scCustomEnd,
+    scDeptLabel: l.scDept, scDeptAll: l.scDeptAll,
+    scMonthsLabel: l.scMonths, scYearsLabel: l.scYears, scFetchBtn: l.scFetch,
   };
   Object.entries(rptMap).forEach(([id, text]) => {
     const el = document.getElementById(id);
@@ -1306,12 +1388,16 @@ function renderPipelineLabels() {
   });
   const ecLabelInput = document.getElementById('ecCustomRangeLabel');
   if (ecLabelInput) ecLabelInput.placeholder = l.ecCustomLabelPh;
+  const scLabelInput = document.getElementById('scCustomRangeLabel');
+  if (scLabelInput) scLabelInput.placeholder = l.scCustomLabelPh;
   const rptGroupISEl = document.getElementById('rptGroupIS');
   if (rptGroupISEl) rptGroupISEl.label = l.rptGroupIS;
   const rptGroupBSEl = document.getElementById('rptGroupBS');
   if (rptGroupBSEl) rptGroupBSEl.label = l.rptGroupBS;
   const rptGroupExpEl = document.getElementById('rptGroupExpense');
   if (rptGroupExpEl) rptGroupExpEl.label = l.rptGroupExpense;
+  const rptGroupSalesEl = document.getElementById('rptGroupSales');
+  if (rptGroupSalesEl) rptGroupSalesEl.label = l.rptGroupSales;
   // === Header Buttons ===
   const headerMap = { headerChangePw: l.hChangePw, headerLogout: l.hLogout };
   Object.entries(headerMap).forEach(([id, text]) => {
@@ -1608,6 +1694,7 @@ function getReport(data, compare) {
 async function fetchReport() {
   const type = document.getElementById('reportType').value;
   if (type === 'expense-compare') { fetchExpenseComparison(); return; }
+  if (type === 'sales-compare') { fetchSalesComparison(); return; }
   const startDate = document.getElementById('startDate').value;
   const endDate = document.getElementById('endDate').value;
   const compare = document.getElementById('compare').value;
@@ -4641,7 +4728,10 @@ document.getElementById('companySelect').addEventListener('change', () => {
     renderLedgerSelectedChips();
   }
   ecDeptLoaded = false;
-  if (document.getElementById('reportType').value === 'expense-compare') loadEcDepartments();
+  scDeptLoaded = false;
+  const rptType = document.getElementById('reportType').value;
+  if (rptType === 'expense-compare') loadEcDepartments();
+  if (rptType === 'sales-compare') loadScDepartments();
 });
 
 // ==========================================
@@ -4656,14 +4746,17 @@ let ecDeptLoaded = false;
 function onReportTypeChange() {
   const type = document.getElementById('reportType').value;
   const isExpense = type === 'expense-compare';
+  const isSales = type === 'sales-compare';
+  const isCompareMode = isExpense || isSales;
   document.getElementById('expenseCompareControls').style.display = isExpense ? '' : 'none';
-  // Hide standard date/compare controls for expense mode
+  document.getElementById('salesCompareControls').style.display = isSales ? '' : 'none';
+  // Hide standard date/compare controls for compare modes
   const controls = document.querySelectorAll('#reportsView > .controls > div');
   controls.forEach((div, i) => {
     if (i === 0) return; // report type selector always visible
-    div.style.display = isExpense ? 'none' : '';
+    div.style.display = isCompareMode ? 'none' : '';
   });
-  // Seed default months/years
+  // Seed default months/years for expense
   if (isExpense && ecMonths.length === 0 && ecYears.length === 0) {
     const now = new Date();
     const y = now.getFullYear();
@@ -4677,6 +4770,20 @@ function onReportTypeChange() {
     renderEcChips();
   }
   if (isExpense && !ecDeptLoaded) loadEcDepartments();
+  // Seed default months/years for sales
+  if (isSales && scMonths.length === 0 && scYears.length === 0) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const prev = m === 0 ? 12 : m;
+    const prevY = m === 0 ? y - 1 : y;
+    scMonths = [`${prevY}-${String(prev).padStart(2,'0')}`, `${y}-${String(m+1).padStart(2,'0')}`];
+    scYears = [y - 1, y];
+    document.getElementById('scAddMonth').value = `${y}-${String(m+1).padStart(2,'0')}`;
+    document.getElementById('scAddYear').value = y;
+    renderScChips();
+  }
+  if (isSales && !scDeptLoaded) loadScDepartments();
 }
 
 async function loadEcDepartments() {
@@ -4921,6 +5028,210 @@ function renderEcChart(data) {
           beginAtZero: true,
           ticks: { callback: v => v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : v }
         },
+        x: { ticks: { maxRotation: 45 } }
+      }
+    }
+  });
+}
+
+// ==========================================
+//  Sales Comparison Report
+// ==========================================
+let scMonths = [];
+let scYears = [];
+let scCustomRanges = [];
+let scChartInstance = null;
+let scDeptLoaded = false;
+
+function onScModeChange() {
+  const mode = document.getElementById('scMode').value;
+  document.getElementById('scCustomPanel').style.display = mode === 'custom' ? '' : 'none';
+  document.getElementById('scMomPanel').style.display = mode === 'mom' ? '' : 'none';
+  document.getElementById('scYoyPanel').style.display = mode === 'yoy' ? '' : 'none';
+}
+
+function renderScChips() {
+  document.getElementById('scCustomChips').innerHTML = scCustomRanges.map((r, i) =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#dce8f7;border-radius:12px;font-size:13px;">${r.label}<span style="cursor:pointer;color:#c62828;font-weight:bold;" onclick="removeScCustomRange(${i})">✕</span></span>`
+  ).join('');
+  document.getElementById('scMonthChips').innerHTML = scMonths.map(m =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#e3e8f0;border-radius:12px;font-size:13px;">${m}<span style="cursor:pointer;color:#c62828;font-weight:bold;" onclick="removeScMonth('${m}')">✕</span></span>`
+  ).join('');
+  document.getElementById('scYearChips').innerHTML = scYears.map(y =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#e3e8f0;border-radius:12px;font-size:13px;">${y}<span style="cursor:pointer;color:#c62828;font-weight:bold;" onclick="removeScYear(${y})">✕</span></span>`
+  ).join('');
+}
+
+function addScMonth() { const v = document.getElementById('scAddMonth').value; if (!v || scMonths.includes(v)) return; scMonths.push(v); scMonths.sort(); renderScChips(); }
+function removeScMonth(m) { scMonths = scMonths.filter(x => x !== m); renderScChips(); }
+function addScYear() { const v = parseInt(document.getElementById('scAddYear').value); if (!v || scYears.includes(v)) return; scYears.push(v); scYears.sort(); renderScChips(); }
+function removeScYear(y) { scYears = scYears.filter(x => x !== y); renderScChips(); }
+
+function addScCustomRange() {
+  const s = document.getElementById('scCustomStart').value;
+  const e = document.getElementById('scCustomEnd').value;
+  const lbl = document.getElementById('scCustomRangeLabel').value.trim();
+  if (!s || !e) return;
+  if (s > e) { alert(getLang() === 'en' ? 'Start date must be before end date' : '起始日須在結束日之前'); return; }
+  if (scCustomRanges.some(r => r.start === s && r.end === e)) return;
+  scCustomRanges.push({ start: s, end: e, label: lbl || `${s} ~ ${e}` });
+  scCustomRanges.sort((a, b) => a.start.localeCompare(b.start));
+  document.getElementById('scCustomRangeLabel').value = '';
+  renderScChips();
+}
+
+function removeScCustomRange(idx) { scCustomRanges.splice(idx, 1); renderScChips(); }
+
+async function loadScDepartments() {
+  const companyId = getCompanyId();
+  if (!companyId) return;
+  try {
+    const res = await fetch(`/api/departments?companyId=${companyId}`);
+    if (!res.ok) return;
+    const depts = await res.json();
+    const sel = document.getElementById('scDeptSelect');
+    const current = sel.value;
+    sel.innerHTML = `<option value="">${getLang() === 'en' ? 'All' : '全部'}</option>`;
+    depts.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; sel.appendChild(opt); });
+    if (current) sel.value = current;
+    scDeptLoaded = true;
+  } catch (e) { /* silent */ }
+}
+
+const SC_COLORS = ['#0f3460','#e94560','#16c79a','#f5a623','#7b61ff','#00b8d4','#1a1a2e','#ff6b6b'];
+
+async function fetchSalesComparison() {
+  const mode = document.getElementById('scMode').value;
+  const companyId = getCompanyId();
+  const l = L();
+  const btn = document.getElementById('scFetchBtn');
+  const area = document.getElementById('reportArea');
+
+  if (!companyId) { alert(getLang() === 'en' ? 'Please select a company' : '請選擇公司'); return; }
+
+  // Get selected accounts
+  const selectedAccts = [...document.querySelectorAll('.scAcctCb:checked')].map(cb => cb.value);
+  if (selectedAccts.length === 0) { alert(getLang() === 'en' ? 'Select at least 1 account' : '請至少選擇 1 個科目'); return; }
+
+  const dept = document.getElementById('scDeptSelect').value;
+  let url = `/api/sales-comparison?mode=${mode}&companyId=${companyId}&accounts=${selectedAccts.join(',')}`;
+  if (dept) url += `&department=${encodeURIComponent(dept)}`;
+
+  if (mode === 'custom') {
+    if (scCustomRanges.length < 2) { alert(getLang() === 'en' ? 'Add at least 2 ranges' : '請至少新增 2 段區間'); return; }
+    url += `&custom=${encodeURIComponent(scCustomRanges.map(r => `${r.start},${r.end},${r.label}`).join(';'))}`;
+  } else if (mode === 'mom') {
+    if (scMonths.length < 2) { alert(getLang() === 'en' ? 'Select at least 2 months' : '請至少選擇 2 個月份'); return; }
+    url += scMonths.map(m => `&periods[]=${m}`).join('');
+  } else {
+    if (scYears.length < 2) { alert(getLang() === 'en' ? 'Select at least 2 years' : '請至少選擇 2 個年份'); return; }
+    url += scYears.map(y => `&periods[]=${y}`).join('');
+  }
+
+  btn.disabled = true; btn.textContent = getLang() === 'en' ? 'Loading...' : '查詢中...';
+  area.innerHTML = `<div class="loading">${getLang() === 'en' ? 'Fetching sales data from Business Central...' : '正在從 Business Central 取得銷售資料...'}</div>`;
+
+  try {
+    const res = await fetch(url);
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    const data = await res.json();
+    renderSalesComparison(data);
+    document.getElementById('exportBar').classList.add('show');
+  } catch (e) {
+    area.innerHTML = `<div class="error">${getLang() === 'en' ? 'Query failed: ' : '查詢失敗：'}${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = l.scFetch;
+  }
+}
+
+function renderSalesComparison(data) {
+  const l = L();
+  const { periods, accounts, totals, changes } = data;
+  const pCount = periods.length;
+  const fmt = v => v != null ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0';
+  const pctFmt = v => v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '-';
+
+  // Summary cards
+  let summaryHtml = periods.map((p, i) => {
+    const changeHtml = changes[i]
+      ? `<div style="font-size:13px;margin-top:4px;color:${changes[i].diff >= 0 ? '#2e7d32' : '#c62828'};">${changes[i].diff >= 0 ? '▲' : '▼'} ${fmt(Math.abs(changes[i].diff))} (${pctFmt(changes[i].pct)})</div>`
+      : '';
+    return `<div style="flex:1;min-width:160px;padding:14px;background:#fff;border-radius:8px;border:1px solid #e0e0e0;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div style="font-size:12px;color:#666;">${p.label}</div>
+      <div style="font-size:22px;font-weight:700;margin-top:4px;">${fmt(p.total)}</div>${changeHtml}
+    </div>`;
+  }).join('');
+
+  // Table
+  const periodHeaders = periods.map(p => `<th style="text-align:right;">${p.label}</th>`).join('');
+  const changeHeader = pCount > 1 ? `<th style="text-align:right;">${l.ecChange}</th>` : '';
+
+  const tableRows = accounts.map(acc => {
+    const amtCells = acc.amounts.map(a => `<td style="text-align:right;padding:6px 8px;">${fmt(a)}</td>`).join('');
+    let changeCell = '';
+    if (pCount > 1) {
+      const diff = acc.amounts[pCount - 1] - acc.amounts[0];
+      const pct = acc.amounts[0] !== 0 ? diff / Math.abs(acc.amounts[0]) : null;
+      const color = diff >= 0 ? '#2e7d32' : '#c62828';
+      changeCell = `<td style="text-align:right;padding:6px 8px;color:${color};font-weight:500;">${fmt(diff)} (${pctFmt(pct)})</td>`;
+    }
+    return `<tr><td style="padding:6px 8px;">${acc.accountNumber} ${acc.displayName}</td>${amtCells}${changeCell}</tr>`;
+  }).join('');
+
+  const totalCells = totals.map(t => `<td style="text-align:right;padding:6px 8px;font-weight:700;">${fmt(t)}</td>`).join('');
+  let totalChangeCell = '';
+  if (pCount > 1 && changes[pCount - 1]) {
+    const c = changes[pCount - 1];
+    const color = c.diff >= 0 ? '#2e7d32' : '#c62828';
+    totalChangeCell = `<td style="text-align:right;padding:6px 8px;font-weight:700;color:${color};">${fmt(c.diff)} (${pctFmt(c.pct)})</td>`;
+  }
+  const totalRow = `<tr style="background:#f0f4f8;border-top:2px solid #1976d2;"><td style="padding:6px 8px;font-weight:700;">${l.scTotal}</td>${totalCells}${totalChangeCell}</tr>`;
+
+  const deptNote = data.department ? `<span style="font-size:12px;color:#666;margin-left:8px;">(${data.department})</span>` : '';
+
+  const area = document.getElementById('reportArea');
+  area.innerHTML = `
+    <h3 style="margin:0 0 12px;">${l.rptSalesCompare}${deptNote}</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">${summaryHtml}</div>
+    <div style="margin-bottom:16px;"><canvas id="scChart" height="260"></canvas></div>
+    <div style="overflow-x:auto;">
+      <table class="report-table">
+        <thead><tr><th>${l.ecAccount}</th>${periodHeaders}${changeHeader}</tr></thead>
+        <tbody>${tableRows}${totalRow}</tbody>
+      </table>
+    </div>`;
+
+  renderScChart(data);
+}
+
+function renderScChart(data) {
+  const ctx = document.getElementById('scChart');
+  if (!ctx) return;
+  if (scChartInstance) { scChartInstance.destroy(); scChartInstance = null; }
+
+  const labels = data.accounts.map(a => `${a.accountNumber} ${a.displayName}`);
+  const datasets = data.periods.map((p, i) => ({
+    label: p.label,
+    data: data.accounts.map(a => a.amounts[i]),
+    backgroundColor: SC_COLORS[i % SC_COLORS.length] + '99',
+    borderColor: SC_COLORS[i % SC_COLORS.length],
+    borderWidth: 1,
+  }));
+
+  scChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}` } }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: v => v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : v } },
         x: { ticks: { maxRotation: 45 } }
       }
     }

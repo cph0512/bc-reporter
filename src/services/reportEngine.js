@@ -619,6 +619,69 @@ class ReportEngine {
   }
 
   /**
+   * 銷售比較 — 指定科目清單
+   */
+  async getSalesComparison(periods, accountNumbers = ['411111', '411112', '411113'], opts = {}) {
+    const cid = opts.companyId;
+    const department = opts.department;
+    const acctSet = new Set(accountNumbers);
+
+    const needDimension = !!department;
+    const glOpts = { fetchAll: true, companyId: cid };
+    if (needDimension) glOpts.expand = 'dimensionSetLines';
+
+    const accountsMapPromise = this.bc.getAccountsMap({ companyId: cid });
+    const glPromises = periods.map(p =>
+      this.bc.getGeneralLedgerEntries(p.startDate, p.endDate, glOpts)
+    );
+
+    const [accountsMap, ...glResults] = await Promise.all([accountsMapPromise, ...glPromises]);
+
+    // Build per-period breakdown by account
+    const periodData = glResults.map(glEntries => {
+      const accountTotals = {};
+      for (const entry of glEntries) {
+        const accNum = entry.accountNumber;
+        if (!acctSet.has(accNum)) continue;
+        const info = accountsMap[accNum];
+        if (!info || info.accountType !== 'Posting') continue;
+        if (needDimension) {
+          const dims = entry.dimensionSetLines || [];
+          const dept = dims.find(d => d.code === '部門');
+          if (!dept || dept.valueCode !== department) continue;
+        }
+        if (!accountTotals[accNum]) accountTotals[accNum] = 0;
+        // Sales: credit - debit (revenue is credit side)
+        accountTotals[accNum] += (entry.creditAmount || 0) - (entry.debitAmount || 0);
+      }
+      return accountTotals;
+    });
+
+    // Build account rows
+    const accounts = accountNumbers.map(accNum => {
+      const info = accountsMap[accNum] || {};
+      const amounts = periodData.map(pt => pt[accNum] || 0);
+      return { accountNumber: accNum, displayName: info.displayName || accNum, amounts };
+    });
+
+    const totals = periods.map((_, i) => accounts.reduce((sum, acc) => sum + acc.amounts[i], 0));
+    const changes = totals.map((t, i) => {
+      if (i === 0) return null;
+      const diff = t - totals[0];
+      const pct = totals[0] !== 0 ? diff / Math.abs(totals[0]) : null;
+      return { diff, pct };
+    });
+
+    return {
+      periods: periods.map((p, i) => ({ ...p, total: totals[i] })),
+      accounts,
+      totals,
+      changes,
+      department: department || null,
+    };
+  }
+
+  /**
    * 取得可用部門列表（從最近 GL entries 的 dimensionSetLines）
    */
   async getDepartments(opts = {}) {
