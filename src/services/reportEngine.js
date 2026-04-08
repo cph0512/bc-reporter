@@ -619,12 +619,12 @@ class ReportEngine {
   }
 
   /**
-   * 銷售比較 — 指定科目清單
+   * 銷售比較 — 指定銷售科目 + 銷售成本 → 毛利率
    */
   async getSalesComparison(periods, accountNumbers = ['411111', '411112', '411113'], opts = {}) {
     const cid = opts.companyId;
     const department = opts.department;
-    const acctSet = new Set(accountNumbers);
+    const salesAcctSet = new Set(accountNumbers);
 
     const needDimension = !!department;
     const glOpts = { fetchAll: true, companyId: cid };
@@ -637,12 +637,26 @@ class ReportEngine {
 
     const [accountsMap, ...glResults] = await Promise.all([accountsMapPromise, ...glPromises]);
 
-    // Build per-period breakdown by account
-    const periodData = glResults.map(glEntries => {
-      const accountTotals = {};
+    // 銷售成本科目: 611010~611038 (銷售費用) + 510100 (勞務成本-理貨) + 510102 (直接人工)
+    const cogsAcctSet = new Set(['510100', '510102']);
+    for (const [accNum, info] of Object.entries(accountsMap)) {
+      if (accNum >= '611010' && accNum <= '611038' && info.accountType === 'Posting') {
+        cogsAcctSet.add(accNum);
+      }
+    }
+
+    // Build per-period breakdown: sales accounts + COGS accounts
+    const salesPeriodData = [];
+    const cogsPeriodData = [];
+
+    for (const glEntries of glResults) {
+      const salesTotals = {};
+      const cogsTotals = {};
       for (const entry of glEntries) {
         const accNum = entry.accountNumber;
-        if (!acctSet.has(accNum)) continue;
+        const isSales = salesAcctSet.has(accNum);
+        const isCogs = cogsAcctSet.has(accNum);
+        if (!isSales && !isCogs) continue;
         const info = accountsMap[accNum];
         if (!info || info.accountType !== 'Posting') continue;
         if (needDimension) {
@@ -650,33 +664,70 @@ class ReportEngine {
           const dept = dims.find(d => d.code === '部門');
           if (!dept || dept.valueCode !== department) continue;
         }
-        if (!accountTotals[accNum]) accountTotals[accNum] = 0;
-        // Sales: credit - debit (revenue is credit side)
-        accountTotals[accNum] += (entry.creditAmount || 0) - (entry.debitAmount || 0);
+        if (isSales) {
+          if (!salesTotals[accNum]) salesTotals[accNum] = 0;
+          salesTotals[accNum] += (entry.creditAmount || 0) - (entry.debitAmount || 0);
+        }
+        if (isCogs) {
+          if (!cogsTotals[accNum]) cogsTotals[accNum] = 0;
+          cogsTotals[accNum] += Math.abs((entry.debitAmount || 0) - (entry.creditAmount || 0));
+        }
       }
-      return accountTotals;
-    });
+      salesPeriodData.push(salesTotals);
+      cogsPeriodData.push(cogsTotals);
+    }
 
-    // Build account rows
-    const accounts = accountNumbers.map(accNum => {
+    // Sales account rows
+    const salesAccounts = accountNumbers.map(accNum => {
       const info = accountsMap[accNum] || {};
-      const amounts = periodData.map(pt => pt[accNum] || 0);
+      const amounts = salesPeriodData.map(pt => pt[accNum] || 0);
       return { accountNumber: accNum, displayName: info.displayName || accNum, amounts };
     });
 
-    const totals = periods.map((_, i) => accounts.reduce((sum, acc) => sum + acc.amounts[i], 0));
-    const changes = totals.map((t, i) => {
+    // COGS account rows (only accounts with non-zero amounts)
+    const allCogsAccts = [...cogsAcctSet].sort();
+    const cogsAccounts = allCogsAccts
+      .map(accNum => {
+        const info = accountsMap[accNum] || {};
+        const amounts = cogsPeriodData.map(pt => pt[accNum] || 0);
+        return { accountNumber: accNum, displayName: info.displayName || accNum, amounts };
+      })
+      .filter(acc => acc.amounts.some(a => a !== 0));
+
+    // Totals
+    const salesTotals = periods.map((_, i) => salesAccounts.reduce((sum, acc) => sum + acc.amounts[i], 0));
+    const cogsTotals = periods.map((_, i) => cogsAccounts.reduce((sum, acc) => sum + acc.amounts[i], 0));
+    const grossProfit = periods.map((_, i) => salesTotals[i] - cogsTotals[i]);
+    const grossMargin = periods.map((_, i) => salesTotals[i] !== 0 ? grossProfit[i] / salesTotals[i] : null);
+
+    // Changes
+    const salesChanges = salesTotals.map((t, i) => {
       if (i === 0) return null;
-      const diff = t - totals[0];
-      const pct = totals[0] !== 0 ? diff / Math.abs(totals[0]) : null;
-      return { diff, pct };
+      const diff = t - salesTotals[0];
+      return { diff, pct: salesTotals[0] !== 0 ? diff / Math.abs(salesTotals[0]) : null };
+    });
+    const cogsChanges = cogsTotals.map((t, i) => {
+      if (i === 0) return null;
+      const diff = t - cogsTotals[0];
+      return { diff, pct: cogsTotals[0] !== 0 ? diff / Math.abs(cogsTotals[0]) : null };
+    });
+    const gpChanges = grossProfit.map((t, i) => {
+      if (i === 0) return null;
+      const diff = t - grossProfit[0];
+      return { diff, pct: grossProfit[0] !== 0 ? diff / Math.abs(grossProfit[0]) : null };
     });
 
     return {
-      periods: periods.map((p, i) => ({ ...p, total: totals[i] })),
-      accounts,
-      totals,
-      changes,
+      periods: periods.map((p, i) => ({ ...p, salesTotal: salesTotals[i], cogsTotal: cogsTotals[i], grossProfit: grossProfit[i], grossMargin: grossMargin[i] })),
+      salesAccounts,
+      cogsAccounts,
+      salesTotals,
+      cogsTotals,
+      grossProfit,
+      grossMargin,
+      salesChanges,
+      cogsChanges,
+      gpChanges,
       department: department || null,
     };
   }

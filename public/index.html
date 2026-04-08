@@ -5148,46 +5148,107 @@ async function fetchSalesComparison() {
 
 function renderSalesComparison(data) {
   const l = L();
-  const { periods, accounts, totals, changes } = data;
+  const isZh = getLang() !== 'en';
+  const { periods, salesAccounts, cogsAccounts, salesTotals, cogsTotals, grossProfit, grossMargin, salesChanges, cogsChanges, gpChanges } = data;
   const pCount = periods.length;
   const fmt = v => v != null ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0';
   const pctFmt = v => v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '-';
+  const marginFmt = v => v != null ? (v * 100).toFixed(1) + '%' : '-';
 
-  // Summary cards
+  // Summary cards: sales / cost / gross profit / margin per period
   let summaryHtml = periods.map((p, i) => {
-    const changeHtml = changes[i]
-      ? `<div style="font-size:13px;margin-top:4px;color:${changes[i].diff >= 0 ? '#2e7d32' : '#c62828'};">${changes[i].diff >= 0 ? '▲' : '▼'} ${fmt(Math.abs(changes[i].diff))} (${pctFmt(changes[i].pct)})</div>`
-      : '';
-    return `<div style="flex:1;min-width:160px;padding:14px;background:#fff;border-radius:8px;border:1px solid #e0e0e0;box-shadow:0 1px 3px rgba(0,0,0,.06);">
-      <div style="font-size:12px;color:#666;">${p.label}</div>
-      <div style="font-size:22px;font-weight:700;margin-top:4px;">${fmt(p.total)}</div>${changeHtml}
+    const marginColor = p.grossMargin != null && p.grossMargin >= 0.2 ? '#2e7d32' : p.grossMargin != null && p.grossMargin >= 0.1 ? '#f57f17' : '#c62828';
+    return `<div style="flex:1;min-width:180px;padding:14px;background:#fff;border-radius:8px;border:1px solid #e0e0e0;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:8px;">${p.label}</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#666;"><span>${isZh ? '銷貨收入' : 'Revenue'}</span><span style="font-weight:600;color:#1565c0;">${fmt(p.salesTotal)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#666;margin-top:2px;"><span>${isZh ? '銷售成本' : 'COGS'}</span><span style="font-weight:600;color:#c62828;">${fmt(p.cogsTotal)}</span></div>
+      <div style="border-top:1px solid #e0e0e0;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-size:13px;"><span style="font-weight:600;">${isZh ? '毛利' : 'Gross Profit'}</span><span style="font-weight:700;color:${p.grossProfit >= 0 ? '#2e7d32' : '#c62828'};">${fmt(p.grossProfit)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-top:4px;"><span style="font-weight:600;">${isZh ? '毛利率' : 'Margin'}</span><span style="font-weight:700;font-size:18px;color:${marginColor};">${marginFmt(p.grossMargin)}</span></div>
     </div>`;
   }).join('');
 
-  // Table
+  // Table headers
   const periodHeaders = periods.map(p => `<th style="text-align:right;">${p.label}</th>`).join('');
   const changeHeader = pCount > 1 ? `<th style="text-align:right;">${l.ecChange}</th>` : '';
 
-  const tableRows = accounts.map(acc => {
-    const amtCells = acc.amounts.map(a => `<td style="text-align:right;padding:6px 8px;">${fmt(a)}</td>`).join('');
+  // Helper: build account rows
+  function buildAcctRows(accts, isCogs) {
+    return accts.map(acc => {
+      const amtCells = acc.amounts.map(a => `<td style="text-align:right;padding:5px 8px;">${fmt(a)}</td>`).join('');
+      let changeCell = '';
+      if (pCount > 1) {
+        const diff = acc.amounts[pCount - 1] - acc.amounts[0];
+        const pct = acc.amounts[0] !== 0 ? diff / Math.abs(acc.amounts[0]) : null;
+        const goodUp = !isCogs; // revenue up = good, cost up = bad
+        const isGood = goodUp ? diff >= 0 : diff <= 0;
+        const color = isGood ? '#2e7d32' : '#c62828';
+        changeCell = `<td style="text-align:right;padding:5px 8px;color:${color};font-size:12px;">${fmt(diff)} (${pctFmt(pct)})</td>`;
+      }
+      return `<tr class="sc-detail-row" style="display:none;background:#fafbfc;font-size:12px;"><td style="padding:5px 8px 5px 28px;color:#555;">${acc.accountNumber} ${acc.displayName}</td>${amtCells}${changeCell}</tr>`;
+    }).join('');
+  }
+
+  // Helper: build subtotal row (clickable to expand)
+  function buildSubtotalRow(label, totals, changes, isCogs, sectionClass) {
+    const cells = totals.map(t => `<td style="text-align:right;padding:6px 8px;font-weight:600;">${fmt(t)}</td>`).join('');
+    let changeCell = '';
+    if (pCount > 1 && changes[pCount - 1]) {
+      const c = changes[pCount - 1];
+      const goodUp = !isCogs;
+      const isGood = goodUp ? c.diff >= 0 : c.diff <= 0;
+      const color = isGood ? '#2e7d32' : '#c62828';
+      changeCell = `<td style="text-align:right;padding:6px 8px;font-weight:600;color:${color};">${fmt(c.diff)} (${pctFmt(c.pct)})</td>`;
+    }
+    return `<tr style="cursor:pointer;background:#f5f7fa;" onclick="toggleScSection(this,'${sectionClass}')"><td style="padding:6px 8px;font-weight:600;">▸ ${label}</td>${cells}${changeCell}</tr>`;
+  }
+
+  // Sales section
+  const salesSubtotal = buildSubtotalRow(isZh ? '銷貨收入' : 'Revenue', salesTotals, salesChanges, false, 'sc-sales-detail');
+  const salesDetailRows = salesAccounts.map(acc => {
+    const amtCells = acc.amounts.map(a => `<td style="text-align:right;padding:5px 8px;">${fmt(a)}</td>`).join('');
     let changeCell = '';
     if (pCount > 1) {
       const diff = acc.amounts[pCount - 1] - acc.amounts[0];
       const pct = acc.amounts[0] !== 0 ? diff / Math.abs(acc.amounts[0]) : null;
       const color = diff >= 0 ? '#2e7d32' : '#c62828';
-      changeCell = `<td style="text-align:right;padding:6px 8px;color:${color};font-weight:500;">${fmt(diff)} (${pctFmt(pct)})</td>`;
+      changeCell = `<td style="text-align:right;padding:5px 8px;color:${color};font-size:12px;">${fmt(diff)} (${pctFmt(pct)})</td>`;
     }
-    return `<tr><td style="padding:6px 8px;">${acc.accountNumber} ${acc.displayName}</td>${amtCells}${changeCell}</tr>`;
+    return `<tr class="sc-sales-detail" style="display:none;background:#fafbfc;font-size:12px;"><td style="padding:5px 8px 5px 28px;color:#555;">${acc.accountNumber} ${acc.displayName}</td>${amtCells}${changeCell}</tr>`;
   }).join('');
 
-  const totalCells = totals.map(t => `<td style="text-align:right;padding:6px 8px;font-weight:700;">${fmt(t)}</td>`).join('');
-  let totalChangeCell = '';
-  if (pCount > 1 && changes[pCount - 1]) {
-    const c = changes[pCount - 1];
+  // COGS section
+  const cogsSubtotal = buildSubtotalRow(isZh ? '銷售成本' : 'Cost of Sales', cogsTotals, cogsChanges, true, 'sc-cogs-detail');
+  const cogsDetailRows = cogsAccounts.map(acc => {
+    const amtCells = acc.amounts.map(a => `<td style="text-align:right;padding:5px 8px;">${fmt(a)}</td>`).join('');
+    let changeCell = '';
+    if (pCount > 1) {
+      const diff = acc.amounts[pCount - 1] - acc.amounts[0];
+      const pct = acc.amounts[0] !== 0 ? diff / Math.abs(acc.amounts[0]) : null;
+      const color = diff <= 0 ? '#2e7d32' : '#c62828'; // cost down = good
+      changeCell = `<td style="text-align:right;padding:5px 8px;color:${color};font-size:12px;">${fmt(diff)} (${pctFmt(pct)})</td>`;
+    }
+    return `<tr class="sc-cogs-detail" style="display:none;background:#fafbfc;font-size:12px;"><td style="padding:5px 8px 5px 28px;color:#555;">${acc.accountNumber} ${acc.displayName}</td>${amtCells}${changeCell}</tr>`;
+  }).join('');
+
+  // Gross profit row
+  const gpCells = grossProfit.map(g => `<td style="text-align:right;padding:8px;font-weight:700;font-size:15px;color:${g >= 0 ? '#2e7d32' : '#c62828'};">${fmt(g)}</td>`).join('');
+  let gpChangeCell = '';
+  if (pCount > 1 && gpChanges[pCount - 1]) {
+    const c = gpChanges[pCount - 1];
     const color = c.diff >= 0 ? '#2e7d32' : '#c62828';
-    totalChangeCell = `<td style="text-align:right;padding:6px 8px;font-weight:700;color:${color};">${fmt(c.diff)} (${pctFmt(c.pct)})</td>`;
+    gpChangeCell = `<td style="text-align:right;padding:8px;font-weight:700;color:${color};">${fmt(c.diff)} (${pctFmt(c.pct)})</td>`;
   }
-  const totalRow = `<tr style="background:#f0f4f8;border-top:2px solid #1976d2;"><td style="padding:6px 8px;font-weight:700;">${l.scTotal}</td>${totalCells}${totalChangeCell}</tr>`;
+  const gpRow = `<tr style="background:#e8f5e9;border-top:2px solid #2e7d32;"><td style="padding:8px;font-weight:700;">${isZh ? '毛利' : 'Gross Profit'}</td>${gpCells}${gpChangeCell}</tr>`;
+
+  // Gross margin row
+  const marginCells = grossMargin.map(m => `<td style="text-align:right;padding:8px;font-weight:700;font-size:16px;">${marginFmt(m)}</td>`).join('');
+  let marginChangeCell = '';
+  if (pCount > 1 && grossMargin[0] != null && grossMargin[pCount - 1] != null) {
+    const diff = grossMargin[pCount - 1] - grossMargin[0];
+    const color = diff >= 0 ? '#2e7d32' : '#c62828';
+    marginChangeCell = `<td style="text-align:right;padding:8px;font-weight:700;color:${color};">${diff >= 0 ? '+' : ''}${(diff * 100).toFixed(1)}pp</td>`;
+  }
+  const marginRow = `<tr style="background:#e8f5e9;"><td style="padding:8px;font-weight:700;">${isZh ? '毛利率' : 'Gross Margin'}</td>${marginCells}${marginChangeCell}</tr>`;
 
   const deptNote = data.department ? `<span style="font-size:12px;color:#666;margin-left:8px;">(${data.department})</span>` : '';
 
@@ -5195,30 +5256,42 @@ function renderSalesComparison(data) {
   area.innerHTML = `
     <h3 style="margin:0 0 12px;">${l.rptSalesCompare}${deptNote}</h3>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">${summaryHtml}</div>
-    <div style="margin-bottom:16px;"><canvas id="scChart" height="260"></canvas></div>
+    <div style="margin-bottom:16px;"><canvas id="scChart" height="280"></canvas></div>
     <div style="overflow-x:auto;">
       <table class="report-table">
         <thead><tr><th>${l.ecAccount}</th>${periodHeaders}${changeHeader}</tr></thead>
-        <tbody>${tableRows}${totalRow}</tbody>
+        <tbody>
+          ${salesSubtotal}${salesDetailRows}
+          ${cogsSubtotal}${cogsDetailRows}
+          ${gpRow}
+          ${marginRow}
+        </tbody>
       </table>
     </div>`;
 
   renderScChart(data);
 }
 
+function toggleScSection(row, className) {
+  const rows = row.closest('tbody').querySelectorAll('.' + className);
+  const showing = rows.length > 0 && rows[0].style.display !== 'none';
+  rows.forEach(r => r.style.display = showing ? 'none' : '');
+  const td = row.querySelector('td');
+  td.textContent = td.textContent.replace(/^[▸▾]/, showing ? '▸' : '▾');
+}
+
 function renderScChart(data) {
   const ctx = document.getElementById('scChart');
   if (!ctx) return;
   if (scChartInstance) { scChartInstance.destroy(); scChartInstance = null; }
+  const isZh = getLang() !== 'en';
 
-  const labels = data.accounts.map(a => `${a.accountNumber} ${a.displayName}`);
-  const datasets = data.periods.map((p, i) => ({
-    label: p.label,
-    data: data.accounts.map(a => a.amounts[i]),
-    backgroundColor: SC_COLORS[i % SC_COLORS.length] + '99',
-    borderColor: SC_COLORS[i % SC_COLORS.length],
-    borderWidth: 1,
-  }));
+  const labels = data.periods.map(p => p.label);
+  const datasets = [
+    { label: isZh ? '銷貨收入' : 'Revenue', data: data.salesTotals, backgroundColor: '#1565c099', borderColor: '#1565c0', borderWidth: 1 },
+    { label: isZh ? '銷售成本' : 'COGS', data: data.cogsTotals, backgroundColor: '#c6282899', borderColor: '#c62828', borderWidth: 1 },
+    { label: isZh ? '毛利' : 'Gross Profit', data: data.grossProfit, backgroundColor: '#2e7d3299', borderColor: '#2e7d32', borderWidth: 1 },
+  ];
 
   scChartInstance = new Chart(ctx, {
     type: 'bar',
@@ -5228,7 +5301,13 @@ function renderScChart(data) {
       maintainAspectRatio: false,
       plugins: {
         legend: { position: 'top' },
-        tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}` } }
+        tooltip: { callbacks: { label: (ctx) => {
+          const v = ctx.parsed.y.toLocaleString();
+          if (ctx.datasetIndex <= 2 && data.grossMargin[ctx.dataIndex] != null) {
+            return `${ctx.dataset.label}: ${v}`;
+          }
+          return `${ctx.dataset.label}: ${v}`;
+        }}}
       },
       scales: {
         y: { beginAtZero: true, ticks: { callback: v => v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : v } },
