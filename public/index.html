@@ -606,7 +606,11 @@
       <button class="btn btn-sm btn-primary" onclick="addEcYear()">+</button>
     </div>
   </div>
-  <div style="margin-top:12px;">
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+    <label style="font-weight:500;font-size:13px;" id="ecDeptLabel">部門</label>
+    <select id="ecDeptSelect" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+      <option value="" id="ecDeptAll">全部</option>
+    </select>
     <button class="btn btn-primary" onclick="fetchExpenseComparison()" id="ecFetchBtn">查詢費用比較</button>
   </div>
 </div>
@@ -1084,6 +1088,7 @@ const LABELS = {
     ecMode: '比較模式', ecCustomRange: '自訂區間', ecMom: '月 vs 月', ecYoy: '年 vs 年',
     ecCustom: '新增比較區間（至少 2 段）', ecCustomStart: '起', ecCustomEnd: '迄', ecCustomLabelPh: '標籤（選填）',
     ecMonths: '選擇月份（至少 2 個）', ecYears: '選擇年份（至少 2 年）',
+    ecDept: '部門', ecDeptAll: '全部',
     ecFetch: '查詢費用比較', ecTotal: '費用合計', ecAccount: '科目', ecCategory: '分類',
     ecChange: '變化', ecAmount: '金額',
 
@@ -1263,6 +1268,7 @@ const LABELS = {
     ecMode: 'Compare Mode', ecCustomRange: 'Custom Range', ecMom: 'Month vs Month', ecYoy: 'Year vs Year',
     ecCustom: 'Add comparison ranges (at least 2)', ecCustomStart: 'From', ecCustomEnd: 'To', ecCustomLabelPh: 'Label (optional)',
     ecMonths: 'Select months (at least 2)', ecYears: 'Select years (at least 2)',
+    ecDept: 'Department', ecDeptAll: 'All',
     ecFetch: 'Query Expense Comparison', ecTotal: 'Total Expenses', ecAccount: 'Account', ecCategory: 'Category',
     ecChange: 'Change', ecAmount: 'Amount',
 
@@ -1291,6 +1297,7 @@ function renderPipelineLabels() {
     rptOptNoCompare: l.rptNoCompare, rptOptYoY: l.rptYoY, rptOptMoM: l.rptMoM, rptOptQoQ: l.rptQoQ,
     ecModeLabel: l.ecMode, ecOptCustomRange: l.ecCustomRange, ecOptMom: l.ecMom, ecOptYoy: l.ecYoy,
     ecCustomLabel: l.ecCustom, ecCustomStartLabel: l.ecCustomStart, ecCustomEndLabel: l.ecCustomEnd,
+    ecDeptLabel: l.ecDept, ecDeptAll: l.ecDeptAll,
     ecMonthsLabel: l.ecMonths, ecYearsLabel: l.ecYears, ecFetchBtn: l.ecFetch,
   };
   Object.entries(rptMap).forEach(([id, text]) => {
@@ -4633,6 +4640,8 @@ document.getElementById('companySelect').addEventListener('change', () => {
     loadLedgerAccounts();
     renderLedgerSelectedChips();
   }
+  ecDeptLoaded = false;
+  if (document.getElementById('reportType').value === 'expense-compare') loadEcDepartments();
 });
 
 // ==========================================
@@ -4642,6 +4651,7 @@ let ecMonths = [];
 let ecYears = [];
 let ecCustomRanges = []; // [{start, end, label}]
 let ecChartInstance = null;
+let ecDeptLoaded = false;
 
 function onReportTypeChange() {
   const type = document.getElementById('reportType').value;
@@ -4666,6 +4676,27 @@ function onReportTypeChange() {
     document.getElementById('ecAddYear').value = y;
     renderEcChips();
   }
+  if (isExpense && !ecDeptLoaded) loadEcDepartments();
+}
+
+async function loadEcDepartments() {
+  const companyId = getCompanyId();
+  if (!companyId) return;
+  try {
+    const res = await fetch(`/api/departments?companyId=${companyId}`);
+    if (!res.ok) return;
+    const depts = await res.json();
+    const sel = document.getElementById('ecDeptSelect');
+    const current = sel.value;
+    sel.innerHTML = `<option value="" id="ecDeptAll">${getLang() === 'en' ? 'All' : '全部'}</option>`;
+    depts.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d; opt.textContent = d;
+      sel.appendChild(opt);
+    });
+    if (current) sel.value = current;
+    ecDeptLoaded = true;
+  } catch (e) { /* silent */ }
 }
 
 function onEcModeChange() {
@@ -4743,7 +4774,9 @@ async function fetchExpenseComparison() {
 
   if (!companyId) { alert(getLang() === 'en' ? 'Please select a company' : '請選擇公司'); return; }
 
+  const dept = document.getElementById('ecDeptSelect').value;
   let url = `/api/expense-comparison?mode=${mode}&companyId=${companyId}`;
+  if (dept) url += `&department=${encodeURIComponent(dept)}`;
   if (mode === 'custom') {
     if (ecCustomRanges.length < 2) { alert(getLang() === 'en' ? 'Add at least 2 ranges' : '請至少新增 2 段區間'); return; }
     const customVal = ecCustomRanges.map(r => `${r.start},${r.end},${r.label}`).join(';');

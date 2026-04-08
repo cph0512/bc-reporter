@@ -171,6 +171,7 @@ class BCClient {
       return this.requestAll(this.companyUrl('generalLedgerEntries', options.companyId), {
         $filter: filters.length > 0 ? filters.join(' and ') : undefined,
         $orderby: 'entryNumber asc',
+        $expand: options.expand || undefined,
       });
     }
 
@@ -178,6 +179,7 @@ class BCClient {
       $filter: filters.length > 0 ? filters.join(' and ') : undefined,
       $orderby: 'postingDate desc',
       $top: options.top || 5000,
+      $expand: options.expand || undefined,
     });
   }
 

@@ -527,12 +527,18 @@ class ReportEngine {
    */
   async getExpenseComparison(periods, expenseRange = '510100-631038', opts = {}) {
     const cid = opts.companyId;
+    const department = opts.department; // 部門篩選（空字串 = 全部）
     const [rangeStart, rangeEnd] = expenseRange.split('-');
+
+    // If department filter requested, expand dimensionSetLines
+    const needDimension = !!department;
+    const glOpts = { fetchAll: true, companyId: cid };
+    if (needDimension) glOpts.expand = 'dimensionSetLines';
 
     // Fetch GL entries + accounts map for all periods in parallel
     const accountsMapPromise = this.bc.getAccountsMap({ companyId: cid });
     const glPromises = periods.map(p =>
-      this.bc.getGeneralLedgerEntries(p.startDate, p.endDate, { fetchAll: true, companyId: cid })
+      this.bc.getGeneralLedgerEntries(p.startDate, p.endDate, glOpts)
     );
 
     const [accountsMap, ...glResults] = await Promise.all([accountsMapPromise, ...glPromises]);
@@ -545,6 +551,12 @@ class ReportEngine {
         if (accNum < rangeStart || accNum > rangeEnd) continue;
         const info = accountsMap[accNum];
         if (!info || info.accountType !== 'Posting') continue;
+        // Department filter
+        if (needDimension) {
+          const dims = entry.dimensionSetLines || [];
+          const dept = dims.find(d => d.code === '部門');
+          if (!dept || dept.valueCode !== department) continue;
+        }
         if (!accountTotals[accNum]) accountTotals[accNum] = 0;
         accountTotals[accNum] += Math.abs((entry.debitAmount || 0) - (entry.creditAmount || 0));
       }
@@ -602,7 +614,37 @@ class ReportEngine {
       totals,
       changes,
       expenseRange,
+      department: department || null,
     };
+  }
+
+  /**
+   * 取得可用部門列表（從最近 GL entries 的 dimensionSetLines）
+   */
+  async getDepartments(opts = {}) {
+    const cid = opts.companyId;
+    const cacheKey = this.getCacheKey('departments', cid);
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    // Fetch recent 3 months of entries with dimensions (departments rarely change)
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    const start = `${threeMonthsAgo.getFullYear()}-${String(threeMonthsAgo.getMonth() + 1).padStart(2, '0')}-01`;
+    const end = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()}`;
+    const entries = await this.bc.getGeneralLedgerEntries(start, end, {
+      fetchAll: true, companyId: cid, expand: 'dimensionSetLines',
+    });
+
+    const deptSet = new Set();
+    for (const entry of entries) {
+      const dims = entry.dimensionSetLines || [];
+      const dept = dims.find(d => d.code === '部門');
+      if (dept) deptSet.add(dept.valueCode);
+    }
+    const result = [...deptSet].sort();
+    this.setCache(cacheKey, result);
+    return result;
   }
 
   // ===== YTD =====

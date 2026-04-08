@@ -576,10 +576,24 @@ module.exports = function(reportEngine) {
       }
 
       const expenseRange = req.query.range || '510100-631038';
+      if (req.query.department) co.department = req.query.department;
       const data = await reportEngine.getExpenseComparison(periods, expenseRange, co);
       res.json(data);
     } catch (error) {
       console.error('[API] Expense Comparison error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ===== Departments (部門列表) =====
+
+  router.get('/departments', requireDashboard('reports'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      const departments = await reportEngine.getDepartments(co);
+      res.json(departments);
+    } catch (error) {
+      console.error('[API] Departments error:', error.message);
       res.status(500).json({ error: error.message });
     }
   });
