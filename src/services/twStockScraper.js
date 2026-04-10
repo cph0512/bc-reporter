@@ -219,19 +219,28 @@ async function fetchCashFlow(stockCode, year, season, market = 'sii') {
 }
 
 /**
- * 抓取月營收
+ * 抓取月營收 — 使用 FinMind API（MOPS 已封鎖直接存取）
  */
 async function fetchMonthlyRevenue(stockCode, year, month, market = 'sii') {
+  // Unused params kept for API compatibility
   try {
-    const html = await postMOPS('ajax_t21sb06', {
-      TYPEK: market,
-      year: toROCYear(year),
-      season: '',
-      co_id: stockCode,
-      isnew: 'true',
-      month: String(month).padStart(2, '0'),
-    });
-    return parseRevenueTable(html);
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDate = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMonthRevenue&data_id=${stockCode}&start_date=${startDate}&end_date=${endDate}`;
+    const response = await axios.get(url, { timeout: 15000 });
+    const records = response.data?.data || [];
+    if (records.length === 0) return null;
+    // Convert to MOPS-like format for compatibility
+    return records.map(r => ({
+      '公司代號': r.stock_id,
+      '當月營收': r.revenue,
+      '上月營收': r.last_month_revenue || 0,
+      '去年當月營收': r.last_year_revenue || 0,
+      '上月比較增減(%)': r.revenue_month_growth_rate || 0,
+      '去年同月增減(%)': r.revenue_year_growth_rate || 0,
+      '營收年份': r.revenue_year,
+      '營收月份': r.revenue_month,
+    }));
   } catch (err) {
     console.error(`[twStockScraper] 月營收抓取失敗 ${stockCode} ${year}/${month}:`, err.message);
     return null;
@@ -307,22 +316,35 @@ async function fetchAllFinancials(stockCode, market = 'sii', yearsBack = 3, onPr
 }
 
 /**
- * 只抓月營收（輕量模式，約 30 秒 / 股）
+ * 只抓月營收（FinMind 一次抓全部，約 2 秒 / 股）
  */
 async function fetchRevenueOnly(stockCode, market = 'sii', yearsBack = 3) {
   const now = new Date();
   const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
   const startYear = currentYear - yearsBack;
+  const startDate = `${startYear}-01-01`;
   const result = {};
 
-  for (let y = startYear; y <= currentYear; y++) {
-    const maxMonth = (y === currentYear) ? Math.max(1, currentMonth - 1) : 12;
-    for (let m = 1; m <= maxMonth; m++) {
-      const monthKey = `${y}_${String(m).padStart(2, '0')}`;
-      result[monthKey] = await fetchMonthlyRevenue(stockCode, y, m, market);
-      await delay(REQUEST_DELAY);
+  try {
+    const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMonthRevenue&data_id=${stockCode}&start_date=${startDate}`;
+    const response = await axios.get(url, { timeout: 30000 });
+    const records = response.data?.data || [];
+
+    for (const r of records) {
+      const monthKey = `${r.revenue_year}_${String(r.revenue_month).padStart(2, '0')}`;
+      result[monthKey] = [{
+        '公司代號': r.stock_id,
+        '當月營收': r.revenue,
+        '上月營收': r.last_month_revenue || 0,
+        '去年當月營收': r.last_year_revenue || 0,
+        '上月比較增減(%)': r.revenue_month_growth_rate || 0,
+        '去年同月增減(%)': r.revenue_year_growth_rate || 0,
+        '營收年份': r.revenue_year,
+        '營收月份': r.revenue_month,
+      }];
     }
+  } catch (err) {
+    console.error(`[twStockScraper] FinMind 月營收抓取失敗 ${stockCode}:`, err.message);
   }
   return result;
 }
