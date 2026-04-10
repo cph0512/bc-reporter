@@ -899,11 +899,27 @@
 
 <!-- Revenue Compare Modal -->
 <div id="twsCompareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:14px;padding:24px;max-width:900px;width:95%;max-height:90vh;overflow-y:auto;position:relative;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+  <div style="background:#fff;border-radius:14px;padding:24px;max-width:95vw;width:95%;max-height:90vh;overflow-y:auto;position:relative;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <h3 style="margin:0;font-size:16px;">營收比較表</h3>
       <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeCompareModal()">✕</span>
     </div>
+    <!-- Controls -->
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">
+      <select id="twsCmpMode" onchange="refreshCompare()" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <option value="annual">年營收</option>
+        <option value="monthly">月營收</option>
+      </select>
+      <select id="twsCmpYear" onchange="refreshCompare()" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <option value="">全部年度</option>
+      </select>
+      <button class="btn btn-sm" onclick="twsCmpSelectAll(true)">全選</button>
+      <button class="btn btn-sm" onclick="twsCmpSelectAll(false)">全不選</button>
+      <span id="twsCmpSelected" style="font-size:12px;color:#888;"></span>
+    </div>
+    <!-- Stock checkboxes -->
+    <div id="twsCmpStocks" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;max-height:120px;overflow-y:auto;"></div>
+    <!-- Results -->
     <div id="twsCompareContent" style="overflow-x:auto;"></div>
   </div>
 </div>
@@ -5972,61 +5988,144 @@ async function syncAllTwsRevenue() {
 }
 
 // ===== Revenue Compare =====
-async function showTwsCompare() {
+function showTwsCompare() {
   if (twsWatchlist.length === 0) { alert('追蹤清單為空'); return; }
   const modal = document.getElementById('twsCompareModal');
   modal.style.display = 'flex';
-  const content = document.getElementById('twsCompareContent');
-  content.innerHTML = '<div class="loading">載入中...</div>';
 
-  const codes = twsWatchlist.map(w => w.code).join(',');
-  try {
-    const res = await fetch(`/api/tw-stock/compare/revenue?codes=${codes}`);
-    const data = await res.json();
-    renderRevenueCompare(data);
-  } catch(e) { content.innerHTML = '<div class="error">載入失敗</div>'; }
+  // Year selector
+  const yearSel = document.getElementById('twsCmpYear');
+  const curYear = new Date().getFullYear();
+  yearSel.innerHTML = '<option value="">全部年度</option>';
+  for (let y = curYear; y >= curYear - 5; y--) yearSel.innerHTML += `<option value="${y}">${y}</option>`;
+
+  // Stock checkboxes
+  const stocksDiv = document.getElementById('twsCmpStocks');
+  stocksDiv.innerHTML = twsWatchlist.map(w =>
+    `<label style="display:flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid #d0d0d0;border-radius:4px;font-size:11px;cursor:pointer;background:#fff;">
+      <input type="checkbox" class="twsCmpCb" value="${w.code}" checked onchange="refreshCompare()"/> ${w.code} ${w.name}
+    </label>`
+  ).join('');
+
+  refreshCompare();
 }
 function closeCompareModal() { document.getElementById('twsCompareModal').style.display = 'none'; }
+function twsCmpSelectAll(val) {
+  document.querySelectorAll('.twsCmpCb').forEach(cb => cb.checked = val);
+  refreshCompare();
+}
 
-function renderRevenueCompare(data) {
+async function refreshCompare() {
+  const codes = Array.from(document.querySelectorAll('.twsCmpCb:checked')).map(cb => cb.value);
+  const mode = document.getElementById('twsCmpMode').value;
+  const year = document.getElementById('twsCmpYear').value;
+  const content = document.getElementById('twsCompareContent');
+  document.getElementById('twsCmpSelected').textContent = `${codes.length} 檔`;
+
+  if (codes.length === 0) { content.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">請勾選要比較的股票</div>'; return; }
+  content.innerHTML = '<div class="loading">載入中...</div>';
+
+  const params = `codes=${codes.join(',')}&mode=${mode}${year ? '&year=' + year : ''}`;
+  try {
+    const res = await fetch(`/api/tw-stock/compare/revenue?${params}`);
+    const data = await res.json();
+    if (mode === 'annual') renderAnnualCompare(data);
+    else renderMonthlyCompare(data);
+  } catch(e) { content.innerHTML = '<div class="error">載入失敗</div>'; }
+}
+
+function renderAnnualCompare(data) {
   const content = document.getElementById('twsCompareContent');
   const codes = Object.keys(data);
   if (codes.length === 0) { content.innerHTML = '<div style="color:#999;padding:20px;text-align:center;">尚無營收資料，請先同步</div>'; return; }
 
-  // Collect all months across all stocks
-  const allMonths = new Set();
-  for (const code of codes) {
-    Object.keys(data[code].revenue || {}).forEach(k => allMonths.add(k));
-  }
-  const months = [...allMonths].sort().reverse().slice(0, 24); // Last 24 months
+  // Collect all years
+  const allYears = new Set();
+  for (const code of codes) Object.keys(data[code].annual || {}).forEach(y => allYears.add(y));
+  const years = [...allYears].sort().reverse();
 
-  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr>';
-  html += '<th style="background:#1a1a2e;color:#fff;padding:6px 8px;text-align:left;position:sticky;left:0;z-index:1;">公司</th>';
-  for (const m of months) {
-    html += `<th style="background:#1a1a2e;color:#fff;padding:6px 8px;text-align:right;white-space:nowrap;">${m}</th>`;
-  }
+  if (years.length === 0) { content.innerHTML = '<div style="color:#999;padding:20px;text-align:center;">尚無營收資料</div>'; return; }
+
+  // Build rows: [{code, name, ...yearValues}], then sort by latest year desc
+  const rows = codes.map(code => {
+    const s = data[code];
+    const row = { code, name: s.name };
+    for (const y of years) row[y] = s.annual?.[y] || 0;
+    return row;
+  }).sort((a, b) => (b[years[0]] || 0) - (a[years[0]] || 0));
+
+  const thStyle = 'background:#1a1a2e;color:#fff;padding:8px 10px;text-align:right;white-space:nowrap;font-size:12px;';
+  const thLeft = 'background:#1a1a2e;color:#fff;padding:8px 10px;text-align:left;position:sticky;left:0;z-index:1;font-size:12px;';
+  const tdStyle = 'padding:6px 10px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px;';
+  const tdLeft = 'padding:6px 10px;border-bottom:1px solid #f0f0f0;font-weight:600;white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1;font-size:12px;';
+
+  let html = '<table style="width:100%;border-collapse:collapse;"><thead><tr>';
+  html += `<th style="${thLeft}">公司</th>`;
+  for (const y of years) html += `<th style="${thStyle}">${y}</th>`;
+  // YoY column for latest 2 years
+  if (years.length >= 2) html += `<th style="${thStyle}">YoY%</th>`;
   html += '</tr></thead><tbody>';
 
-  for (const code of codes) {
-    const stock = data[code];
-    html += `<tr><td style="padding:5px 8px;border-bottom:1px solid #f0f0f0;font-weight:600;white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1;">${code} ${stock.name}</td>`;
-    for (const m of months) {
-      const rev = stock.revenue?.[m];
-      let val = '';
-      if (Array.isArray(rev) && rev.length > 0) {
-        // Find the revenue value — usually named 營業收入 or 當月營收
-        const entry = rev[0];
-        const revKey = Object.keys(entry).find(k => k.includes('營收') || k.includes('營業收入'));
-        if (revKey) val = entry[revKey];
-      }
-      const formatted = typeof val === 'number' ? (val / 1000).toFixed(0) : '';
-      html += `<td style="padding:5px 8px;border-bottom:1px solid #f0f0f0;text-align:right;">${formatted ? formatted + 'K' : '-'}</td>`;
+  for (const row of rows) {
+    html += `<tr><td style="${tdLeft}">${row.code} ${row.name}</td>`;
+    for (const y of years) {
+      const val = row[y];
+      const formatted = val ? (val >= 1e8 ? (val / 1e8).toFixed(1) + '億' : (val / 1e4).toFixed(0) + '萬') : '-';
+      html += `<td style="${tdStyle}">${formatted}</td>`;
+    }
+    if (years.length >= 2) {
+      const cur = row[years[0]] || 0;
+      const prev = row[years[1]] || 0;
+      const yoy = prev > 0 ? ((cur - prev) / prev * 100).toFixed(1) : '-';
+      const color = yoy !== '-' ? (parseFloat(yoy) >= 0 ? '#2e7d32' : '#c62828') : '#999';
+      html += `<td style="${tdStyle}color:${color};font-weight:600;">${yoy !== '-' ? yoy + '%' : '-'}</td>`;
     }
     html += '</tr>';
   }
 
   html += '</tbody></table>';
-  html += '<div style="font-size:11px;color:#999;margin-top:8px;">單位：千元（K = 千）</div>';
+  content.innerHTML = html;
+}
+
+function renderMonthlyCompare(data) {
+  const content = document.getElementById('twsCompareContent');
+  const codes = Object.keys(data);
+  if (codes.length === 0) { content.innerHTML = '<div style="color:#999;padding:20px;text-align:center;">尚無營收資料</div>'; return; }
+
+  const allMonths = new Set();
+  for (const code of codes) Object.keys(data[code].revenue || {}).forEach(k => allMonths.add(k));
+  const months = [...allMonths].sort().reverse().slice(0, 24);
+
+  if (months.length === 0) { content.innerHTML = '<div style="color:#999;padding:20px;text-align:center;">尚無月營收資料</div>'; return; }
+
+  const thStyle = 'background:#1a1a2e;color:#fff;padding:6px 8px;text-align:right;white-space:nowrap;font-size:11px;';
+  const thLeft = 'background:#1a1a2e;color:#fff;padding:6px 8px;text-align:left;position:sticky;left:0;z-index:1;font-size:11px;';
+  const tdStyle = 'padding:5px 8px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:11px;';
+  const tdLeft = 'padding:5px 8px;border-bottom:1px solid #f0f0f0;font-weight:600;white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1;font-size:11px;';
+
+  let html = '<table style="width:100%;border-collapse:collapse;"><thead><tr>';
+  html += `<th style="${thLeft}">公司</th>`;
+  for (const m of months) html += `<th style="${thStyle}">${m.replace('_','/')}</th>`;
+  html += '</tr></thead><tbody>';
+
+  for (const code of codes) {
+    const stock = data[code];
+    html += `<tr><td style="${tdLeft}">${code} ${stock.name}</td>`;
+    for (const m of months) {
+      const rev = stock.revenue?.[m];
+      let val = '';
+      if (Array.isArray(rev) && rev.length > 0) {
+        const entry = rev[0];
+        const revKey = Object.keys(entry).find(k => k.includes('營收') || k.includes('營業收入'));
+        if (revKey) val = entry[revKey];
+      }
+      const formatted = typeof val === 'number' ? (val >= 1e8 ? (val/1e8).toFixed(1)+'億' : (val/1e4).toFixed(0)+'萬') : '-';
+      html += `<td style="${tdStyle}">${formatted}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  html += '</tbody></table>';
   content.innerHTML = html;
 }
 

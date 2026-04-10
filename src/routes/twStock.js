@@ -107,17 +107,42 @@ router.post('/sync-revenue-all', async (req, res) => {
   res.json({ message: `批次月營收同步完成`, results });
 });
 
-// 營收比較（多股同時比較）
+// 營收比較（多股同時比較，支援月/年）
 router.get('/compare/revenue', (req, res) => {
   const codes = (req.query.codes || '').split(',').filter(Boolean);
+  const mode = req.query.mode || 'monthly'; // 'monthly' or 'annual'
+  const year = req.query.year; // optional filter
   if (codes.length === 0) return res.json({});
 
   const result = {};
   for (const code of codes) {
     const fin = twStockStore.getFinancials(code);
     const stock = twStockStore.getStock(code);
-    if (fin?.revenue) {
-      result[code] = { name: stock?.name || code, revenue: fin.revenue };
+    if (!fin?.revenue) continue;
+
+    if (mode === 'annual') {
+      // Aggregate monthly → annual
+      const annual = {};
+      for (const [key, entries] of Object.entries(fin.revenue)) {
+        const y = key.split('_')[0];
+        if (year && y !== year) continue;
+        if (!annual[y]) annual[y] = 0;
+        if (Array.isArray(entries) && entries.length > 0) {
+          const entry = entries[0];
+          const revKey = Object.keys(entry).find(k => k.includes('營收') || k.includes('營業收入'));
+          if (revKey && typeof entry[revKey] === 'number') annual[y] += entry[revKey];
+        }
+      }
+      result[code] = { name: stock?.name || code, market: stock?.market, annual };
+    } else {
+      let revenue = fin.revenue;
+      if (year) {
+        revenue = {};
+        for (const [k, v] of Object.entries(fin.revenue)) {
+          if (k.startsWith(year)) revenue[k] = v;
+        }
+      }
+      result[code] = { name: stock?.name || code, market: stock?.market, revenue };
     }
   }
   res.json(result);
