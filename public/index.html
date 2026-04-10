@@ -755,11 +755,12 @@
     </div>
     <div>
       <label id="twsLabelReportType">報表類型</label>
-      <select id="twsReportType" onchange="loadTwsFinancials()">
+      <select id="twsReportType" onchange="onTwsReportTypeChange()">
         <option value="income" id="twsOptIncome">損益表</option>
         <option value="balance" id="twsOptBalance">資產負債表</option>
         <option value="cashflow" id="twsOptCashflow">現金流量表</option>
         <option value="revenue" id="twsOptRevenue">月營收</option>
+        <option value="compare">-- 營收比較表 --</option>
       </select>
     </div>
     <div>
@@ -769,7 +770,6 @@
       <button class="btn btn-sm" onclick="syncAllTwStock()" id="twsSyncAllBtn" style="display:none;">同步全部</button>
     </div>
     <div>
-      <button class="btn btn-sm" onclick="showTwsCompare()" id="twsCompareBtn">營收比較</button>
       <button class="btn btn-export btn-sm" onclick="exportTwStock()" id="twsExportBtn">Excel</button>
     </div>
   </div>
@@ -782,7 +782,6 @@
         <div style="display:flex;gap:6px;">
           <button class="btn btn-sm btn-primary" onclick="showAddTwsModal()" id="twsAddBtn" style="display:none;">+ 新增</button>
           <button class="btn btn-sm" onclick="showBatchImportModal()" id="twsBatchBtn" style="display:none;">批次匯入 AI 廠商</button>
-          <button class="btn btn-sm" onclick="showTwsCompare()" id="twsCompareBtn2" style="display:none;">營收比較表</button>
           <button class="btn btn-sm" onclick="syncAllTwsRevenue()" id="twsSyncRevenueAllBtn2" style="display:none;">同步全部營收</button>
         </div>
       </div>
@@ -5993,40 +5992,70 @@ async function syncAllTwsRevenue() {
   setTimeout(() => statusEl.style.display = 'none', 8000);
 }
 
-// ===== Revenue Compare =====
-function showTwsCompare() {
-  if (twsWatchlist.length === 0) { alert('追蹤清單為空'); return; }
-  const modal = document.getElementById('twsCompareModal');
-  modal.style.display = 'flex';
+// ===== Report Type Change Handler =====
+function onTwsReportTypeChange() {
+  const type = document.getElementById('twsReportType').value;
+  if (type === 'compare') {
+    renderCompareInline();
+  } else {
+    loadTwsFinancials();
+  }
+}
 
-  // Year selector
-  const yearSel = document.getElementById('twsCmpYear');
+// ===== Revenue Compare (inline in #twsResults) =====
+function renderCompareInline() {
+  if (twsWatchlist.length === 0) { document.getElementById('twsResults').innerHTML = '<div style="color:#999;padding:20px;text-align:center;">請先匯入股票</div>'; return; }
+  const container = document.getElementById('twsResults');
+  const emptyState = document.getElementById('twsEmptyState');
+  if (emptyState) emptyState.style.display = 'none';
+
   const curYear = new Date().getFullYear();
-  yearSel.innerHTML = '<option value="">全部年度</option>';
-  for (let y = curYear; y >= curYear - 5; y--) yearSel.innerHTML += `<option value="${y}">${y}</option>`;
+  let yearOpts = '<option value="">全部年度</option>';
+  for (let y = curYear; y >= curYear - 5; y--) yearOpts += `<option value="${y}">${y}</option>`;
 
-  // Stock checkboxes
-  const stocksDiv = document.getElementById('twsCmpStocks');
-  stocksDiv.innerHTML = twsWatchlist.map(w =>
-    `<label style="display:flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid #d0d0d0;border-radius:4px;font-size:11px;cursor:pointer;background:#fff;">
+  const stockCbs = twsWatchlist.map(w =>
+    `<label style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid #d0d0d0;border-radius:4px;font-size:11px;cursor:pointer;background:#fff;margin:2px;">
       <input type="checkbox" class="twsCmpCb" value="${w.code}" checked onchange="refreshCompare()"/> ${w.code} ${w.name}
     </label>`
   ).join('');
 
+  container.innerHTML = `
+    <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <select id="twsCmpMode" onchange="refreshCompare()" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <option value="annual">年營收</option>
+        <option value="monthly">月營收</option>
+      </select>
+      <select id="twsCmpYear" onchange="refreshCompare()" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        ${yearOpts}
+      </select>
+      <button class="btn btn-sm" onclick="twsCmpSelectAll(true)">全選</button>
+      <button class="btn btn-sm" onclick="twsCmpSelectAll(false)">全不選</button>
+      <button class="btn btn-sm btn-primary" onclick="refreshCompare()">查詢</button>
+      <span id="twsCmpSelected" style="font-size:12px;color:#888;"></span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:2px;margin-bottom:12px;max-height:100px;overflow-y:auto;">
+      ${stockCbs}
+    </div>
+    <div id="twsCmpTable" style="overflow-x:auto;"></div>
+  `;
   refreshCompare();
 }
-function closeCompareModal() { document.getElementById('twsCompareModal').style.display = 'none'; }
+
 function twsCmpSelectAll(val) {
   document.querySelectorAll('.twsCmpCb').forEach(cb => cb.checked = val);
   refreshCompare();
 }
+// Keep modal functions for backwards compat
+function showTwsCompare() { document.getElementById('twsReportType').value = 'compare'; renderCompareInline(); }
+function closeCompareModal() { document.getElementById('twsCompareModal').style.display = 'none'; }
 
 async function refreshCompare() {
   const codes = Array.from(document.querySelectorAll('.twsCmpCb:checked')).map(cb => cb.value);
   const mode = document.getElementById('twsCmpMode').value;
   const year = document.getElementById('twsCmpYear').value;
-  const content = document.getElementById('twsCompareContent');
-  document.getElementById('twsCmpSelected').textContent = `${codes.length} 檔`;
+  const content = document.getElementById('twsCmpTable') || document.getElementById('twsCompareContent');
+  const selEl = document.getElementById('twsCmpSelected');
+  if (selEl) selEl.textContent = `${codes.length} 檔`;
 
   if (codes.length === 0) { content.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">請勾選要比較的股票</div>'; return; }
   content.innerHTML = '<div class="loading">載入中...</div>';
@@ -6041,7 +6070,7 @@ async function refreshCompare() {
 }
 
 function renderAnnualCompare(data) {
-  const content = document.getElementById('twsCompareContent');
+  const content = document.getElementById('twsCmpTable') || document.getElementById('twsCompareContent');
   const codes = Object.keys(data);
   if (codes.length === 0) { content.innerHTML = '<div style="color:#999;padding:20px;text-align:center;">尚無營收資料，請先同步</div>'; return; }
 
@@ -6094,7 +6123,7 @@ function renderAnnualCompare(data) {
 }
 
 function renderMonthlyCompare(data) {
-  const content = document.getElementById('twsCompareContent');
+  const content = document.getElementById('twsCmpTable') || document.getElementById('twsCompareContent');
   const codes = Object.keys(data);
   if (codes.length === 0) { content.innerHTML = '<div style="color:#999;padding:20px;text-align:center;">尚無營收資料</div>'; return; }
 
