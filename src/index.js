@@ -15,6 +15,7 @@ const authRoutes = require('./routes/auth');
 const botAuthRoutes = require('./routes/botAuth');
 const adminRoutes = require('./routes/admin');
 const pipelineRoutes = require('./routes/pipeline');
+const twStockRoutes = require('./routes/twStock');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 const companyAccess = require('./middleware/companyAccess');
 const { securityHeaders, corsConfig } = require('./middleware/security');
@@ -274,6 +275,7 @@ app.get('/api/companies', requireAuth, (req, res) => {
 });
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/api/pipeline', requireAuth, pipelineRoutes);
+app.use('/api/tw-stock', requireAuth, twStockRoutes);
 app.use('/api/contacts', requireAuth, aiLimiter, contactRoutes);
 app.use('/api', requireAuth, companyAccess, createReportRoutes(reportEngine));
 app.use('/docs', requireAuth, docsRoutes);

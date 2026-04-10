@@ -744,6 +744,91 @@
   </div>
 </div><!-- /ledgerView -->
 
+<!-- ===== Taiwan Stock Financials Module ===== -->
+<div id="twStockView" style="display:none">
+  <div class="controls" style="flex-wrap:wrap;gap:10px;align-items:flex-end;">
+    <div>
+      <label id="twsLabelStock">股票</label>
+      <select id="twsStockSelect" onchange="onTwsStockChange()" style="min-width:160px;">
+        <option value="">-- 選擇股票 --</option>
+      </select>
+    </div>
+    <div>
+      <label id="twsLabelReportType">報表類型</label>
+      <select id="twsReportType" onchange="loadTwsFinancials()">
+        <option value="income" id="twsOptIncome">損益表</option>
+        <option value="balance" id="twsOptBalance">資產負債表</option>
+        <option value="cashflow" id="twsOptCashflow">現金流量表</option>
+        <option value="revenue" id="twsOptRevenue">月營收</option>
+      </select>
+    </div>
+    <div>
+      <button class="btn btn-primary" onclick="syncTwStock()" id="twsSyncBtn">同步資料</button>
+      <button class="btn btn-sm" onclick="syncAllTwStock()" id="twsSyncAllBtn" style="display:none;">同步全部</button>
+    </div>
+    <div>
+      <button class="btn btn-export btn-sm" onclick="exportTwStock()" id="twsExportBtn">Excel</button>
+    </div>
+  </div>
+
+  <!-- Watchlist Management -->
+  <div style="padding:0 24px;max-width:1400px;margin:0 auto;">
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:600;color:#555;" id="twsLabelWatchlist">追蹤清單</label>
+        <button class="btn btn-sm btn-primary" onclick="showAddTwsModal()" id="twsAddBtn" style="display:none;">+ 新增</button>
+      </div>
+      <div id="twsWatchlistChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px;"></div>
+    </div>
+  </div>
+
+  <!-- Sync Status -->
+  <div id="twsSyncStatus" style="display:none;padding:0 24px;max-width:1400px;margin:0 auto;">
+    <div style="background:#e8f4fd;border:1px solid #b3d9f2;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#1a5276;">
+      <span id="twsSyncMsg">同步中...</span>
+    </div>
+  </div>
+
+  <!-- Last Sync Info -->
+  <div id="twsLastSync" style="padding:0 24px;max-width:1400px;margin:0 auto;font-size:12px;color:#999;margin-bottom:8px;"></div>
+
+  <!-- Results -->
+  <div style="padding:0 24px 24px;margin:0 auto;">
+    <div id="twsResults" class="content" style="max-width:100%;overflow-x:auto;">
+      <div class="loading" style="color:#999;">選擇股票後查看財報資料</div>
+    </div>
+  </div>
+</div><!-- /twStockView -->
+
+<!-- Add Stock Modal -->
+<div id="twsAddModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px;max-width:400px;width:95%;position:relative;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;font-size:16px;" id="twsAddTitle">新增追蹤股票</h3>
+      <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeTwsModal()">✕</span>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;">股票代碼</label>
+      <input type="text" id="twsAddCode" placeholder="例: 2330" style="width:100%;padding:8px;border:1px solid #d0d0d0;border-radius:6px;font-size:14px;margin-top:4px;">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;">公司名稱</label>
+      <input type="text" id="twsAddName" placeholder="例: 台積電" style="width:100%;padding:8px;border:1px solid #d0d0d0;border-radius:6px;font-size:14px;margin-top:4px;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:13px;font-weight:600;">市場</label>
+      <select id="twsAddMarket" style="width:100%;padding:8px;border:1px solid #d0d0d0;border-radius:6px;font-size:14px;margin-top:4px;">
+        <option value="sii">上市 (TWSE)</option>
+        <option value="otc">上櫃 (TPEx)</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn" onclick="closeTwsModal()">取消</button>
+      <button class="btn btn-primary" onclick="addTwStock()">新增</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== Contacts Module ===== -->
 <!-- contactsView removed — now embedded inside pipeline views -->
 
@@ -861,6 +946,7 @@ function renderTabs() {
     { id: 'purchasing-dashboard', label: l.dPurchasingTab, perm: 'purchasing' },
     { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline', userOnly: true },
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
+    { id: 'tw-stock', label: l.dTwStockTab, perm: 'twstock' },
     { id: 'reports', label: l.dReports, perm: 'reports' },
     { id: 'ledger', label: l.dLedgerTab, perm: 'ledger' },
   ];
@@ -1069,7 +1155,7 @@ const LABELS = {
     sMargin: '利潤率',
 
     // Dashboard tabs
-    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dReports: '報表', dLedgerTab: '查帳',
+    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dTwStockTab: '台股財報', dReports: '報表', dLedgerTab: '查帳',
     // Ledger labels
     ledgerType: '查詢類型', ledgerGL: '總帳分錄', ledgerTB: '試算表', ledgerJournal: '日記帳',
     ledgerAccounts: '科目篩選（可多選）', ledgerClearAll: '清除全部', ledgerFetch: '查詢',
@@ -1256,7 +1342,7 @@ const LABELS = {
     sMargin: 'Margin',
 
     // Dashboard tabs
-    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dReports: 'Reports', dLedgerTab: 'Ledger',
+    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dTwStockTab: 'TW Stocks', dReports: 'Reports', dLedgerTab: 'Ledger',
     // Ledger labels
     ledgerType: 'Query Type', ledgerGL: 'GL Entries', ledgerTB: 'Trial Balance', ledgerJournal: 'Journals',
     ledgerAccounts: 'Account Filter (multi-select)', ledgerClearAll: 'Clear All', ledgerFetch: 'Query',
@@ -2095,6 +2181,7 @@ function switchTab(tab) {
   document.getElementById('pipelineDashboardView').style.display = 'none';
   document.getElementById('reportsView').style.display = 'none';
   document.getElementById('ledgerView').style.display = 'none';
+  document.getElementById('twStockView').style.display = 'none';
 
   if (tab === 'dashboard') {
     document.getElementById('dashboardView').style.display = '';
@@ -2113,6 +2200,9 @@ function switchTab(tab) {
     loadPipelineDashboard();
   } else if (tab === 'reports') {
     document.getElementById('reportsView').style.display = '';
+  } else if (tab === 'tw-stock') {
+    document.getElementById('twStockView').style.display = '';
+    loadTwStock();
   } else if (tab === 'ledger') {
     document.getElementById('ledgerView').style.display = '';
     initLedgerView();
@@ -5315,6 +5405,351 @@ function renderScChart(data) {
       }
     }
   });
+}
+
+// ==========================================
+//  Taiwan Stock Financials (台股財報)
+// ==========================================
+
+let twsWatchlist = [];
+let twsCurrentCode = '';
+
+async function loadTwStock() {
+  // 依角色顯示/隱藏管理按鈕
+  const isAdminOrMgr = userRole === 'admin' || userRole === 'manager';
+  const addBtn = document.getElementById('twsAddBtn');
+  const syncAllBtn = document.getElementById('twsSyncAllBtn');
+  if (addBtn) addBtn.style.display = isAdminOrMgr ? '' : 'none';
+  if (syncAllBtn) syncAllBtn.style.display = userRole === 'admin' ? '' : 'none';
+
+  try {
+    const res = await fetch('/api/tw-stock/watchlist');
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (res.status === 403) {
+      document.getElementById('twsResults').innerHTML = '<div class="error">無權限存取台股財報</div>';
+      return;
+    }
+    twsWatchlist = await res.json();
+    renderTwsWatchlist();
+
+    // 填充下拉選單
+    const sel = document.getElementById('twsStockSelect');
+    sel.innerHTML = '<option value="">-- ' + (getLang() === 'en' ? 'Select stock' : '選擇股票') + ' --</option>';
+    twsWatchlist.forEach(w => {
+      sel.innerHTML += `<option value="${w.code}">${w.code} ${w.name}</option>`;
+    });
+
+    // 恢復之前選的股票
+    if (twsCurrentCode && twsWatchlist.find(w => w.code === twsCurrentCode)) {
+      sel.value = twsCurrentCode;
+      loadTwsFinancials();
+    }
+  } catch (err) {
+    document.getElementById('twsResults').innerHTML = '<div class="error">載入失敗</div>';
+  }
+}
+
+function renderTwsWatchlist() {
+  const container = document.getElementById('twsWatchlistChips');
+  const isAdminOrMgr = userRole === 'admin' || userRole === 'manager';
+  container.innerHTML = twsWatchlist.map(w => {
+    const syncIcon = w.needsSync ? '⟳' : '✓';
+    const syncColor = w.needsSync ? '#e67e22' : '#27ae60';
+    const removeBtn = isAdminOrMgr
+      ? `<span onclick="removeTwStock('${w.code}')" style="cursor:pointer;margin-left:4px;color:#999;">&times;</span>`
+      : '';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:#f0f4f8;border:1px solid #d0dbe6;border-radius:16px;padding:3px 10px;font-size:12px;cursor:pointer;" onclick="selectTwStock('${w.code}')">
+      <span style="color:${syncColor};font-size:10px;">${syncIcon}</span>
+      <strong>${w.code}</strong> ${w.name}${removeBtn}
+    </span>`;
+  }).join('');
+
+  if (twsWatchlist.length === 0) {
+    container.innerHTML = '<span style="color:#999;font-size:12px;">' +
+      (getLang() === 'en' ? 'No stocks in watchlist. Add one to get started.' : '追蹤清單為空，請先新增股票。') + '</span>';
+  }
+}
+
+function selectTwStock(code) {
+  document.getElementById('twsStockSelect').value = code;
+  onTwsStockChange();
+}
+
+function onTwsStockChange() {
+  twsCurrentCode = document.getElementById('twsStockSelect').value;
+  if (twsCurrentCode) {
+    loadTwsFinancials();
+  }
+}
+
+async function loadTwsFinancials() {
+  const code = document.getElementById('twsStockSelect').value;
+  if (!code) return;
+  twsCurrentCode = code;
+
+  const type = document.getElementById('twsReportType').value;
+  const container = document.getElementById('twsResults');
+  const lang = getLang();
+  container.innerHTML = `<div class="loading">${lang === 'en' ? 'Loading...' : '載入中...'}</div>`;
+
+  try {
+    const res = await fetch(`/api/tw-stock/financials/${code}/${type}`);
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    const data = await res.json();
+
+    // 更新 lastSync 資訊
+    const stock = twsWatchlist.find(w => w.code === code);
+    const syncEl = document.getElementById('twsLastSync');
+    if (stock?.lastSync) {
+      const d = new Date(stock.lastSync);
+      syncEl.textContent = (lang === 'en' ? 'Last sync: ' : '上次同步: ') + d.toLocaleString('zh-TW');
+    } else {
+      syncEl.textContent = '';
+    }
+
+    if (!data || Object.keys(data).length === 0) {
+      container.innerHTML = `<div class="loading" style="color:#999;">${lang === 'en' ? 'No data. Click "Sync" to fetch from MOPS.' : '尚無資料，請點擊「同步資料」從公開資訊觀測站抓取。'}</div>`;
+      return;
+    }
+
+    renderTwsData(data, type);
+  } catch (err) {
+    container.innerHTML = '<div class="error">載入失敗</div>';
+  }
+}
+
+function renderTwsData(data, type) {
+  const container = document.getElementById('twsResults');
+  const periods = Object.keys(data).sort();
+  const lang = getLang();
+
+  if (periods.length === 0) {
+    container.innerHTML = `<div class="loading" style="color:#999;">${lang === 'en' ? 'No data available' : '無資料'}</div>`;
+    return;
+  }
+
+  let html = '';
+
+  if (type === 'revenue') {
+    // 月營收 — 扁平表格
+    html = renderTwsRevenueTable(data, periods);
+  } else {
+    // 三大報表 — 每季一個折疊區塊
+    html = renderTwsStatementTable(data, periods);
+  }
+
+  container.innerHTML = html;
+}
+
+function renderTwsStatementTable(data, periods) {
+  let html = '';
+  for (const period of periods) {
+    const periodData = data[period];
+    if (!periodData) continue;
+
+    html += `<details style="margin-bottom:12px;" ${period === periods[periods.length - 1] ? 'open' : ''}>
+      <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:8px 0;border-bottom:1px solid #eee;">${period}</summary>
+      <div style="overflow-x:auto;">`;
+
+    // 處理 table_0, table_1... 格式
+    for (const tableKey of Object.keys(periodData)) {
+      const table = periodData[tableKey];
+      if (!table?.items || !table?.header) continue;
+
+      html += '<table class="report-table" style="width:100%;border-collapse:collapse;margin:8px 0;font-size:13px;">';
+      html += '<thead><tr>';
+      for (const h of table.header) {
+        html += `<th style="background:#1a1a2e;color:#fff;padding:6px 10px;text-align:left;font-size:12px;">${h}</th>`;
+      }
+      html += '</tr></thead><tbody>';
+
+      for (const item of table.items) {
+        html += '<tr>';
+        html += `<td style="padding:5px 10px;border-bottom:1px solid #f0f0f0;">${item.name}</td>`;
+        for (let i = 1; i < table.header.length; i++) {
+          const val = item[table.header[i]];
+          const formatted = typeof val === 'number' ? val.toLocaleString() : (val ?? '');
+          html += `<td style="padding:5px 10px;border-bottom:1px solid #f0f0f0;text-align:right;">${formatted}</td>`;
+        }
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+    }
+
+    html += '</div></details>';
+  }
+  return html;
+}
+
+function renderTwsRevenueTable(data, periods) {
+  // 收集所有月份的資料欄位
+  const allKeys = new Set();
+  for (const p of periods) {
+    const arr = data[p];
+    if (Array.isArray(arr)) {
+      arr.forEach(entry => Object.keys(entry).forEach(k => allKeys.add(k)));
+    }
+  }
+  const keys = [...allKeys];
+
+  if (keys.length === 0) return '<div style="color:#999;padding:12px;">無月營收資料</div>';
+
+  let html = '<table class="report-table" style="width:100%;border-collapse:collapse;font-size:13px;">';
+  html += '<thead><tr>';
+  html += '<th style="background:#1a1a2e;color:#fff;padding:6px 10px;text-align:left;">期間</th>';
+  for (const k of keys) {
+    html += `<th style="background:#1a1a2e;color:#fff;padding:6px 10px;text-align:right;">${k}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  for (const period of periods.reverse()) {
+    const entries = data[period];
+    if (!Array.isArray(entries) || entries.length === 0) continue;
+    for (const entry of entries) {
+      html += '<tr>';
+      html += `<td style="padding:5px 10px;border-bottom:1px solid #f0f0f0;font-weight:600;">${period}</td>`;
+      for (const k of keys) {
+        const val = entry[k];
+        const formatted = typeof val === 'number' ? val.toLocaleString() : (val ?? '');
+        html += `<td style="padding:5px 10px;border-bottom:1px solid #f0f0f0;text-align:right;">${formatted}</td>`;
+      }
+      html += '</tr>';
+    }
+  }
+
+  html += '</tbody></table>';
+  return html;
+}
+
+async function syncTwStock() {
+  const code = document.getElementById('twsStockSelect').value;
+  if (!code) { alert(getLang() === 'en' ? 'Please select a stock first' : '請先選擇股票'); return; }
+
+  const lang = getLang();
+  const statusEl = document.getElementById('twsSyncStatus');
+  const msgEl = document.getElementById('twsSyncMsg');
+  statusEl.style.display = '';
+  msgEl.textContent = lang === 'en' ? `Syncing ${code}... This may take a few minutes.` : `正在同步 ${code}... 可能需要幾分鐘，請稍候。`;
+
+  try {
+    const res = await fetch(`/api/tw-stock/sync/${code}`, { method: 'POST' });
+    const result = await res.json();
+    if (res.ok) {
+      msgEl.textContent = result.message;
+      msgEl.parentElement.style.background = '#d4edda';
+      msgEl.parentElement.style.borderColor = '#c3e6cb';
+      msgEl.parentElement.style.color = '#155724';
+      // 重新載入資料
+      await loadTwStock();
+      loadTwsFinancials();
+    } else {
+      msgEl.textContent = result.error || '同步失敗';
+      msgEl.parentElement.style.background = '#f8d7da';
+      msgEl.parentElement.style.borderColor = '#f5c6cb';
+      msgEl.parentElement.style.color = '#721c24';
+    }
+  } catch (err) {
+    msgEl.textContent = lang === 'en' ? 'Sync failed' : '同步失敗';
+    msgEl.parentElement.style.background = '#f8d7da';
+    msgEl.parentElement.style.borderColor = '#f5c6cb';
+    msgEl.parentElement.style.color = '#721c24';
+  }
+
+  setTimeout(() => { statusEl.style.display = 'none'; }, 8000);
+}
+
+async function syncAllTwStock() {
+  const lang = getLang();
+  if (!confirm(lang === 'en' ? 'Sync all stocks? This may take a long time.' : '同步所有股票？這可能需要較長時間。')) return;
+
+  const statusEl = document.getElementById('twsSyncStatus');
+  const msgEl = document.getElementById('twsSyncMsg');
+  statusEl.style.display = '';
+  msgEl.textContent = lang === 'en' ? 'Syncing all stocks...' : '正在同步所有股票...';
+
+  try {
+    const res = await fetch('/api/tw-stock/sync-all', { method: 'POST' });
+    const result = await res.json();
+    if (res.ok) {
+      const ok = result.results?.filter(r => r.status === 'ok').length || 0;
+      const fail = result.results?.filter(r => r.status === 'error').length || 0;
+      msgEl.textContent = lang === 'en' ? `Done: ${ok} success, ${fail} failed` : `完成: ${ok} 成功, ${fail} 失敗`;
+      msgEl.parentElement.style.background = '#d4edda';
+      msgEl.parentElement.style.borderColor = '#c3e6cb';
+      msgEl.parentElement.style.color = '#155724';
+      await loadTwStock();
+    } else {
+      msgEl.textContent = result.error || '同步失敗';
+    }
+  } catch (err) {
+    msgEl.textContent = lang === 'en' ? 'Sync failed' : '同步失敗';
+  }
+
+  setTimeout(() => { statusEl.style.display = 'none'; }, 10000);
+}
+
+function showAddTwsModal() {
+  const modal = document.getElementById('twsAddModal');
+  modal.style.display = 'flex';
+  document.getElementById('twsAddCode').value = '';
+  document.getElementById('twsAddName').value = '';
+  document.getElementById('twsAddCode').focus();
+}
+
+function closeTwsModal() {
+  document.getElementById('twsAddModal').style.display = 'none';
+}
+
+async function addTwStock() {
+  const code = document.getElementById('twsAddCode').value.trim();
+  const name = document.getElementById('twsAddName').value.trim();
+  const market = document.getElementById('twsAddMarket').value;
+
+  if (!code || !name) {
+    alert(getLang() === 'en' ? 'Stock code and name are required' : '股票代碼和名稱為必填');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/tw-stock/watchlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, name, market }),
+    });
+    const result = await res.json();
+    if (res.ok) {
+      closeTwsModal();
+      await loadTwStock();
+    } else {
+      alert(result.error || '新增失敗');
+    }
+  } catch (err) {
+    alert('新增失敗');
+  }
+}
+
+async function removeTwStock(code) {
+  const lang = getLang();
+  if (!confirm(lang === 'en' ? `Remove ${code} from watchlist?` : `移除 ${code}？`)) return;
+
+  try {
+    const res = await fetch(`/api/tw-stock/watchlist/${code}`, { method: 'DELETE' });
+    if (res.ok) {
+      if (twsCurrentCode === code) twsCurrentCode = '';
+      await loadTwStock();
+    } else {
+      const result = await res.json();
+      alert(result.error || '移除失敗');
+    }
+  } catch (err) {
+    alert('移除失敗');
+  }
+}
+
+function exportTwStock() {
+  const code = document.getElementById('twsStockSelect').value;
+  if (!code) { alert(getLang() === 'en' ? 'Please select a stock first' : '請先選擇股票'); return; }
+  window.open(`/api/tw-stock/export/${code}`, '_blank');
 }
 
 // Init
