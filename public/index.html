@@ -6105,7 +6105,7 @@ function renderAnnualCompare(data) {
     html += `<tr><td style="${tdLeft}">${row.code} ${row.name}</td>`;
     for (const y of years) {
       const val = row[y];
-      const formatted = val ? (val >= 1e8 ? (val / 1e8).toFixed(1) + '億' : (val / 1e4).toFixed(0) + '萬') : '-';
+      const formatted = val ? (val >= 1e8 ? (val / 1e8).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' 億' : val.toLocaleString()) : '-';
       html += `<td style="${tdStyle}">${formatted}</td>`;
     }
     if (years.length >= 2) {
@@ -6154,7 +6154,7 @@ function renderMonthlyCompare(data) {
         const revKey = Object.keys(entry).find(k => k.includes('營收') || k.includes('營業收入'));
         if (revKey) val = entry[revKey];
       }
-      const formatted = typeof val === 'number' ? (val >= 1e8 ? (val/1e8).toFixed(1)+'億' : (val/1e4).toFixed(0)+'萬') : '-';
+      const formatted = typeof val === 'number' ? (val >= 1e8 ? (val/1e8).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')+' 億' : val.toLocaleString()) : '-';
       html += `<td style="${tdStyle}">${formatted}</td>`;
     }
     html += '</tr>';
