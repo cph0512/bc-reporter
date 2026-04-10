@@ -332,6 +332,7 @@ async function fetchRevenueOnly(stockCode, market = 'sii', yearsBack = 3) {
 
     for (const r of records) {
       const monthKey = `${r.revenue_year}_${String(r.revenue_month).padStart(2, '0')}`;
+      // Each month should have exactly 1 entry — use revenue_year+revenue_month as unique key
       result[monthKey] = [{
         '公司代號': r.stock_id,
         '當月營收': r.revenue,
@@ -343,6 +344,7 @@ async function fetchRevenueOnly(stockCode, market = 'sii', yearsBack = 3) {
         '營收月份': r.revenue_month,
       }];
     }
+    console.log(`[FinMind] ${stockCode}: ${Object.keys(result).length} months`);
   } catch (err) {
     console.error(`[twStockScraper] FinMind 月營收抓取失敗 ${stockCode}:`, err.message);
   }
