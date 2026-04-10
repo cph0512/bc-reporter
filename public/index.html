@@ -795,7 +795,43 @@
   <!-- Results -->
   <div style="padding:0 24px 24px;margin:0 auto;">
     <div id="twsResults" class="content" style="max-width:100%;overflow-x:auto;">
-      <div class="loading" style="color:#999;">選擇股票後查看財報資料</div>
+    </div>
+  </div>
+
+  <!-- Empty State / Welcome -->
+  <div id="twsEmptyState" style="padding:0 24px;max-width:1400px;margin:0 auto;">
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:40px 24px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:16px;">📊</div>
+      <h3 style="margin:0 0 8px;font-size:18px;color:#333;" id="twsEmptyTitle">台股財報分析</h3>
+      <p style="color:#777;font-size:14px;max-width:500px;margin:0 auto 20px;" id="twsEmptyDesc">
+        從公開資訊觀測站 (MOPS) 抓取上市櫃公司三大報表與月營收，支援 3 年歷史資料比較分析。
+      </p>
+      <div style="background:#f8f9fa;border-radius:10px;padding:20px;max-width:600px;margin:0 auto;text-align:left;">
+        <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:12px;" id="twsEmptySteps">使用步驟：</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:#666;">
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="background:#1a1a2e;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">1</span>
+            <span>點擊上方「<strong>+ 新增</strong>」按鈕，輸入股票代碼（如 2330）和公司名稱（如 台積電）</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="background:#1a1a2e;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">2</span>
+            <span>選擇股票後點擊「<strong>同步資料</strong>」，系統會從公開資訊觀測站抓取財報（約需 2-5 分鐘）</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="background:#1a1a2e;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">3</span>
+            <span>切換「<strong>損益表 / 資產負債表 / 現金流量表 / 月營收</strong>」查看各季度資料</span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:20px;">
+        <div style="font-size:12px;color:#999;margin-bottom:8px;">支援的報表類型</div>
+        <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
+          <span style="background:#e8f5e9;color:#2e7d32;padding:4px 12px;border-radius:12px;font-size:12px;">損益表</span>
+          <span style="background:#e3f2fd;color:#1565c0;padding:4px 12px;border-radius:12px;font-size:12px;">資產負債表</span>
+          <span style="background:#fff3e0;color:#e65100;padding:4px 12px;border-radius:12px;font-size:12px;">現金流量表</span>
+          <span style="background:#fce4ec;color:#c62828;padding:4px 12px;border-radius:12px;font-size:12px;">月營收</span>
+        </div>
+      </div>
     </div>
   </div>
 </div><!-- /twStockView -->
@@ -5422,11 +5458,15 @@ async function loadTwStock() {
   if (addBtn) addBtn.style.display = isAdminOrMgr ? '' : 'none';
   if (syncAllBtn) syncAllBtn.style.display = userRole === 'admin' ? '' : 'none';
 
+  const emptyState = document.getElementById('twsEmptyState');
+  const resultsEl = document.getElementById('twsResults');
+
   try {
     const res = await fetch('/api/tw-stock/watchlist');
     if (res.status === 401) { window.location.href = '/login'; return; }
     if (res.status === 403) {
-      document.getElementById('twsResults').innerHTML = '<div class="error">無權限存取台股財報</div>';
+      resultsEl.innerHTML = '<div class="error">無權限存取台股財報</div>';
+      if (emptyState) emptyState.style.display = 'none';
       return;
     }
     twsWatchlist = await res.json();
@@ -5439,13 +5479,25 @@ async function loadTwStock() {
       sel.innerHTML += `<option value="${w.code}">${w.code} ${w.name}</option>`;
     });
 
-    // 恢復之前選的股票
+    // 顯示/隱藏 empty state
+    if (twsWatchlist.length === 0) {
+      if (emptyState) emptyState.style.display = '';
+      resultsEl.innerHTML = '';
+    } else {
+      if (emptyState) emptyState.style.display = 'none';
+    }
+
+    // 恢復之前選的股票，或自動選第一支
     if (twsCurrentCode && twsWatchlist.find(w => w.code === twsCurrentCode)) {
       sel.value = twsCurrentCode;
       loadTwsFinancials();
+    } else if (twsWatchlist.length > 0 && !twsCurrentCode) {
+      sel.value = twsWatchlist[0].code;
+      twsCurrentCode = twsWatchlist[0].code;
+      loadTwsFinancials();
     }
   } catch (err) {
-    document.getElementById('twsResults').innerHTML = '<div class="error">載入失敗</div>';
+    resultsEl.innerHTML = '<div class="error">載入失敗</div>';
   }
 }
 
@@ -5486,6 +5538,10 @@ async function loadTwsFinancials() {
   const code = document.getElementById('twsStockSelect').value;
   if (!code) return;
   twsCurrentCode = code;
+
+  // 隱藏 empty state
+  const emptyState = document.getElementById('twsEmptyState');
+  if (emptyState) emptyState.style.display = 'none';
 
   const type = document.getElementById('twsReportType').value;
   const container = document.getElementById('twsResults');
