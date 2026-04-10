@@ -782,6 +782,8 @@
         <div style="display:flex;gap:6px;">
           <button class="btn btn-sm btn-primary" onclick="showAddTwsModal()" id="twsAddBtn" style="display:none;">+ 新增</button>
           <button class="btn btn-sm" onclick="showBatchImportModal()" id="twsBatchBtn" style="display:none;">批次匯入 AI 廠商</button>
+          <button class="btn btn-sm" onclick="showTwsCompare()" id="twsCompareBtn2" style="display:none;">營收比較表</button>
+          <button class="btn btn-sm" onclick="syncAllTwsRevenue()" id="twsSyncRevenueAllBtn2" style="display:none;">同步全部營收</button>
         </div>
       </div>
       <div id="twsWatchlistChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px;"></div>
@@ -5515,9 +5517,13 @@ async function loadTwStock() {
   const addBtn = document.getElementById('twsAddBtn');
   const syncAllBtn = document.getElementById('twsSyncAllBtn');
   const batchBtn = document.getElementById('twsBatchBtn');
+  const compareBtn2 = document.getElementById('twsCompareBtn2');
+  const syncRevBtn2 = document.getElementById('twsSyncRevenueAllBtn2');
   if (addBtn) addBtn.style.display = isAdminOrMgr ? '' : 'none';
   if (batchBtn) batchBtn.style.display = isAdminOrMgr ? '' : 'none';
   if (syncAllBtn) syncAllBtn.style.display = userRole === 'admin' ? '' : 'none';
+  if (compareBtn2) compareBtn2.style.display = isAdminOrMgr ? '' : 'none';
+  if (syncRevBtn2) syncRevBtn2.style.display = isAdminOrMgr ? '' : 'none';
 
   const emptyState = document.getElementById('twsEmptyState');
   const resultsEl = document.getElementById('twsResults');
