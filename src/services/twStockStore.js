@@ -129,6 +129,22 @@ const twStockStore = {
     writeData(data);
   },
 
+  /**
+   * 合併部分財報資料（如只有 revenue）
+   */
+  mergeFinancials(code, partial) {
+    const data = readData();
+    if (!data.financials[code]) data.financials[code] = {};
+    for (const type of Object.keys(partial)) {
+      if (partial[type]) {
+        if (!data.financials[code][type]) data.financials[code][type] = {};
+        Object.assign(data.financials[code][type], partial[type]);
+      }
+    }
+    data.financials[code].lastSync = new Date().toISOString();
+    writeData(data);
+  },
+
   // 完整原始資料存取（for deployment sync）
   getRawData() {
     return readData();

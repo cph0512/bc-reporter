@@ -764,9 +764,12 @@
     </div>
     <div>
       <button class="btn btn-primary" onclick="syncTwStock()" id="twsSyncBtn">同步資料</button>
+      <button class="btn btn-sm" onclick="syncTwsRevenueOnly()" id="twsSyncRevenueBtn">只抓營收</button>
+      <button class="btn btn-sm" onclick="syncAllTwsRevenue()" id="twsSyncRevenueAllBtn">全部營收</button>
       <button class="btn btn-sm" onclick="syncAllTwStock()" id="twsSyncAllBtn" style="display:none;">同步全部</button>
     </div>
     <div>
+      <button class="btn btn-sm" onclick="showTwsCompare()" id="twsCompareBtn">營收比較</button>
       <button class="btn btn-export btn-sm" onclick="exportTwStock()" id="twsExportBtn">Excel</button>
     </div>
   </div>
@@ -776,7 +779,10 @@
     <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <label style="font-size:12px;font-weight:600;color:#555;" id="twsLabelWatchlist">追蹤清單</label>
-        <button class="btn btn-sm btn-primary" onclick="showAddTwsModal()" id="twsAddBtn" style="display:none;">+ 新增</button>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-primary" onclick="showAddTwsModal()" id="twsAddBtn" style="display:none;">+ 新增</button>
+          <button class="btn btn-sm" onclick="showBatchImportModal()" id="twsBatchBtn" style="display:none;">批次匯入 AI 廠商</button>
+        </div>
       </div>
       <div id="twsWatchlistChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px;"></div>
     </div>
@@ -862,6 +868,43 @@
       <button class="btn" onclick="closeTwsModal()">取消</button>
       <button class="btn btn-primary" onclick="addTwStock()">新增</button>
     </div>
+  </div>
+</div>
+
+<!-- Batch Import Modal -->
+<div id="twsBatchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px;max-width:700px;width:95%;max-height:85vh;overflow-y:auto;position:relative;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;font-size:16px;">批次匯入 — 台灣 AI 相關廠商</h3>
+      <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeBatchModal()">✕</span>
+    </div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;">
+      <button class="btn btn-sm" onclick="twsBatchSelectAll(true)">全選</button>
+      <button class="btn btn-sm" onclick="twsBatchSelectAll(false)">全不選</button>
+      <button class="btn btn-sm" onclick="twsBatchSelectCategory('chip')">半導體</button>
+      <button class="btn btn-sm" onclick="twsBatchSelectCategory('server')">伺服器</button>
+      <button class="btn btn-sm" onclick="twsBatchSelectCategory('software')">軟體</button>
+      <button class="btn btn-sm" onclick="twsBatchSelectCategory('parts')">零組件</button>
+    </div>
+    <div id="twsBatchList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;max-height:50vh;overflow-y:auto;padding:4px;"></div>
+    <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:16px;">
+      <span id="twsBatchCount" style="font-size:13px;color:#666;">已選 0 檔</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="closeBatchModal()">取消</button>
+        <button class="btn btn-primary" onclick="submitBatchImport()">匯入選取的股票</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Revenue Compare Modal -->
+<div id="twsCompareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px;max-width:900px;width:95%;max-height:90vh;overflow-y:auto;position:relative;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;font-size:16px;">營收比較表</h3>
+      <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeCompareModal()">✕</span>
+    </div>
+    <div id="twsCompareContent" style="overflow-x:auto;"></div>
   </div>
 </div>
 
@@ -5455,7 +5498,9 @@ async function loadTwStock() {
   const isAdminOrMgr = userRole === 'admin' || userRole === 'manager';
   const addBtn = document.getElementById('twsAddBtn');
   const syncAllBtn = document.getElementById('twsSyncAllBtn');
+  const batchBtn = document.getElementById('twsBatchBtn');
   if (addBtn) addBtn.style.display = isAdminOrMgr ? '' : 'none';
+  if (batchBtn) batchBtn.style.display = isAdminOrMgr ? '' : 'none';
   if (syncAllBtn) syncAllBtn.style.display = userRole === 'admin' ? '' : 'none';
 
   const emptyState = document.getElementById('twsEmptyState');
@@ -5806,6 +5851,183 @@ function exportTwStock() {
   const code = document.getElementById('twsStockSelect').value;
   if (!code) { alert(getLang() === 'en' ? 'Please select a stock first' : '請先選擇股票'); return; }
   window.open(`/api/tw-stock/export/${code}`, '_blank');
+}
+
+// ===== Batch Import AI Stocks =====
+const TW_AI_STOCKS = [
+  // 半導體 / AI晶片
+  {code:"2330",name:"台積電",market:"sii",cat:"chip"},{code:"2454",name:"聯發科",market:"sii",cat:"chip"},
+  {code:"3661",name:"世芯-KY",market:"sii",cat:"chip"},{code:"3443",name:"創意電子",market:"sii",cat:"chip"},
+  {code:"2379",name:"瑞昱",market:"sii",cat:"chip"},{code:"8150",name:"南亞科",market:"sii",cat:"chip"},
+  {code:"6770",name:"力積電",market:"sii",cat:"chip"},{code:"3711",name:"日月光投控",market:"sii",cat:"chip"},
+  {code:"6415",name:"矽力-KY",market:"sii",cat:"chip"},
+  // AI伺服器 / 硬體
+  {code:"2317",name:"鴻海",market:"sii",cat:"server"},{code:"2382",name:"廣達",market:"sii",cat:"server"},
+  {code:"3231",name:"緯創",market:"sii",cat:"server"},{code:"6669",name:"緯穎",market:"sii",cat:"server"},
+  {code:"2357",name:"華碩",market:"sii",cat:"server"},{code:"2376",name:"技嘉",market:"sii",cat:"server"},
+  {code:"2377",name:"微星",market:"sii",cat:"server"},{code:"2324",name:"仁寶",market:"sii",cat:"server"},
+  {code:"2356",name:"英業達",market:"sii",cat:"server"},{code:"2308",name:"台達電",market:"sii",cat:"server"},
+  // AI軟體
+  {code:"2468",name:"精誠資訊",market:"sii",cat:"software"},{code:"6752",name:"叡揚資訊",market:"otc",cat:"software"},
+  // AIoT / 智慧製造
+  {code:"2354",name:"鴻準",market:"sii",cat:"parts"},{code:"2359",name:"所羅門",market:"sii",cat:"parts"},
+  {code:"2395",name:"研華",market:"sii",cat:"parts"},{code:"6166",name:"凌華科技",market:"sii",cat:"parts"},
+  {code:"8234",name:"新漢",market:"otc",cat:"parts"},{code:"2352",name:"佳世達",market:"sii",cat:"parts"},
+  // 關鍵零組件
+  {code:"2301",name:"光寶科",market:"sii",cat:"parts"},{code:"2385",name:"群光",market:"sii",cat:"parts"},
+  {code:"3324",name:"雙鴻",market:"sii",cat:"parts"},{code:"3017",name:"奇鋐",market:"sii",cat:"parts"},
+  {code:"6230",name:"超眾",market:"sii",cat:"parts"},{code:"2421",name:"建準",market:"sii",cat:"parts"},
+  {code:"2368",name:"金像電",market:"sii",cat:"parts"},{code:"6762",name:"聯茂",market:"sii",cat:"parts"},
+  {code:"6274",name:"台燿",market:"sii",cat:"parts"},{code:"3037",name:"欣興",market:"sii",cat:"parts"},
+  {code:"8046",name:"南電",market:"sii",cat:"parts"},{code:"3189",name:"景碩",market:"sii",cat:"parts"},
+  {code:"2375",name:"勤誠",market:"otc",cat:"parts"},
+];
+const CAT_LABELS = {chip:'半導體',server:'伺服器/硬體',software:'軟體',parts:'零組件/AIoT'};
+
+function showBatchImportModal() {
+  const modal = document.getElementById('twsBatchModal');
+  modal.style.display = 'flex';
+  const list = document.getElementById('twsBatchList');
+  const existingCodes = new Set(twsWatchlist.map(w => w.code));
+  list.innerHTML = TW_AI_STOCKS.map(s => {
+    const exists = existingCodes.has(s.code);
+    return `<label style="display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid ${exists?'#e0e0e0':'#d0d0d0'};border-radius:6px;font-size:12px;${exists?'opacity:0.4;':'cursor:pointer;'}background:#fff;">
+      <input type="checkbox" data-code="${s.code}" data-name="${s.name}" data-market="${s.market}" data-cat="${s.cat}" ${exists?'disabled checked':''}/>
+      <span style="font-weight:600;">${s.code}</span> ${s.name}
+      <span style="color:#999;font-size:10px;margin-left:auto;">${CAT_LABELS[s.cat]||s.cat}</span>
+    </label>`;
+  }).join('');
+  updateBatchCount();
+}
+function closeBatchModal() { document.getElementById('twsBatchModal').style.display = 'none'; }
+function twsBatchSelectAll(val) {
+  document.querySelectorAll('#twsBatchList input[type=checkbox]:not(:disabled)').forEach(cb => cb.checked = val);
+  updateBatchCount();
+}
+function twsBatchSelectCategory(cat) {
+  document.querySelectorAll('#twsBatchList input[type=checkbox]:not(:disabled)').forEach(cb => {
+    cb.checked = cb.dataset.cat === cat;
+  });
+  updateBatchCount();
+}
+function updateBatchCount() {
+  const n = document.querySelectorAll('#twsBatchList input[type=checkbox]:checked:not(:disabled)').length;
+  document.getElementById('twsBatchCount').textContent = `已選 ${n} 檔`;
+}
+document.addEventListener('change', e => {
+  if (e.target.closest('#twsBatchList')) updateBatchCount();
+});
+
+async function submitBatchImport() {
+  const checks = document.querySelectorAll('#twsBatchList input[type=checkbox]:checked:not(:disabled)');
+  const stocks = Array.from(checks).map(cb => ({code:cb.dataset.code, name:cb.dataset.name, market:cb.dataset.market}));
+  if (stocks.length === 0) { alert('請至少選擇一檔股票'); return; }
+  try {
+    const res = await fetch('/api/tw-stock/watchlist/batch', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({stocks})
+    });
+    const result = await res.json();
+    alert(result.message);
+    closeBatchModal();
+    await loadTwStock();
+  } catch(e) { alert('匯入失敗'); }
+}
+
+// ===== Revenue-only Sync =====
+async function syncTwsRevenueOnly() {
+  const code = document.getElementById('twsStockSelect').value;
+  if (!code) { alert('請先選擇股票'); return; }
+  const statusEl = document.getElementById('twsSyncStatus');
+  const msgEl = document.getElementById('twsSyncMsg');
+  statusEl.style.display = '';
+  msgEl.textContent = `正在同步 ${code} 月營收... 約需 30 秒`;
+  try {
+    const res = await fetch(`/api/tw-stock/sync/${code}/revenue`, {method:'POST'});
+    const result = await res.json();
+    msgEl.textContent = result.message || result.error;
+    if (res.ok) {
+      document.getElementById('twsReportType').value = 'revenue';
+      await loadTwStock();
+      loadTwsFinancials();
+    }
+  } catch(e) { msgEl.textContent = '同步失敗'; }
+  setTimeout(() => statusEl.style.display = 'none', 5000);
+}
+
+async function syncAllTwsRevenue() {
+  if (!confirm(`批次同步所有追蹤股票的月營收？（${twsWatchlist.length} 檔，每檔約 30 秒）`)) return;
+  const statusEl = document.getElementById('twsSyncStatus');
+  const msgEl = document.getElementById('twsSyncMsg');
+  statusEl.style.display = '';
+  msgEl.textContent = `正在批次同步 ${twsWatchlist.length} 檔月營收... 請耐心等候`;
+  try {
+    const res = await fetch('/api/tw-stock/sync-revenue-all', {method:'POST'});
+    const result = await res.json();
+    const ok = result.results?.filter(r=>r.status==='ok').length || 0;
+    const fail = result.results?.filter(r=>r.status==='error').length || 0;
+    msgEl.textContent = `完成：${ok} 成功${fail?' / '+fail+' 失敗':''}`;
+    await loadTwStock();
+  } catch(e) { msgEl.textContent = '同步失敗'; }
+  setTimeout(() => statusEl.style.display = 'none', 8000);
+}
+
+// ===== Revenue Compare =====
+async function showTwsCompare() {
+  if (twsWatchlist.length === 0) { alert('追蹤清單為空'); return; }
+  const modal = document.getElementById('twsCompareModal');
+  modal.style.display = 'flex';
+  const content = document.getElementById('twsCompareContent');
+  content.innerHTML = '<div class="loading">載入中...</div>';
+
+  const codes = twsWatchlist.map(w => w.code).join(',');
+  try {
+    const res = await fetch(`/api/tw-stock/compare/revenue?codes=${codes}`);
+    const data = await res.json();
+    renderRevenueCompare(data);
+  } catch(e) { content.innerHTML = '<div class="error">載入失敗</div>'; }
+}
+function closeCompareModal() { document.getElementById('twsCompareModal').style.display = 'none'; }
+
+function renderRevenueCompare(data) {
+  const content = document.getElementById('twsCompareContent');
+  const codes = Object.keys(data);
+  if (codes.length === 0) { content.innerHTML = '<div style="color:#999;padding:20px;text-align:center;">尚無營收資料，請先同步</div>'; return; }
+
+  // Collect all months across all stocks
+  const allMonths = new Set();
+  for (const code of codes) {
+    Object.keys(data[code].revenue || {}).forEach(k => allMonths.add(k));
+  }
+  const months = [...allMonths].sort().reverse().slice(0, 24); // Last 24 months
+
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr>';
+  html += '<th style="background:#1a1a2e;color:#fff;padding:6px 8px;text-align:left;position:sticky;left:0;z-index:1;">公司</th>';
+  for (const m of months) {
+    html += `<th style="background:#1a1a2e;color:#fff;padding:6px 8px;text-align:right;white-space:nowrap;">${m}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  for (const code of codes) {
+    const stock = data[code];
+    html += `<tr><td style="padding:5px 8px;border-bottom:1px solid #f0f0f0;font-weight:600;white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1;">${code} ${stock.name}</td>`;
+    for (const m of months) {
+      const rev = stock.revenue?.[m];
+      let val = '';
+      if (Array.isArray(rev) && rev.length > 0) {
+        // Find the revenue value — usually named 營業收入 or 當月營收
+        const entry = rev[0];
+        const revKey = Object.keys(entry).find(k => k.includes('營收') || k.includes('營業收入'));
+        if (revKey) val = entry[revKey];
+      }
+      const formatted = typeof val === 'number' ? (val / 1000).toFixed(0) : '';
+      html += `<td style="padding:5px 8px;border-bottom:1px solid #f0f0f0;text-align:right;">${formatted ? formatted + 'K' : '-'}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  html += '</tbody></table>';
+  html += '<div style="font-size:11px;color:#999;margin-top:8px;">單位：千元（K = 千）</div>';
+  content.innerHTML = html;
 }
 
 // Init

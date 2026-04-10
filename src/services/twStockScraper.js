@@ -306,11 +306,33 @@ async function fetchAllFinancials(stockCode, market = 'sii', yearsBack = 3, onPr
   return result;
 }
 
+/**
+ * 只抓月營收（輕量模式，約 30 秒 / 股）
+ */
+async function fetchRevenueOnly(stockCode, market = 'sii', yearsBack = 3) {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const startYear = currentYear - yearsBack;
+  const result = {};
+
+  for (let y = startYear; y <= currentYear; y++) {
+    const maxMonth = (y === currentYear) ? Math.max(1, currentMonth - 1) : 12;
+    for (let m = 1; m <= maxMonth; m++) {
+      const monthKey = `${y}_${String(m).padStart(2, '0')}`;
+      result[monthKey] = await fetchMonthlyRevenue(stockCode, y, m, market);
+      await delay(REQUEST_DELAY);
+    }
+  }
+  return result;
+}
+
 module.exports = {
   fetchIncomeStatement,
   fetchBalanceSheet,
   fetchCashFlow,
   fetchMonthlyRevenue,
   fetchAllFinancials,
+  fetchRevenueOnly,
   toROCYear,
 };

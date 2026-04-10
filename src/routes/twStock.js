@@ -54,6 +54,75 @@ router.delete('/watchlist/:code', requireManagerOrAdmin, (req, res) => {
   }
 });
 
+// 批次匯入
+router.post('/watchlist/batch', requireManagerOrAdmin, (req, res) => {
+  const { stocks } = req.body; // [{code, name, market}, ...]
+  if (!Array.isArray(stocks) || stocks.length === 0) {
+    return res.status(400).json({ error: '請提供股票清單' });
+  }
+  const results = [];
+  const addedBy = req.session.user?.displayName || req.session.user?.username;
+  for (const s of stocks) {
+    if (!s.code || !s.name) continue;
+    if (!/^\d{4,6}$/.test(s.code)) continue;
+    try {
+      twStockStore.addToWatchlist(s.code.trim(), s.name.trim(), s.market || 'sii', addedBy);
+      results.push({ code: s.code, name: s.name, status: 'ok' });
+    } catch (err) {
+      results.push({ code: s.code, name: s.name, status: 'skip', error: err.message });
+    }
+  }
+  res.json({ message: `匯入完成：${results.filter(r => r.status === 'ok').length} 成功`, results });
+});
+
+// 只同步月營收（輕量模式）
+router.post('/sync/:code/revenue', async (req, res) => {
+  const stock = twStockStore.getStock(req.params.code);
+  if (!stock) return res.status(404).json({ error: '股票不在追蹤清單中' });
+
+  try {
+    const revenue = await scraper.fetchRevenueOnly(stock.code, stock.market);
+    twStockStore.mergeFinancials(stock.code, { revenue });
+    res.json({ message: `${stock.code} ${stock.name} 月營收同步完成`, lastSync: new Date().toISOString() });
+  } catch (err) {
+    res.status(500).json({ error: `同步失敗: ${err.message}` });
+  }
+});
+
+// 批次同步月營收（所有追蹤股票）
+router.post('/sync-revenue-all', async (req, res) => {
+  const watchlist = twStockStore.getWatchlist();
+  if (watchlist.length === 0) return res.json({ message: '追蹤清單為空' });
+
+  const results = [];
+  for (const stock of watchlist) {
+    try {
+      const revenue = await scraper.fetchRevenueOnly(stock.code, stock.market);
+      twStockStore.mergeFinancials(stock.code, { revenue });
+      results.push({ code: stock.code, name: stock.name, status: 'ok' });
+    } catch (err) {
+      results.push({ code: stock.code, name: stock.name, status: 'error', error: err.message });
+    }
+  }
+  res.json({ message: `批次月營收同步完成`, results });
+});
+
+// 營收比較（多股同時比較）
+router.get('/compare/revenue', (req, res) => {
+  const codes = (req.query.codes || '').split(',').filter(Boolean);
+  if (codes.length === 0) return res.json({});
+
+  const result = {};
+  for (const code of codes) {
+    const fin = twStockStore.getFinancials(code);
+    const stock = twStockStore.getStock(code);
+    if (fin?.revenue) {
+      result[code] = { name: stock?.name || code, revenue: fin.revenue };
+    }
+  }
+  res.json(result);
+});
+
 // ===== 財報查詢 =====
 
 router.get('/financials/:code', (req, res) => {
