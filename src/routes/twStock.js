@@ -121,17 +121,17 @@ router.get('/compare/revenue', (req, res) => {
     if (!fin?.revenue) continue;
 
     if (mode === 'annual') {
-      // Aggregate monthly → annual
+      // Aggregate monthly → annual using 營收年份+營收月份 for correct year mapping
       const annual = {};
       for (const [key, entries] of Object.entries(fin.revenue)) {
-        const y = key.split('_')[0];
-        if (year && y !== year) continue;
-        if (!annual[y]) annual[y] = 0;
-        if (Array.isArray(entries) && entries.length > 0) {
-          const entry = entries[0];
-          const revKey = Object.keys(entry).find(k => k.includes('營收') || k.includes('營業收入'));
-          if (revKey && typeof entry[revKey] === 'number') annual[y] += entry[revKey];
-        }
+        if (!Array.isArray(entries) || entries.length === 0) continue;
+        const entry = entries[0];
+        // Use 營收年份 + 營收月份 for correct mapping (e.g., 2025/12 revenue reported in 2026/01)
+        const revYear = String(entry['營收年份'] || key.split('_')[0]);
+        const revKey = Object.keys(entry).find(k => k.includes('營收') && !k.includes('年份') && !k.includes('月份') && !k.includes('去年') && !k.includes('上月'));
+        if (year && revYear !== year) continue;
+        if (!annual[revYear]) annual[revYear] = 0;
+        if (revKey && typeof entry[revKey] === 'number') annual[revYear] += entry[revKey];
       }
       result[code] = { name: stock?.name || code, market: stock?.market, annual };
     } else {
