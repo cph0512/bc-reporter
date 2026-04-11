@@ -2861,6 +2861,7 @@ function renderMyPipelineTable() {
         : '—'}</td>
       <td style="white-space:nowrap;">
         <button class="btn btn-sm btn-edit" onclick="openEditLead('${lead.id}')">${L().plEdit}</button>
+        <button class="btn btn-sm" style="background:#f8d7da;color:#c62828;margin-left:4px;" onclick="deleteLead('${lead.id}','${escHtml(lead.companyName).replace(/'/g,"\\'")}')">刪除</button>
       </td>
     </tr>`;
   }).join('');
