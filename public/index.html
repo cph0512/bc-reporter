@@ -6182,7 +6182,8 @@ async function renderProspectReport() {
       <button class="btn btn-primary" onclick="fetchProspectData()">抓取營收資料</button>
       <button class="btn btn-sm" onclick="syncAllTwsRevenue()">重新同步全部營收</button>
       <button class="btn btn-export btn-sm" onclick="window.open('/api/tw-stock/export/compare','_blank')">匯出 Excel</button>
-      <span style="font-size:12px;color:#999;">點擊「抓取營收資料」載入報表</span>
+      <button class="btn btn-sm" style="background:#1b5e20;color:#fff;" onclick="importToPipeline()">匯入業務管線</button>
+      <span id="prospectSelectCount" style="font-size:12px;color:#999;"></span>
     </div>
     <div id="prospectTable"></div>
   `;
@@ -6255,7 +6256,8 @@ async function fetchProspectData() {
     </div>
     <div style="font-size:11px;color:#999;margin-bottom:12px;">計算方式：最新年營收 × 3% = 預估物流費用｜2026 為截至目前累計｜排序：物流費用高→低</div>`;
 
-    html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>';
+    html += '<div style="overflow-x:auto;"><table id="prospectTbl" style="width:100%;border-collapse:collapse;"><thead><tr>';
+    html += `<th style="${thL}"><input type="checkbox" onchange="toggleAllProspect(this.checked)" checked/></th>`;
     html += `<th style="${thL}">#</th>`;
     html += `<th style="${thL}">公司</th>`;
     html += `<th style="${th}">產業</th>`;
@@ -6278,7 +6280,8 @@ async function fetchProspectData() {
       const yoyColor = r.yoy2524 !== null ? (r.yoy2524 >= 0 ? '#2e7d32' : '#c62828') : '#999';
       const bg = i % 2 === 0 ? '#fff' : '#fafafa';
 
-      html += `<tr style="background:${bg}">`;
+      html += `<tr style="background:${bg}" data-code="${r.code}" data-name="${r.name}" data-logistics="${r.logistics}" data-priority="${priority}" data-revenue="${r.latestRev}" data-market="${TW_AI_STOCKS.find(s=>s.code===r.code)?.market||'sii'}">`;
+      html += `<td style="${tdL}background:${bg};"><input type="checkbox" class="prospectCb" checked/></td>`;
       html += `<td style="${tdL}background:${bg};">${i+1}</td>`;
       html += `<td style="${tdL}background:${bg};">${r.code} ${r.name}</td>`;
       html += `<td style="${td}">${CAT_LABELS[r.cat] || '-'}</td>`;
@@ -6294,6 +6297,42 @@ async function fetchProspectData() {
     html += '</tbody></table></div>';
     table.innerHTML = html;
   } catch(e) { table.innerHTML = '<div class="error">載入失敗: ' + e.message + '</div>'; }
+}
+
+// ===== Prospect → Pipeline =====
+function toggleAllProspect(checked) {
+  document.querySelectorAll('.prospectCb').forEach(cb => cb.checked = checked);
+}
+
+async function importToPipeline() {
+  const rows = document.querySelectorAll('#prospectTbl tbody tr');
+  const selected = [];
+  rows.forEach(tr => {
+    const cb = tr.querySelector('.prospectCb');
+    if (cb?.checked) {
+      selected.push({
+        code: tr.dataset.code,
+        name: tr.dataset.name,
+        logistics: Number(tr.dataset.logistics) || 0,
+        priority: tr.dataset.priority,
+        revenue: Number(tr.dataset.revenue) || 0,
+        market: tr.dataset.market,
+      });
+    }
+  });
+  if (selected.length === 0) { alert('請勾選要匯入的公司'); return; }
+  if (!confirm(`將 ${selected.length} 家公司匯入業務管線？`)) return;
+
+  try {
+    const res = await fetch('/api/tw-stock/to-pipeline', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stocks: selected }),
+    });
+    const result = await res.json();
+    const ok = result.results?.filter(r => r.status === 'ok').length || 0;
+    const skip = result.results?.filter(r => r.status === 'skip').length || 0;
+    alert(`匯入完成：${ok} 家新增${skip ? '、' + skip + ' 家已存在（略過）' : ''}\n\n可到「業務管線」查看`);
+  } catch(e) { alert('匯入失敗'); }
 }
 
 // Init

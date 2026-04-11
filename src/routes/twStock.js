@@ -344,6 +344,44 @@ router.get('/export/:code', async (req, res) => {
   }
 });
 
+// ===== 匯入到業務管線 =====
+
+router.post('/to-pipeline', requireManagerOrAdmin, (req, res) => {
+  const { stocks } = req.body; // [{code, name, logistics, priority, revenue, market}, ...]
+  if (!Array.isArray(stocks) || stocks.length === 0) {
+    return res.status(400).json({ error: '請選擇要匯入的公司' });
+  }
+  const pipelineStore = require('../services/pipelineStore');
+  const existing = pipelineStore.getLeads();
+  const results = [];
+  const createdBy = req.session.user?.displayName || req.session.user?.username;
+
+  for (const s of stocks) {
+    // Check if already exists by company name
+    const found = existing.find(l => l.companyName === s.name || l.companyName === `${s.code} ${s.name}`);
+    if (found) {
+      results.push({ code: s.code, name: s.name, status: 'skip', reason: '已存在' });
+      continue;
+    }
+    try {
+      const lead = pipelineStore.createLead({
+        companyName: `${s.code} ${s.name}`,
+        category: '潛在合作對象',
+        status: '初步接觸',
+        salesperson: createdBy || '',
+        estimatedValue: s.logistics || 0,
+        notes: `來源：AI廠商營收分析\n股票代碼：${s.code}\n市場：${s.market === 'otc' ? '上櫃' : '上市'}\n年營收：${s.revenue ? (s.revenue / 1e8).toFixed(2) + ' 億' : '-'}\n預估物流費用(3%)：${s.logistics ? (s.logistics / 1e8).toFixed(2) + ' 億' : '-'}\n優先級：${s.priority}`,
+        createdBy,
+      });
+      results.push({ code: s.code, name: s.name, status: 'ok', leadId: lead.id });
+    } catch (err) {
+      results.push({ code: s.code, name: s.name, status: 'error', reason: err.message });
+    }
+  }
+  const ok = results.filter(r => r.status === 'ok').length;
+  res.json({ message: `匯入完成：${ok} 家新增`, results });
+});
+
 // ===== 營收比較 + 潛力客戶 Excel 匯出 =====
 
 router.get('/export/compare', async (req, res) => {
