@@ -6034,6 +6034,7 @@ function renderCompareInline() {
       <button class="btn btn-sm" onclick="twsCmpSelectAll(true)">全選</button>
       <button class="btn btn-sm" onclick="twsCmpSelectAll(false)">全不選</button>
       <button class="btn btn-sm btn-primary" onclick="refreshCompare()">查詢</button>
+      <button class="btn btn-export btn-sm" onclick="window.open('/api/tw-stock/export/compare','_blank')">匯出 Excel</button>
       <span id="twsCmpSelected" style="font-size:12px;color:#888;"></span>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:2px;margin-bottom:12px;max-height:100px;overflow-y:auto;">
@@ -6180,6 +6181,7 @@ async function renderProspectReport() {
     <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;">
       <button class="btn btn-primary" onclick="fetchProspectData()">抓取營收資料</button>
       <button class="btn btn-sm" onclick="syncAllTwsRevenue()">重新同步全部營收</button>
+      <button class="btn btn-export btn-sm" onclick="window.open('/api/tw-stock/export/compare','_blank')">匯出 Excel</button>
       <span style="font-size:12px;color:#999;">點擊「抓取營收資料」載入報表</span>
     </div>
     <div id="prospectTable"></div>
