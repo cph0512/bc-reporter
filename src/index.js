@@ -109,7 +109,7 @@ app.get('/api/sync/export', (req, res) => {
   }
   auditLog('sync_export', req);
   // Strip password hashes from user data (規範 §5.2)
-  const safeUsers = userStore.getAllRaw().map(({ password, ...user }) => user);
+  const safeUsers = userStore.getAllRaw().map(({ passwordHash, ...user }) => user);
   res.json({
     users: safeUsers,
     pipeline: pipelineStore.getRawData(),
