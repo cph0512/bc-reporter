@@ -6175,108 +6175,123 @@ async function renderProspectReport() {
 
   if (twsWatchlist.length === 0) { container.innerHTML = '<div style="color:#999;padding:20px;text-align:center;">請先匯入股票</div>'; return; }
 
-  container.innerHTML = '<div class="loading">載入中...</div>';
+  // Show controls + placeholder
+  container.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;">
+      <button class="btn btn-primary" onclick="fetchProspectData()">抓取營收資料</button>
+      <button class="btn btn-sm" onclick="syncAllTwsRevenue()">重新同步全部營收</button>
+      <span style="font-size:12px;color:#999;">點擊「抓取營收資料」載入報表</span>
+    </div>
+    <div id="prospectTable"></div>
+  `;
+}
+
+async function fetchProspectData() {
+  const table = document.getElementById('prospectTable');
+  table.innerHTML = '<div class="loading">載入中...</div>';
   const codes = twsWatchlist.map(w => w.code).join(',');
 
   try {
     const res = await fetch(`/api/tw-stock/compare/revenue?codes=${codes}&mode=annual`);
     const data = await res.json();
     const entries = Object.keys(data);
-    if (entries.length === 0) { container.innerHTML = '<div style="color:#999;padding:20px;text-align:center;">尚無營收資料，請先同步</div>'; return; }
+    if (entries.length === 0) { table.innerHTML = '<div style="color:#999;padding:20px;text-align:center;">尚無營收資料，請先點「重新同步全部營收」</div>'; return; }
 
-    // Collect all years
-    const allYears = new Set();
-    entries.forEach(code => Object.keys(data[code].annual || {}).forEach(y => allYears.add(y)));
-    const years = [...allYears].sort().reverse();
-    const latestYear = years[0];
-    const prevYear = years[1];
-
-    // Build rows
+    // Fixed years to show
+    const showYears = ['2024', '2025', '2026'];
     const catMap = {};
     TW_AI_STOCKS.forEach(s => catMap[s.code] = s.cat);
     const LOGISTICS_RATE = 0.03;
 
     const rows = entries.map(code => {
       const s = data[code];
-      const rev = s.annual?.[latestYear] || 0;
-      const prevRev = prevYear ? (s.annual?.[prevYear] || 0) : 0;
-      const yoy = prevRev > 0 ? ((rev - prevRev) / prevRev * 100) : null;
-      const logistics = rev * LOGISTICS_RATE;
-      const cat = catMap[code] || '';
-      return { code, name: s.name, cat, rev, prevRev, yoy, logistics, latestYear, prevYear };
-    }).filter(r => r.rev > 0).sort((a, b) => b.logistics - a.logistics);
+      const row = { code, name: s.name, cat: catMap[code] || '', annual: {} };
+      for (const y of showYears) row.annual[y] = s.annual?.[y] || 0;
+      // Use latest non-zero year for logistics calc
+      const latestRev = row.annual['2026'] || row.annual['2025'] || row.annual['2024'] || 0;
+      row.latestRev = latestRev;
+      row.logistics = latestRev * LOGISTICS_RATE;
+      // YoY: 2025 vs 2024
+      const r25 = row.annual['2025'], r24 = row.annual['2024'];
+      row.yoy2524 = r24 > 0 ? ((r25 - r24) / r24 * 100) : null;
+      // YoY: 2026 vs 2025 (partial year)
+      const r26 = row.annual['2026'];
+      row.yoy2625 = r25 > 0 && r26 > 0 ? ((r26 / r25 * 12 / new Date().getMonth() - 1) * 100).toFixed(0) : null;
+      return row;
+    }).filter(r => r.latestRev > 0).sort((a, b) => b.logistics - a.logistics);
 
-    // Year selector
-    let yearOpts = years.map(y => `<option value="${y}" ${y === latestYear ? 'selected' : ''}>${y}</option>`).join('');
+    const fmtRev = (v) => {
+      if (!v) return '-';
+      if (v >= 1e8) return (v/1e8).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' 億';
+      if (v >= 1e4) return (v/1e4).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' 萬';
+      return v.toLocaleString();
+    };
 
-    const thStyle = 'background:#1a1a2e;color:#fff;padding:8px 10px;text-align:right;white-space:nowrap;font-size:12px;cursor:pointer;';
-    const thLeft = 'background:#1a1a2e;color:#fff;padding:8px 10px;text-align:left;position:sticky;left:0;z-index:1;font-size:12px;';
-    const tdS = 'padding:7px 10px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px;';
-    const tdL = 'padding:7px 10px;border-bottom:1px solid #f0f0f0;font-weight:600;white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1;font-size:12px;';
-
-    const fmtRev = (v) => v >= 1e8 ? (v/1e8).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' 億' : v.toLocaleString();
-    const fmtLog = (v) => v >= 1e8 ? (v/1e8).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' 億' : v >= 1e4 ? (v/1e4).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' 萬' : v.toLocaleString();
-
-    // Summary KPIs
+    // KPIs
     const totalLogistics = rows.reduce((s, r) => s + r.logistics, 0);
-    const totalRev = rows.reduce((s, r) => s + r.rev, 0);
-    const avgLogistics = totalLogistics / rows.length;
+    const avgLogistics = rows.length > 0 ? totalLogistics / rows.length : 0;
+
+    const th = 'background:#1a1a2e;color:#fff;padding:8px 10px;text-align:right;white-space:nowrap;font-size:12px;';
+    const thL = 'background:#1a1a2e;color:#fff;padding:8px 10px;text-align:left;position:sticky;left:0;z-index:1;font-size:12px;';
+    const td = 'padding:7px 10px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px;';
+    const tdL = 'padding:7px 10px;border-bottom:1px solid #f0f0f0;font-weight:600;white-space:nowrap;position:sticky;left:0;z-index:1;font-size:12px;';
 
     let html = `
-    <div style="margin-bottom:16px;">
-      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-        <div style="background:#e8f5e9;border-radius:10px;padding:14px 20px;flex:1;min-width:180px;">
-          <div style="font-size:12px;color:#2e7d32;font-weight:600;">潛力客戶數</div>
-          <div style="font-size:24px;font-weight:700;color:#1b5e20;">${rows.length} 家</div>
-        </div>
-        <div style="background:#e3f2fd;border-radius:10px;padding:14px 20px;flex:1;min-width:180px;">
-          <div style="font-size:12px;color:#1565c0;font-weight:600;">物流費用總潛力 (${latestYear})</div>
-          <div style="font-size:24px;font-weight:700;color:#0d47a1;">${fmtRev(totalLogistics)}</div>
-        </div>
-        <div style="background:#fff3e0;border-radius:10px;padding:14px 20px;flex:1;min-width:180px;">
-          <div style="font-size:12px;color:#e65100;font-weight:600;">平均物流預算/家</div>
-          <div style="font-size:24px;font-weight:700;color:#bf360c;">${fmtLog(avgLogistics)}</div>
-        </div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+      <div style="background:#e8f5e9;border-radius:10px;padding:14px 20px;flex:1;min-width:180px;">
+        <div style="font-size:12px;color:#2e7d32;font-weight:600;">潛力客戶數</div>
+        <div style="font-size:24px;font-weight:700;color:#1b5e20;">${rows.length} 家</div>
       </div>
-      <div style="font-size:11px;color:#999;">計算方式：年營收 × 3% = 預估物流費用｜資料年度：${latestYear}｜排序：物流費用高→低</div>
-    </div>`;
+      <div style="background:#e3f2fd;border-radius:10px;padding:14px 20px;flex:1;min-width:180px;">
+        <div style="font-size:12px;color:#1565c0;font-weight:600;">物流費用總潛力</div>
+        <div style="font-size:24px;font-weight:700;color:#0d47a1;">${fmtRev(totalLogistics)}</div>
+      </div>
+      <div style="background:#fff3e0;border-radius:10px;padding:14px 20px;flex:1;min-width:180px;">
+        <div style="font-size:12px;color:#e65100;font-weight:600;">平均物流預算/家</div>
+        <div style="font-size:24px;font-weight:700;color:#bf360c;">${fmtRev(avgLogistics)}</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#999;margin-bottom:12px;">計算方式：最新年營收 × 3% = 預估物流費用｜2026 為截至目前累計｜排序：物流費用高→低</div>`;
 
-    html += '<table style="width:100%;border-collapse:collapse;"><thead><tr>';
-    html += `<th style="${thLeft}">#</th>`;
-    html += `<th style="${thLeft}">公司</th>`;
-    html += `<th style="${thStyle}">產業</th>`;
-    html += `<th style="${thStyle}">${latestYear} 年營收</th>`;
-    if (prevYear) html += `<th style="${thStyle}">YoY%</th>`;
-    html += `<th style="${thStyle}background:#1b5e20;">預估物流費用 (3%)</th>`;
-    html += `<th style="${thStyle}">開發優先級</th>`;
+    html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>';
+    html += `<th style="${thL}">#</th>`;
+    html += `<th style="${thL}">公司</th>`;
+    html += `<th style="${th}">產業</th>`;
+    html += `<th style="${th}">2024 營收</th>`;
+    html += `<th style="${th}">2025 營收</th>`;
+    html += `<th style="${th}">YoY%</th>`;
+    html += `<th style="${th}">2026 營收(累計)</th>`;
+    html += `<th style="${th}background:#1b5e20;">預估物流費用(3%)</th>`;
+    html += `<th style="${th}">優先級</th>`;
     html += '</tr></thead><tbody>';
 
     rows.forEach((r, i) => {
-      const yoyStr = r.yoy !== null ? r.yoy.toFixed(1) + '%' : '-';
-      const yoyColor = r.yoy !== null ? (r.yoy >= 0 ? '#2e7d32' : '#c62828') : '#999';
-      // Priority: based on logistics size
       let priority, priBg, priColor;
-      if (r.logistics >= 1e9) { priority = 'S 級'; priBg = '#c62828'; priColor = '#fff'; }
-      else if (r.logistics >= 3e8) { priority = 'A 級'; priBg = '#e65100'; priColor = '#fff'; }
-      else if (r.logistics >= 1e8) { priority = 'B 級'; priBg = '#1565c0'; priColor = '#fff'; }
-      else { priority = 'C 級'; priBg = '#e0e0e0'; priColor = '#333'; }
-      const catLabel = CAT_LABELS[r.cat] || r.cat || '-';
+      if (r.logistics >= 1e9) { priority = 'S'; priBg = '#c62828'; priColor = '#fff'; }
+      else if (r.logistics >= 3e8) { priority = 'A'; priBg = '#e65100'; priColor = '#fff'; }
+      else if (r.logistics >= 1e8) { priority = 'B'; priBg = '#1565c0'; priColor = '#fff'; }
+      else { priority = 'C'; priBg = '#e0e0e0'; priColor = '#333'; }
 
-      const rowBg = i % 2 === 0 ? '#fff' : '#fafafa';
-      html += `<tr style="background:${rowBg}">`;
-      html += `<td style="${tdL}">${i + 1}</td>`;
-      html += `<td style="${tdL}">${r.code} ${r.name}</td>`;
-      html += `<td style="${tdS}">${catLabel}</td>`;
-      html += `<td style="${tdS}">${fmtRev(r.rev)}</td>`;
-      if (prevYear) html += `<td style="${tdS}color:${yoyColor};font-weight:600;">${yoyStr}</td>`;
-      html += `<td style="${tdS}font-weight:700;color:#1b5e20;">${fmtLog(r.logistics)}</td>`;
-      html += `<td style="${tdS}"><span style="background:${priBg};color:${priColor};padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">${priority}</span></td>`;
+      const yoyStr = r.yoy2524 !== null ? r.yoy2524.toFixed(1) + '%' : '-';
+      const yoyColor = r.yoy2524 !== null ? (r.yoy2524 >= 0 ? '#2e7d32' : '#c62828') : '#999';
+      const bg = i % 2 === 0 ? '#fff' : '#fafafa';
+
+      html += `<tr style="background:${bg}">`;
+      html += `<td style="${tdL}background:${bg};">${i+1}</td>`;
+      html += `<td style="${tdL}background:${bg};">${r.code} ${r.name}</td>`;
+      html += `<td style="${td}">${CAT_LABELS[r.cat] || '-'}</td>`;
+      html += `<td style="${td}">${fmtRev(r.annual['2024'])}</td>`;
+      html += `<td style="${td}">${fmtRev(r.annual['2025'])}</td>`;
+      html += `<td style="${td}color:${yoyColor};font-weight:600;">${yoyStr}</td>`;
+      html += `<td style="${td}">${fmtRev(r.annual['2026'])}</td>`;
+      html += `<td style="${td}font-weight:700;color:#1b5e20;">${fmtRev(r.logistics)}</td>`;
+      html += `<td style="${td}"><span style="background:${priBg};color:${priColor};padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">${priority}</span></td>`;
       html += '</tr>';
     });
 
-    html += '</tbody></table>';
-    container.innerHTML = html;
-  } catch(e) { container.innerHTML = '<div class="error">載入失敗: ' + e.message + '</div>'; }
+    html += '</tbody></table></div>';
+    table.innerHTML = html;
+  } catch(e) { table.innerHTML = '<div class="error">載入失敗: ' + e.message + '</div>'; }
 }
 
 // Init
