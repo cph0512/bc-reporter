@@ -57,7 +57,7 @@ const userStore = {
     return safe;
   },
 
-  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [], managedSalespeople = [], canExport }) {
+  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [], managedSalespeople = [], canExport, isSales }) {
     const users = readUsers();
     if (users.find(u => u.username === username)) {
       throw new Error('Username already exists');
@@ -75,6 +75,7 @@ const userStore = {
       dashboards,
       managedSalespeople,
       canExport: exportAllowed,
+      isSales: Boolean(isSales),
       createdAt: new Date().toISOString(),
     };
     users.push(newUser);
@@ -101,6 +102,7 @@ const userStore = {
     if (fields.managedSalespeople !== undefined) users[idx].managedSalespeople = fields.managedSalespeople;
     if (fields.canExport !== undefined) users[idx].canExport = Boolean(fields.canExport);
     if (fields.disabled !== undefined) users[idx].disabled = fields.disabled;
+    if (fields.isSales !== undefined) users[idx].isSales = Boolean(fields.isSales);
     if (fields.password) {
       users[idx].passwordHash = await bcrypt.hash(fields.password, COST);
     }

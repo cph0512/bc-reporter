@@ -6196,18 +6196,15 @@ async function renderProspectReport() {
 }
 
 async function fetchProspectData() {
-  // Populate salesperson dropdown
+  // Populate salesperson dropdown from salespeople list
   try {
-    const uRes = await fetch('/api/pipeline/config');
-    if (uRes.ok) {
-      const uData = await uRes.json();
-      // Also fetch users for display names
-      const usersRes = await fetch('/api/users');
-      const users = usersRes.ok ? await usersRes.json() : [];
+    const spRes = await fetch('/api/admin/salespeople');
+    if (spRes.ok) {
+      const salespeople = await spRes.json();
       const sel = document.getElementById('prospectSalesperson');
-      if (sel && users.length > 0) {
+      if (sel) {
         sel.innerHTML = '<option value="">指派業務人員</option>';
-        users.forEach(u => {
+        salespeople.forEach(u => {
           const name = u.displayName || u.username;
           sel.innerHTML += `<option value="${name}">${name}</option>`;
         });

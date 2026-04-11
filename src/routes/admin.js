@@ -21,6 +21,12 @@ router.get('/pipeline-export', (req, res) => {
   res.json(pipelineStore.getRawData());
 });
 
+// GET /api/admin/salespeople — list users marked as sales
+router.get('/salespeople', (req, res) => {
+  const all = userStore.getAll();
+  res.json(all.filter(u => u.isSales || u.role === 'manager'));
+});
+
 // POST /api/admin/users — create user
 router.post('/users', async (req, res) => {
   try {
