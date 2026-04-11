@@ -177,7 +177,7 @@ app.get('/api/external/income', async (req, res) => {
   try {
     const { year, month, companyId } = req.query;
     const opts = companyId ? { companyId } : {};
-    const data = await reportEngine.getEbitda(parseInt(year), parseInt(month), opts);
+    const data = await reportEngine.getIncomeStatement(parseInt(year), parseInt(month), opts);
     res.json(data);
   } catch (e) { console.error('[API Error]', e.message); res.status(500).json({ error: 'Internal server error' }); }
 });
