@@ -125,11 +125,16 @@ app.post('/api/sync/import-pipeline', express.json({ limit: '10mb' }), (req, res
     if (!leads) return res.status(400).json({ error: 'Missing leads' });
     const current = pipelineStore.getRawData();
     // Merge: add new leads (by id), update existing
-    const existingIds = new Set(current.leads.map(l => l.id));
+    const existingIdxMap = new Map(current.leads.map((l, i) => [l.id, i]));
     let added = 0, updated = 0;
     for (const lead of leads) {
-      if (!existingIds.has(lead.id)) {
+      const idx = existingIdxMap.get(lead.id);
+      if (idx !== undefined) {
+        current.leads[idx] = lead;
+        updated++;
+      } else {
         current.leads.push(lead);
+        existingIdxMap.set(lead.id, current.leads.length - 1);
         added++;
       }
     }
@@ -143,7 +148,7 @@ app.post('/api/sync/import-pipeline', express.json({ limit: '10mb' }), (req, res
       }
     }
     pipelineStore.setRawData(current);
-    res.json({ success: true, added, total_leads: current.leads.length, total_activities: current.activities.length });
+    res.json({ success: true, added, updated, total_leads: current.leads.length, total_activities: current.activities.length });
   } catch (e) {
     console.error('[Sync Import] Error:', e.message);
     res.status(500).json({ error: 'Import failed' });
