@@ -6185,6 +6185,9 @@ async function renderProspectReport() {
       <button class="btn btn-primary" onclick="fetchProspectData()">抓取營收資料</button>
       <button class="btn btn-sm" onclick="syncAllTwsRevenue()">重新同步全部營收</button>
       <button class="btn btn-export btn-sm" onclick="window.open('/api/tw-stock/export/compare','_blank')">匯出 Excel</button>
+      <select id="prospectSalesperson" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
+        <option value="">指派業務人員</option>
+      </select>
       <button class="btn btn-sm" style="background:#1b5e20;color:#fff;" onclick="importToPipeline()">匯入業務管線</button>
       <span id="prospectSelectCount" style="font-size:12px;color:#999;"></span>
     </div>
@@ -6193,6 +6196,24 @@ async function renderProspectReport() {
 }
 
 async function fetchProspectData() {
+  // Populate salesperson dropdown
+  try {
+    const uRes = await fetch('/api/pipeline/config');
+    if (uRes.ok) {
+      const uData = await uRes.json();
+      // Also fetch users for display names
+      const usersRes = await fetch('/api/users');
+      const users = usersRes.ok ? await usersRes.json() : [];
+      const sel = document.getElementById('prospectSalesperson');
+      if (sel && users.length > 0) {
+        sel.innerHTML = '<option value="">指派業務人員</option>';
+        users.forEach(u => {
+          const name = u.displayName || u.username;
+          sel.innerHTML += `<option value="${name}">${name}</option>`;
+        });
+      }
+    }
+  } catch {}
   const table = document.getElementById('prospectTable');
   table.innerHTML = '<div class="loading">載入中...</div>';
   const codes = twsWatchlist.map(w => w.code).join(',');
@@ -6324,7 +6345,9 @@ async function importToPipeline() {
     }
   });
   if (selected.length === 0) { alert('請勾選要匯入的公司'); return; }
-  if (!confirm(`將 ${selected.length} 家公司匯入業務管線？`)) return;
+  const salesperson = document.getElementById('prospectSalesperson')?.value || '';
+  if (!confirm(`將 ${selected.length} 家公司匯入業務管線${salesperson ? '（指派給 ' + salesperson + '）' : ''}？`)) return;
+  selected.forEach(s => s.salesperson = salesperson);
 
   try {
     const res = await fetch('/api/tw-stock/to-pipeline', {

@@ -368,7 +368,7 @@ router.post('/to-pipeline', requireManagerOrAdmin, (req, res) => {
         companyName: `${s.code} ${s.name}`,
         category: '潛在合作對象',
         status: '初步接觸',
-        salesperson: createdBy || '',
+        salesperson: s.salesperson || createdBy || '',
         estimatedValue: s.logistics || 0,
         notes: `來源：AI廠商營收分析\n股票代碼：${s.code}\n市場：${s.market === 'otc' ? '上櫃' : '上市'}\n年營收：${s.revenue ? (s.revenue / 1e8).toFixed(2) + ' 億' : '-'}\n預估物流費用(3%)：${s.logistics ? (s.logistics / 1e8).toFixed(2) + ' 億' : '-'}\n優先級：${s.priority}`,
         createdBy,
