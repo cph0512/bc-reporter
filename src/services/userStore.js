@@ -125,14 +125,20 @@ const userStore = {
   async ensureDefaultAdmin() {
     const users = readUsers();
     if (users.length > 0) return;
-    console.log('⚠️  No users found — creating default admin account');
+    const bootstrapPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+    if (!bootstrapPassword) {
+      console.warn('⚠️  No users found and ADMIN_BOOTSTRAP_PASSWORD is not set — skipping admin creation');
+      console.warn('   Set ADMIN_BOOTSTRAP_PASSWORD env var to bootstrap an admin account on first run');
+      return;
+    }
+    console.log('⚠️  No users found — creating admin account from ADMIN_BOOTSTRAP_PASSWORD');
     await this.create({
       username: 'admin',
-      password: 'admin123',
+      password: bootstrapPassword,
       role: 'admin',
       displayName: 'Administrator',
     });
-    console.log('   Username: admin / Password: admin123 — CHANGE IMMEDIATELY');
+    console.log('   Admin account created. Change the password after first login.');
   },
 };
 
