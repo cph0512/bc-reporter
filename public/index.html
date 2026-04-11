@@ -471,6 +471,7 @@
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
       <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeLeadDetail()">關閉</button>
       <button class="btn btn-sm btn-edit" id="ldEditBtn" onclick="">編輯商機</button>
+      <button class="btn btn-sm" id="ldDeleteBtn" style="background:#f8d7da;color:#c62828;" onclick="">刪除商機</button>
     </div>
   </div>
 </div>
@@ -3488,6 +3489,7 @@ function openLeadDetail(leadId) {
 
   document.getElementById('ldTitle').textContent = lead.companyName;
   document.getElementById('ldEditBtn').setAttribute('onclick', `closeLeadDetail(); openEditLead('${leadId}')`);
+  document.getElementById('ldDeleteBtn').setAttribute('onclick', `closeLeadDetail(); deleteLead('${leadId}','${(lead.companyName||'').replace(/'/g,"\\'")}')`);
 
   // Basic info
   const staleHtml = staleIndicator(lead);
