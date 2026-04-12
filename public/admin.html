@@ -142,6 +142,7 @@
         <label><input type="checkbox" value="sales">銷售儀表板 Sales</label>
         <label><input type="checkbox" value="purchasing">採購儀表板 Purchasing</label>
         <label><input type="checkbox" value="pipeline">業務管線 Pipeline</label>
+        <label><input type="checkbox" value="twstock">台股財報 TW Stocks</label>
         <label><input type="checkbox" value="reports">報表 Reports</label>
         <label><input type="checkbox" value="ledger">查帳 Ledger</label>
       </div>
@@ -153,6 +154,12 @@
           <input type="checkbox" id="mCanExport"> 允許匯出 Excel / PDF 報表
         </label>
         <div style="font-size:11px;color:#999;margin-top:4px;">管理員永遠可以匯出，此設定僅對一般使用者和主管有效</div>
+      </div>
+      <div style="border:1px solid #d0d0d0;border-radius:6px;padding:8px;margin-top:8px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="mIsSales"> 業務人員
+        </label>
+        <div style="font-size:11px;color:#999;margin-top:4px;">勾選後會出現在「潛力客戶開發 → 指派業務人員」選單中</div>
       </div>
     </div>
     <div class="form-group" id="pwGroup">
@@ -199,7 +206,7 @@ async function loadUsers() {
   if (!usersData.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  const dashLabels = { financial: '財務', sales: '銷售', purchasing: '採購', pipeline: '業務管線' };
+  const dashLabels = { financial: '財務', sales: '銷售', purchasing: '採購', pipeline: '業務管線', twstock: '台股財報' };
   tbody.innerHTML = usersData.map(u => {
     const comps = u.companies && u.companies.length
       ? u.companies.map(cid => { const c = allCompanies.find(x => x.id === cid); return c ? esc(c.name) : esc(cid); }).join(', ')
@@ -217,7 +224,7 @@ async function loadUsers() {
       <td style="text-align:center;">${u.role === 'admin' || u.canExport ? '<span style="color:#2e7d32;font-size:13px;">✓</span>' : '<span style="color:#ccc;font-size:13px;">—</span>'}</td>
       <td>${new Date(u.createdAt).toLocaleDateString('zh-TW')}</td>
       <td class="actions">
-        <button class="btn btn-sm btn-edit" onclick='openEdit(${JSON.stringify(u.id)},${JSON.stringify(u.username)},${JSON.stringify(u.displayName)},${JSON.stringify(u.role)},${JSON.stringify(u.companies||[])},${JSON.stringify(u.dashboards||[])},${JSON.stringify(u.managedSalespeople||[])},${JSON.stringify(!!u.canExport)})'>編輯</button>
+        <button class="btn btn-sm btn-edit" onclick='openEdit(${JSON.stringify(u.id)},${JSON.stringify(u.username)},${JSON.stringify(u.displayName)},${JSON.stringify(u.role)},${JSON.stringify(u.companies||[])},${JSON.stringify(u.dashboards||[])},${JSON.stringify(u.managedSalespeople||[])},${JSON.stringify(!!u.canExport)},${JSON.stringify(!!u.isSales)})'>編輯</button>
         ${u.id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}','${esc(u.username)}')">刪除</button>` : ''}
       </td>
     </tr>`;
@@ -279,6 +286,7 @@ function openCreate() {
   document.getElementById('mPassword').value = '';
   document.getElementById('pwLabel').textContent = '密碼';
   document.getElementById('mCanExport').checked = false;
+  document.getElementById('mIsSales').checked = false;
   document.getElementById('modalError').style.display = 'none';
   renderCompanyCheckboxes([]);
   renderDashboardCheckboxes([]);
@@ -287,7 +295,7 @@ function openCreate() {
   document.getElementById('modal').classList.add('show');
 }
 
-function openEdit(id, username, displayName, role, companies, dashboards, managedSalespeople, canExport) {
+function openEdit(id, username, displayName, role, companies, dashboards, managedSalespeople, canExport, isSales) {
   editingId = id;
   document.getElementById('modalTitle').textContent = '編輯帳號';
   document.getElementById('mUsername').value = username;
@@ -297,6 +305,7 @@ function openEdit(id, username, displayName, role, companies, dashboards, manage
   document.getElementById('mPassword').value = '';
   document.getElementById('pwLabel').textContent = '新密碼（留空不更改）';
   document.getElementById('mCanExport').checked = !!canExport;
+  document.getElementById('mIsSales').checked = !!isSales;
   document.getElementById('modalError').style.display = 'none';
   renderCompanyCheckboxes(companies || []);
   renderDashboardCheckboxes(dashboards || []);
@@ -322,6 +331,7 @@ async function saveUser() {
   const dashboards = getSelectedDashboards();
   const managedSalespeople = role === 'manager' ? getSelectedManaged() : [];
   const canExport = document.getElementById('mCanExport').checked;
+  const isSales = document.getElementById('mIsSales').checked;
 
   if (!editingId) {
     // Create
@@ -330,7 +340,7 @@ async function saveUser() {
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, role, displayName: displayName || username, companies, dashboards, managedSalespeople, canExport }),
+        body: JSON.stringify({ username, password, role, displayName: displayName || username, companies, dashboards, managedSalespeople, canExport, isSales }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -339,7 +349,7 @@ async function saveUser() {
     } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
   } else {
     // Update
-    const body = { displayName, role, companies, dashboards, managedSalespeople, canExport };
+    const body = { displayName, role, companies, dashboards, managedSalespeople, canExport, isSales };
     if (password) body.password = password;
     try {
       const res = await fetch(`/api/admin/users/${editingId}`, {

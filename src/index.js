@@ -16,6 +16,7 @@ const botAuthRoutes = require('./routes/botAuth');
 const adminRoutes = require('./routes/admin');
 const pipelineRoutes = require('./routes/pipeline');
 const strategyRoutes = require('./routes/strategy');
+const twStockRoutes = require('./routes/twStock');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 const companyAccess = require('./middleware/companyAccess');
 const { securityHeaders, corsConfig } = require('./middleware/security');
@@ -112,7 +113,7 @@ app.get('/api/sync/export', (req, res) => {
   }
   auditLog('sync_export', req);
   // Strip password hashes from user data (規範 §5.2)
-  const safeUsers = userStore.getAllRaw().map(({ password, ...user }) => user);
+  const safeUsers = userStore.getAllRaw().map(({ passwordHash, ...user }) => user);
   res.json({
     users: safeUsers,
     pipeline: pipelineStore.getRawData(),
@@ -128,11 +129,16 @@ app.post('/api/sync/import-pipeline', express.json({ limit: '10mb' }), (req, res
     if (!leads) return res.status(400).json({ error: 'Missing leads' });
     const current = pipelineStore.getRawData();
     // Merge: add new leads (by id), update existing
-    const existingIds = new Set(current.leads.map(l => l.id));
+    const existingIdxMap = new Map(current.leads.map((l, i) => [l.id, i]));
     let added = 0, updated = 0;
     for (const lead of leads) {
-      if (!existingIds.has(lead.id)) {
+      const idx = existingIdxMap.get(lead.id);
+      if (idx !== undefined) {
+        current.leads[idx] = lead;
+        updated++;
+      } else {
         current.leads.push(lead);
+        existingIdxMap.set(lead.id, current.leads.length - 1);
         added++;
       }
     }
@@ -146,7 +152,7 @@ app.post('/api/sync/import-pipeline', express.json({ limit: '10mb' }), (req, res
       }
     }
     pipelineStore.setRawData(current);
-    res.json({ success: true, added, total_leads: current.leads.length, total_activities: current.activities.length });
+    res.json({ success: true, added, updated, total_leads: current.leads.length, total_activities: current.activities.length });
   } catch (e) {
     console.error('[Sync Import] Error:', e.message);
     res.status(500).json({ error: 'Import failed' });
@@ -180,7 +186,7 @@ app.get('/api/external/income', async (req, res) => {
   try {
     const { year, month, companyId } = req.query;
     const opts = companyId ? { companyId } : {};
-    const data = await reportEngine.getEbitda(parseInt(year), parseInt(month), opts);
+    const data = await reportEngine.getIncomeStatement(parseInt(year), parseInt(month), opts);
     res.json(data);
   } catch (e) { console.error('[API Error]', e.message); res.status(500).json({ error: 'Internal server error' }); }
 });
@@ -279,6 +285,7 @@ app.get('/api/companies', requireAuth, (req, res) => {
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/api/pipeline', requireAuth, pipelineRoutes);
 app.use('/api/strategy', requireAuth, strategyRoutes);
+app.use('/api/tw-stock', requireAuth, twStockRoutes);
 app.use('/api/contacts', requireAuth, aiLimiter, contactRoutes);
 app.use('/api', requireAuth, companyAccess, createReportRoutes(reportEngine));
 app.use('/docs', requireAuth, docsRoutes);

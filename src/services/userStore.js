@@ -57,7 +57,7 @@ const userStore = {
     return safe;
   },
 
-  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [], managedSalespeople = [], canExport }) {
+  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [], managedSalespeople = [], canExport, isSales }) {
     const users = readUsers();
     if (users.find(u => u.username === username)) {
       throw new Error('Username already exists');
@@ -75,6 +75,7 @@ const userStore = {
       dashboards,
       managedSalespeople,
       canExport: exportAllowed,
+      isSales: Boolean(isSales),
       createdAt: new Date().toISOString(),
     };
     users.push(newUser);
@@ -101,6 +102,7 @@ const userStore = {
     if (fields.managedSalespeople !== undefined) users[idx].managedSalespeople = fields.managedSalespeople;
     if (fields.canExport !== undefined) users[idx].canExport = Boolean(fields.canExport);
     if (fields.disabled !== undefined) users[idx].disabled = fields.disabled;
+    if (fields.isSales !== undefined) users[idx].isSales = Boolean(fields.isSales);
     if (fields.password) {
       users[idx].passwordHash = await bcrypt.hash(fields.password, COST);
     }
@@ -123,14 +125,20 @@ const userStore = {
   async ensureDefaultAdmin() {
     const users = readUsers();
     if (users.length > 0) return;
-    console.log('⚠️  No users found — creating default admin account');
+    const bootstrapPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+    if (!bootstrapPassword) {
+      console.warn('⚠️  No users found and ADMIN_BOOTSTRAP_PASSWORD is not set — skipping admin creation');
+      console.warn('   Set ADMIN_BOOTSTRAP_PASSWORD env var to bootstrap an admin account on first run');
+      return;
+    }
+    console.log('⚠️  No users found — creating admin account from ADMIN_BOOTSTRAP_PASSWORD');
     await this.create({
       username: 'admin',
-      password: 'admin123',
+      password: bootstrapPassword,
       role: 'admin',
       displayName: 'Administrator',
     });
-    console.log('   Username: admin / Password: admin123 — CHANGE IMMEDIATELY');
+    console.log('   Admin account created. Change the password after first login.');
   },
 };
 
