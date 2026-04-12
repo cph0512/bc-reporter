@@ -57,7 +57,7 @@ const userStore = {
     return safe;
   },
 
-  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [], managedSalespeople = [], canExport, isSales }) {
+  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [], managedSalespeople = [], canExport, isSales, strategyRole }) {
     const users = readUsers();
     if (users.find(u => u.username === username)) {
       throw new Error('Username already exists');
@@ -76,6 +76,7 @@ const userStore = {
       managedSalespeople,
       canExport: exportAllowed,
       isSales: Boolean(isSales),
+      strategyRole: strategyRole || 'viewer', // finance_editor | sales_manager | viewer
       createdAt: new Date().toISOString(),
     };
     users.push(newUser);
@@ -103,6 +104,7 @@ const userStore = {
     if (fields.canExport !== undefined) users[idx].canExport = Boolean(fields.canExport);
     if (fields.disabled !== undefined) users[idx].disabled = fields.disabled;
     if (fields.isSales !== undefined) users[idx].isSales = Boolean(fields.isSales);
+    if (fields.strategyRole !== undefined) users[idx].strategyRole = fields.strategyRole;
     if (fields.password) {
       users[idx].passwordHash = await bcrypt.hash(fields.password, COST);
     }
