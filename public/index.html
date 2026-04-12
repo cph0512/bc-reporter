@@ -6000,9 +6000,9 @@ function closeTwsModal() {
 }
 
 async function addTwStock() {
-  const code = document.getElementById('twsAddCode').value.trim();
-  const name = document.getElementById('twsAddName').value.trim();
-  const market = document.getElementById('twsAddMarket').value;
+  const code = document.getElementById('twsAddCode')?.value?.trim() || document.getElementById('twsNewCode')?.value?.trim();
+  const name = document.getElementById('twsAddName')?.value?.trim() || document.getElementById('twsNewName')?.value?.trim();
+  const market = document.getElementById('twsAddMarket')?.value || document.getElementById('twsNewMarket')?.value || 'sii';
 
   if (!code || !name) {
     alert(getLang() === 'en' ? 'Stock code and name are required' : '股票代碼和名稱為必填');
@@ -6010,116 +6010,20 @@ async function addTwStock() {
   }
 
   try {
-    const year = new Date().getFullYear();
-    const [overviewRes, coverageRes] = await Promise.all([
-      fetch(`/api/strategy/kpi/overview?scenarioId=${strategyCurrentScenario}&year=${year}`),
-      fetch(`/api/strategy/coverage?scenarioId=${strategyCurrentScenario}&year=${year}`),
-    ]);
-    const overview = await overviewRes.json();
-    const coverage = await coverageRes.json();
-
-    strategyCharts.forEach(c => c.destroy()); strategyCharts = [];
-
-    // KPI Cards
-    const kpiHtml = (overview.kpis || []).map(k => {
-      const color = k.statusColor === 'green' ? '#4caf50' : k.statusColor === 'yellow' ? '#ff9800' : '#f44336';
-      return `<div class="kpi-card" style="border-left:4px solid ${color};">
-        <div class="kpi-label">${k.name}</div>
-        <div class="kpi-value">${k.formatted}</div>
-        <div class="kpi-sub">${k.nameEn}</div>
-      </div>`;
-    }).join('');
-
-    // Coverage card
-    const covColor = coverage.coverage >= 3 ? '#4caf50' : coverage.coverage >= 1.5 ? '#ff9800' : '#f44336';
-    const coverageCard = `<div class="kpi-card" style="border-left:4px solid ${covColor};">
-      <div class="kpi-label">Pipeline Coverage</div>
-      <div class="kpi-value">${coverage.coverageFormatted}</div>
-      <div class="kpi-sub">Gap: ${(coverage.forecastGap || 0).toFixed(1)}M / Pipeline: ${(coverage.weightedPipeline || 0).toFixed(1)}M</div>
-    </div>`;
-
-    container.innerHTML = `
-      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
-        <div>${scenarioSelector()}</div>
-        <div style="font-size:13px;color:#666;">年度: ${year}</div>
-      </div>
-      <div class="kpi-grid">${kpiHtml}${coverageCard}</div>
-      <div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-        <div class="card"><div class="card-header"><span>Forecast vs Actual (Quarterly)</span></div><div class="card-body"><canvas id="chartStratForecastVsActual"></canvas></div></div>
-        <div class="card"><div class="card-header"><span>商業模式營收占比</span></div><div class="card-body"><canvas id="chartStratBizBreakdown"></canvas></div></div>
-      </div>
-      <div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div class="card"><div class="card-header"><span>市場別營收</span></div><div class="card-body"><canvas id="chartStratMarketBreakdown"></canvas></div></div>
-        <div class="card"><div class="card-header"><span>Pipeline 明細 (Top 10)</span></div><div class="card-body">
-          <table style="width:100%;font-size:12px;border-collapse:collapse;">
-            <thead><tr style="border-bottom:2px solid #e0e0e0;text-align:left;">
-              <th style="padding:8px 4px;">公司</th><th>狀態</th><th style="text-align:right;">估值</th><th style="text-align:right;">機率</th><th style="text-align:right;">加權</th>
-            </tr></thead>
-            <tbody>${(coverage.leadDetails || []).slice(0, 10).map(l => `<tr style="border-bottom:1px solid #f0f0f0;">
-              <td style="padding:6px 4px;">${l.company}</td><td>${l.status}</td>
-              <td style="text-align:right;">${(l.value/1000000).toFixed(1)}M</td>
-              <td style="text-align:right;">${(l.probability*100).toFixed(0)}%</td>
-              <td style="text-align:right;">${(l.weighted/1000000).toFixed(1)}M</td>
-            </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">尚無 Pipeline 資料</td></tr>'}
-            </tbody>
-          </table>
-        </div></div>
-      </div>`;
-
-    // Quarterly forecast vs actual chart
-    const qData = overview.quarterlyData || [];
-    if (qData.length > 0) {
-      const ctx1 = document.getElementById('chartStratForecastVsActual');
-      if (ctx1) {
-        strategyCharts.push(new Chart(ctx1, {
-          type: 'bar',
-          data: {
-            labels: qData.map(q => q.quarter),
-            datasets: [
-              { label: 'Forecast', data: qData.map(q => q.forecast?.revenue?.toFixed(1) || 0), backgroundColor: 'rgba(54,162,235,0.7)', borderRadius: 4 },
-              { label: 'Actual', data: qData.map(q => 0), backgroundColor: 'rgba(255,99,132,0.7)', borderRadius: 4 },
-            ]
-          },
-          options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { title: { display: true, text: 'NT$M' } } } }
-        }));
-      }
+    const res = await fetch('/api/tw-stock/watchlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, name, market }),
+    });
+    const result = await res.json();
+    if (res.ok) {
+      closeTwsModal();
+      await loadTwStock();
+    } else {
+      alert(result.error || '新增失敗');
     }
-
-    // Biz model breakdown pie
-    const bizData = overview.bizBreakdown || [];
-    if (bizData.length > 0) {
-      const ctx2 = document.getElementById('chartStratBizBreakdown');
-      if (ctx2) {
-        strategyCharts.push(new Chart(ctx2, {
-          type: 'doughnut',
-          data: {
-            labels: bizData.map(b => b.businessModel),
-            datasets: [{ data: bizData.map(b => b.revenue?.toFixed(1) || 0), backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF'] }]
-          },
-          options: { responsive: true, plugins: { legend: { position: 'right' } } }
-        }));
-      }
-    }
-
-    // Market breakdown bar
-    const mktData = overview.marketBreakdown || [];
-    if (mktData.length > 0) {
-      const ctx3 = document.getElementById('chartStratMarketBreakdown');
-      if (ctx3) {
-        strategyCharts.push(new Chart(ctx3, {
-          type: 'bar',
-          data: {
-            labels: mktData.map(m => m.market),
-            datasets: [{ label: '營收 (NT$M)', data: mktData.map(m => m.revenue?.toFixed(1) || 0), backgroundColor: ['#4caf50','#2196f3','#ff9800'], borderRadius: 4 }]
-          },
-          options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
-        }));
-      }
-    }
-
-  } catch(e) {
-    console.error('Strategy overview error:', e);
-    container.innerHTML = `<div style="color:#c62828;padding:20px;">載入失敗: ${e.message}</div>`;
+  } catch (err) {
+    alert('新增失敗');
   }
 }
 
@@ -6702,29 +6606,6 @@ async function archiveScenario(id) {
     await fetch(`/api/strategy/scenarios/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'archived' }) });
     loadStrategySettings();
   } catch(e) { alert('封存失敗: ' + e.message); }
-}
-
-async function addTwStock() {
-  const code = document.getElementById('twsNewCode')?.value?.trim();
-  const name = document.getElementById('twsNewName')?.value?.trim();
-  const market = document.getElementById('twsNewMarket')?.value || 'TWSE';
-  if (!code) { alert('請輸入股票代號'); return; }
-  try {
-    const res = await fetch('/api/tw-stock/watchlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, name, market }),
-    });
-    const result = await res.json();
-    if (res.ok) {
-      closeTwsModal();
-      await loadTwStock();
-    } else {
-      alert(result.error || '新增失敗');
-    }
-  } catch (err) {
-    alert('新增失敗');
-  }
 }
 
 async function removeTwStock(code) {
