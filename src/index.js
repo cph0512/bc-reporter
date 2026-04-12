@@ -291,7 +291,15 @@ app.use('/api', requireAuth, companyAccess, createReportRoutes(reportEngine));
 app.use('/docs', requireAuth, docsRoutes);
 
 // ===== Static Files (CSS/JS assets — after route matching) =====
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../public'), {
+  etag: false,
+  setHeaders: (res, filePath) => {
+    // No-cache for HTML to prevent stale JS
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
 
 // ===== Start Server (local) / Export (Vercel) =====
 userStore.ensureDefaultAdmin().catch(() => {});
