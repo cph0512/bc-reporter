@@ -6699,6 +6699,14 @@ async function archiveScenario(id) {
     await fetch(`/api/strategy/scenarios/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'archived' }) });
     loadStrategySettings();
   } catch(e) { alert('封存失敗: ' + e.message); }
+}
+
+async function addTwStock() {
+  const code = document.getElementById('twsNewCode')?.value?.trim();
+  const name = document.getElementById('twsNewName')?.value?.trim();
+  const market = document.getElementById('twsNewMarket')?.value || 'TWSE';
+  if (!code) { alert('請輸入股票代號'); return; }
+  try {
     const res = await fetch('/api/tw-stock/watchlist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
