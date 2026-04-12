@@ -15,6 +15,7 @@ const authRoutes = require('./routes/auth');
 const botAuthRoutes = require('./routes/botAuth');
 const adminRoutes = require('./routes/admin');
 const pipelineRoutes = require('./routes/pipeline');
+const strategyRoutes = require('./routes/strategy');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 const companyAccess = require('./middleware/companyAccess');
 const { securityHeaders, corsConfig } = require('./middleware/security');
@@ -42,6 +43,9 @@ if (isProduction) {
 // ===== Initialize BC Client & Report Engine =====
 const bcClient = new BCClient(process.env);
 const reportEngine = new ReportEngine(bcClient);
+
+// Share reportEngine with strategy routes for KPI calculations
+app.locals.reportEngine = reportEngine;
 
 // ===== Middleware =====
 app.set('trust proxy', 1); // Trust Railway/Vercel reverse proxy for secure cookies
@@ -274,6 +278,7 @@ app.get('/api/companies', requireAuth, (req, res) => {
 });
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/api/pipeline', requireAuth, pipelineRoutes);
+app.use('/api/strategy', requireAuth, strategyRoutes);
 app.use('/api/contacts', requireAuth, aiLimiter, contactRoutes);
 app.use('/api', requireAuth, companyAccess, createReportRoutes(reportEngine));
 app.use('/docs', requireAuth, docsRoutes);

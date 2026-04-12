@@ -16,6 +16,7 @@ const loginLimiter = rateLimit({
   message: { error: '登入嘗試次數過多，請 15 分鐘後再試' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   keyGenerator: (req) => {
     // Rate limit by username instead of IP so different users don't block each other
     return (req.body?.username || req.ip || 'unknown').toLowerCase();

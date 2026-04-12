@@ -744,6 +744,48 @@
   </div>
 </div><!-- /ledgerView -->
 
+<!-- ===== Strategy War Room Module ===== -->
+<div id="strategyView" style="display:none">
+  <div class="contacts-sub-tabs" id="strategySubTabs" style="padding:12px 24px 0;border-bottom:1px solid #e0e0e0;background:#fafafa;">
+    <button class="active" onclick="switchStrategySubView('overview')">戰情總覽</button>
+    <button onclick="switchStrategySubView('forecast')">Forecast</button>
+    <button onclick="switchStrategySubView('kpi')">KPI 中心</button>
+    <button onclick="switchStrategySubView('gap')">缺口與策略</button>
+    <button onclick="switchStrategySubView('settings')">設定</button>
+  </div>
+  <!-- A: Overview Dashboard -->
+  <div id="strategyOverviewSub" class="dashboard-content" style="padding:16px 24px;">
+    <div class="loading">載入中...</div>
+  </div>
+  <!-- B: Forecast Editor -->
+  <div id="strategyForecastSub" style="display:none;padding:16px 24px;">
+    <div class="loading">載入中...</div>
+  </div>
+  <!-- C: KPI Center -->
+  <div id="strategyKpiSub" style="display:none;padding:16px 24px;">
+    <div class="loading">載入中...</div>
+  </div>
+  <!-- D: Gap & Strategy -->
+  <div id="strategyGapSub" style="display:none;padding:16px 24px;">
+    <div class="loading">載入中...</div>
+  </div>
+  <!-- E: Settings -->
+  <div id="strategySettingsSub" style="display:none;padding:16px 24px;">
+    <div class="loading">載入中...</div>
+  </div>
+</div><!-- /strategyView -->
+
+<!-- Strategy Modals -->
+<div id="strategyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px;max-width:600px;width:95%;max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="strategyModalTitle" style="margin:0;font-size:16px;">策略</h3>
+      <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeStrategyModal()">✕</span>
+    </div>
+    <div id="strategyModalBody"></div>
+  </div>
+</div>
+
 <!-- ===== Contacts Module ===== -->
 <!-- contactsView removed — now embedded inside pipeline views -->
 
@@ -863,6 +905,7 @@ function renderTabs() {
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
     { id: 'reports', label: l.dReports, perm: 'reports' },
     { id: 'ledger', label: l.dLedgerTab, perm: 'ledger' },
+    { id: 'strategy', label: l.dStrategyTab || '策略戰情室', perm: 'strategy' },
   ];
   const visibleTabs = allTabs.filter(t => {
     if (t.adminOnly && userRole !== 'admin') return false;
@@ -1069,7 +1112,7 @@ const LABELS = {
     sMargin: '利潤率',
 
     // Dashboard tabs
-    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dReports: '報表', dLedgerTab: '查帳',
+    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dReports: '報表', dLedgerTab: '查帳', dStrategyTab: '策略戰情室',
     // Ledger labels
     ledgerType: '查詢類型', ledgerGL: '總帳分錄', ledgerTB: '試算表', ledgerJournal: '日記帳',
     ledgerAccounts: '科目篩選（可多選）', ledgerClearAll: '清除全部', ledgerFetch: '查詢',
@@ -1256,7 +1299,7 @@ const LABELS = {
     sMargin: 'Margin',
 
     // Dashboard tabs
-    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dReports: 'Reports', dLedgerTab: 'Ledger',
+    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dReports: 'Reports', dLedgerTab: 'Ledger', dStrategyTab: 'Strategy War Room',
     // Ledger labels
     ledgerType: 'Query Type', ledgerGL: 'GL Entries', ledgerTB: 'Trial Balance', ledgerJournal: 'Journals',
     ledgerAccounts: 'Account Filter (multi-select)', ledgerClearAll: 'Clear All', ledgerFetch: 'Query',
@@ -2095,6 +2138,7 @@ function switchTab(tab) {
   document.getElementById('pipelineDashboardView').style.display = 'none';
   document.getElementById('reportsView').style.display = 'none';
   document.getElementById('ledgerView').style.display = 'none';
+  document.getElementById('strategyView').style.display = 'none';
 
   if (tab === 'dashboard') {
     document.getElementById('dashboardView').style.display = '';
@@ -2116,6 +2160,9 @@ function switchTab(tab) {
   } else if (tab === 'ledger') {
     document.getElementById('ledgerView').style.display = '';
     initLedgerView();
+  } else if (tab === 'strategy') {
+    document.getElementById('strategyView').style.display = '';
+    loadStrategyOverview();
   }
 }
 
@@ -5315,6 +5362,765 @@ function renderScChart(data) {
       }
     }
   });
+}
+
+// ==========================================
+//  Strategy War Room Module
+// ==========================================
+let strategyCharts = [];
+let strategyScenarios = [];
+let strategyCurrentScenario = null;
+let strategyCurrentSubView = 'overview';
+
+function switchStrategySubView(sub) {
+  strategyCurrentSubView = sub;
+  const subs = ['overview', 'forecast', 'kpi', 'gap', 'settings'];
+  subs.forEach(s => {
+    const el = document.getElementById('strategy' + s.charAt(0).toUpperCase() + s.slice(1) + 'Sub');
+    if (el) el.style.display = s === sub ? '' : 'none';
+  });
+  const btns = document.querySelectorAll('#strategySubTabs button');
+  btns.forEach((b, i) => b.classList.toggle('active', subs[i] === sub));
+  if (sub === 'overview') loadStrategyOverview();
+  else if (sub === 'forecast') loadStrategyForecast();
+  else if (sub === 'kpi') loadStrategyKpiCenter();
+  else if (sub === 'gap') loadStrategyGap();
+  else if (sub === 'settings') loadStrategySettings();
+}
+
+async function loadScenarios() {
+  try {
+    const res = await fetch('/api/strategy/scenarios');
+    strategyScenarios = await res.json();
+    if (strategyScenarios.length > 0 && !strategyCurrentScenario) {
+      strategyCurrentScenario = strategyScenarios[0].id;
+    }
+  } catch(e) { console.error('Load scenarios error:', e); }
+}
+
+function scenarioSelector(onChange) {
+  if (!strategyScenarios.length) return '<div style="color:#999;font-size:13px;">尚無 Scenario，請先上傳 Forecast Excel</div>';
+  return `<select id="scenarioSelect" onchange="${onChange || 'onScenarioChange()'}" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+    ${strategyScenarios.map(s => `<option value="${s.id}" ${s.id === strategyCurrentScenario ? 'selected' : ''}>${s.name} (${s.type})</option>`).join('')}
+  </select>`;
+}
+
+function onScenarioChange() {
+  strategyCurrentScenario = document.getElementById('scenarioSelect')?.value;
+  if (strategyCurrentSubView === 'overview') loadStrategyOverview();
+  else if (strategyCurrentSubView === 'forecast') loadStrategyForecast();
+  else if (strategyCurrentSubView === 'kpi') loadStrategyKpiCenter();
+  else if (strategyCurrentSubView === 'gap') loadStrategyGap();
+}
+
+// --- Sub-tab A: Overview Dashboard ---
+async function loadStrategyOverview() {
+  const container = document.getElementById('strategyOverviewSub');
+  container.innerHTML = '<div class="loading">載入中...</div>';
+  await loadScenarios();
+
+  if (!strategyCurrentScenario) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;">
+        <h3 style="color:#666;">歡迎使用策略戰情室</h3>
+        <p style="color:#999;">請先切換到「Forecast」分頁上傳 Forecast Excel 檔案</p>
+      </div>`;
+    return;
+  }
+
+  try {
+    const year = new Date().getFullYear();
+    const [overviewRes, coverageRes] = await Promise.all([
+      fetch(`/api/strategy/kpi/overview?scenarioId=${strategyCurrentScenario}&year=${year}`),
+      fetch(`/api/strategy/coverage?scenarioId=${strategyCurrentScenario}&year=${year}`),
+    ]);
+    const overview = await overviewRes.json();
+    const coverage = await coverageRes.json();
+
+    strategyCharts.forEach(c => c.destroy()); strategyCharts = [];
+
+    // KPI Cards
+    const kpiHtml = (overview.kpis || []).map(k => {
+      const color = k.statusColor === 'green' ? '#4caf50' : k.statusColor === 'yellow' ? '#ff9800' : '#f44336';
+      return `<div class="kpi-card" style="border-left:4px solid ${color};">
+        <div class="kpi-label">${k.name}</div>
+        <div class="kpi-value">${k.formatted}</div>
+        <div class="kpi-sub">${k.nameEn}</div>
+      </div>`;
+    }).join('');
+
+    // Coverage card
+    const covColor = coverage.coverage >= 3 ? '#4caf50' : coverage.coverage >= 1.5 ? '#ff9800' : '#f44336';
+    const coverageCard = `<div class="kpi-card" style="border-left:4px solid ${covColor};">
+      <div class="kpi-label">Pipeline Coverage</div>
+      <div class="kpi-value">${coverage.coverageFormatted}</div>
+      <div class="kpi-sub">Gap: ${(coverage.forecastGap || 0).toFixed(1)}M / Pipeline: ${(coverage.weightedPipeline || 0).toFixed(1)}M</div>
+    </div>`;
+
+    container.innerHTML = `
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+        <div>${scenarioSelector()}</div>
+        <div style="font-size:13px;color:#666;">年度: ${year}</div>
+      </div>
+      <div class="kpi-grid">${kpiHtml}${coverageCard}</div>
+      <div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="card"><div class="card-header"><span>Forecast vs Actual (Quarterly)</span></div><div class="card-body"><canvas id="chartStratForecastVsActual"></canvas></div></div>
+        <div class="card"><div class="card-header"><span>商業模式營收占比</span></div><div class="card-body"><canvas id="chartStratBizBreakdown"></canvas></div></div>
+      </div>
+      <div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card"><div class="card-header"><span>市場別營收</span></div><div class="card-body"><canvas id="chartStratMarketBreakdown"></canvas></div></div>
+        <div class="card"><div class="card-header"><span>Pipeline 明細 (Top 10)</span></div><div class="card-body">
+          <table style="width:100%;font-size:12px;border-collapse:collapse;">
+            <thead><tr style="border-bottom:2px solid #e0e0e0;text-align:left;">
+              <th style="padding:8px 4px;">公司</th><th>狀態</th><th style="text-align:right;">估值</th><th style="text-align:right;">機率</th><th style="text-align:right;">加權</th>
+            </tr></thead>
+            <tbody>${(coverage.leadDetails || []).slice(0, 10).map(l => `<tr style="border-bottom:1px solid #f0f0f0;">
+              <td style="padding:6px 4px;">${l.company}</td><td>${l.status}</td>
+              <td style="text-align:right;">${(l.value/1000000).toFixed(1)}M</td>
+              <td style="text-align:right;">${(l.probability*100).toFixed(0)}%</td>
+              <td style="text-align:right;">${(l.weighted/1000000).toFixed(1)}M</td>
+            </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">尚無 Pipeline 資料</td></tr>'}
+            </tbody>
+          </table>
+        </div></div>
+      </div>`;
+
+    // Quarterly forecast vs actual chart
+    const qData = overview.quarterlyData || [];
+    if (qData.length > 0) {
+      const ctx1 = document.getElementById('chartStratForecastVsActual');
+      if (ctx1) {
+        strategyCharts.push(new Chart(ctx1, {
+          type: 'bar',
+          data: {
+            labels: qData.map(q => q.quarter),
+            datasets: [
+              { label: 'Forecast', data: qData.map(q => q.forecast?.revenue?.toFixed(1) || 0), backgroundColor: 'rgba(54,162,235,0.7)', borderRadius: 4 },
+              { label: 'Actual', data: qData.map(q => 0), backgroundColor: 'rgba(255,99,132,0.7)', borderRadius: 4 },
+            ]
+          },
+          options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { title: { display: true, text: 'NT$M' } } } }
+        }));
+      }
+    }
+
+    // Biz model breakdown pie
+    const bizData = overview.bizBreakdown || [];
+    if (bizData.length > 0) {
+      const ctx2 = document.getElementById('chartStratBizBreakdown');
+      if (ctx2) {
+        strategyCharts.push(new Chart(ctx2, {
+          type: 'doughnut',
+          data: {
+            labels: bizData.map(b => b.businessModel),
+            datasets: [{ data: bizData.map(b => b.revenue?.toFixed(1) || 0), backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF'] }]
+          },
+          options: { responsive: true, plugins: { legend: { position: 'right' } } }
+        }));
+      }
+    }
+
+    // Market breakdown bar
+    const mktData = overview.marketBreakdown || [];
+    if (mktData.length > 0) {
+      const ctx3 = document.getElementById('chartStratMarketBreakdown');
+      if (ctx3) {
+        strategyCharts.push(new Chart(ctx3, {
+          type: 'bar',
+          data: {
+            labels: mktData.map(m => m.market),
+            datasets: [{ label: '營收 (NT$M)', data: mktData.map(m => m.revenue?.toFixed(1) || 0), backgroundColor: ['#4caf50','#2196f3','#ff9800'], borderRadius: 4 }]
+          },
+          options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+        }));
+      }
+    }
+
+  } catch(e) {
+    console.error('Strategy overview error:', e);
+    container.innerHTML = `<div style="color:#c62828;padding:20px;">載入失敗: ${e.message}</div>`;
+  }
+}
+
+// --- Sub-tab B: Forecast Editor ---
+async function loadStrategyForecast() {
+  const container = document.getElementById('strategyForecastSub');
+  container.innerHTML = '<div class="loading">載入中...</div>';
+  await loadScenarios();
+
+  const isAdmin = userRole === 'admin';
+  const year = new Date().getFullYear();
+
+  let scenarioHtml = scenarioSelector('onScenarioChange()');
+  let uploadHtml = '';
+  if (isAdmin) {
+    uploadHtml = `
+      <div style="margin:16px 0;padding:20px;border:2px dashed #d0d0d0;border-radius:10px;text-align:center;background:#fafafa;" id="forecastDropZone">
+        <p style="color:#666;margin-bottom:8px;">拖放 Excel 檔案至此，或</p>
+        <input type="file" id="forecastFileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleForecastUpload()">
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('forecastFileInput').click()">選擇檔案上傳</button>
+        <div id="forecastUploadStatus" style="margin-top:8px;font-size:12px;color:#999;"></div>
+      </div>`;
+  }
+
+  // Load forecast lines — spreadsheet-style editable table
+  let forecastTable = '<div style="color:#999;text-align:center;padding:40px;">選擇 Scenario 後顯示 Forecast 資料</div>';
+  let fcViewToggle = '';
+  if (strategyCurrentScenario) {
+    try {
+      const res = await fetch(`/api/strategy/forecast?scenarioId=${strategyCurrentScenario}&periodType=quarter&year=${year}`);
+      const lines = await res.json();
+      if (lines.length > 0) {
+        // Build pivot: rows = market/biz combos, cols = quarters
+        const quarters = [`${year}-Q1`,`${year}-Q2`,`${year}-Q3`,`${year}-Q4`];
+        const metricKeys = ['revenue','grossProfit','cogs','opex','operatingProfit'];
+        const metricLabels = {revenue:'營收',grossProfit:'毛利',cogs:'成本',opex:'費用',operatingProfit:'營業利益'};
+        // Group by market+biz
+        const rowKeys = [];
+        const rowMap = {};
+        lines.forEach(l => {
+          const rk = `${l.market}|${l.businessModel}`;
+          if (!rowMap[rk]) { rowMap[rk] = {}; rowKeys.push(rk); }
+          rowMap[rk][l.periodKey] = l;
+        });
+        // Sort: Total first, then by market, then by biz
+        rowKeys.sort((a,b) => {
+          if (a.startsWith('Total|Total')) return -1;
+          if (b.startsWith('Total|Total')) return 1;
+          return a.localeCompare(b);
+        });
+
+        const editableCell = (lineId, metricKey, val) => {
+          if (!isAdmin) return `<td style="text-align:right;padding:5px 6px;font-variant-numeric:tabular-nums;">${val.toFixed(1)}</td>`;
+          return `<td style="text-align:right;padding:0;">
+            <input type="number" step="0.1" value="${val.toFixed(1)}" style="width:80px;text-align:right;border:1px solid transparent;padding:5px 4px;font-size:12px;background:transparent;font-variant-numeric:tabular-nums;"
+              onfocus="this.style.borderColor='#2196f3';this.style.background='#e3f2fd'"
+              onblur="this.style.borderColor='transparent';this.style.background='transparent';saveForecastCell('${lineId}','${metricKey}',this.value)"
+              onkeydown="if(event.key==='Enter'){this.blur()}"
+            >
+          </td>`;
+        };
+
+        let tableRows = '';
+        let prevMarket = '';
+        for (const rk of rowKeys) {
+          const [market, biz] = rk.split('|');
+          // Section header when market changes
+          if (market !== prevMarket && market !== 'Total') {
+            tableRows += `<tr><td colspan="${quarters.length+2}" style="padding:10px 4px 4px;font-weight:700;font-size:13px;color:#1a1a2e;border-bottom:2px solid #e0e0e0;">📍 ${market}</td></tr>`;
+            prevMarket = market;
+          }
+          const label = market === 'Total' && biz === 'Total' ? '🏢 公司合計'
+            : biz === 'Total' ? `${market} 小計`
+            : `　${biz}`;
+          const isSummaryRow = biz === 'Total';
+          const rowStyle = isSummaryRow ? 'background:#f8f9fa;font-weight:600;' : '';
+
+          // Revenue row
+          tableRows += `<tr style="border-bottom:1px solid #f0f0f0;${rowStyle}">
+            <td style="padding:5px 4px;white-space:nowrap;font-size:12px;" rowspan="1">${label}</td>
+            <td style="padding:5px 4px;font-size:11px;color:#999;">營收</td>`;
+          for (const q of quarters) {
+            const line = rowMap[rk]?.[q];
+            if (line) {
+              tableRows += editableCell(line.id, 'revenue', line.metrics?.revenue || 0);
+            } else {
+              tableRows += `<td style="text-align:right;padding:5px 6px;color:#ccc;">-</td>`;
+            }
+          }
+          // Row total
+          const rowTotal = quarters.reduce((s, q) => s + (rowMap[rk]?.[q]?.metrics?.revenue || 0), 0);
+          tableRows += `<td style="text-align:right;padding:5px 6px;font-weight:600;background:#f0f4ff;font-variant-numeric:tabular-nums;">${rowTotal.toFixed(1)}</td></tr>`;
+
+          // Gross profit row (only for summary rows or Total)
+          if (isSummaryRow || (market === 'Total' && biz === 'Total')) {
+            tableRows += `<tr style="border-bottom:1px solid #f0f0f0;${rowStyle}">
+              <td></td><td style="padding:5px 4px;font-size:11px;color:#999;">毛利</td>`;
+            for (const q of quarters) {
+              const line = rowMap[rk]?.[q];
+              if (line && line.metrics?.grossProfit) {
+                tableRows += editableCell(line.id, 'grossProfit', line.metrics.grossProfit || 0);
+              } else {
+                tableRows += `<td style="text-align:right;padding:5px 6px;color:#ccc;">-</td>`;
+              }
+            }
+            const gpTotal = quarters.reduce((s, q) => s + (rowMap[rk]?.[q]?.metrics?.grossProfit || 0), 0);
+            tableRows += `<td style="text-align:right;padding:5px 6px;font-weight:600;background:#f0f4ff;">${gpTotal.toFixed(1)}</td></tr>`;
+          }
+        }
+
+        forecastTable = `<div style="overflow-x:auto;">
+          <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:8px;min-width:700px;">
+            <thead><tr style="border-bottom:2px solid #1a1a2e;background:#f8f9fa;">
+              <th style="text-align:left;padding:8px 4px;min-width:160px;">項目</th>
+              <th style="text-align:left;padding:8px 4px;width:50px;">指標</th>
+              ${quarters.map(q => `<th style="text-align:right;padding:8px 4px;">${q.replace(year+'-','')}</th>`).join('')}
+              <th style="text-align:right;padding:8px 4px;background:#e8eaf6;">年度</th>
+            </tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>`;
+
+        // Toolbar for batch operations
+        if (isAdmin) {
+          fcViewToggle = `<div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;">
+            <button class="btn btn-sm" onclick="applyGrowthRate()">📈 套用成長率</button>
+            <button class="btn btn-sm" onclick="addForecastRow()">+ 新增行</button>
+            <button class="btn btn-sm" style="margin-left:auto;background:#fff3e0;color:#e65100;" onclick="loadStrategyForecast()">🔄 重新載入</button>
+          </div>`;
+        }
+      }
+    } catch(e) { console.error('Load forecast error:', e); }
+  }
+
+  // Import history
+  let historyHtml = '';
+  try {
+    const hRes = await fetch(`/api/strategy/import/history${strategyCurrentScenario ? '?scenarioId=' + strategyCurrentScenario : ''}`);
+    const history = await hRes.json();
+    if (history.length > 0) {
+      historyHtml = `<div style="margin-top:20px;">
+        <h4 style="font-size:14px;margin-bottom:8px;">匯入紀錄</h4>
+        <table style="width:100%;font-size:12px;border-collapse:collapse;">
+          <thead><tr style="border-bottom:2px solid #e0e0e0;"><th style="text-align:left;padding:6px 4px;">檔案</th><th>筆數</th><th>匯入者</th><th>時間</th></tr></thead>
+          <tbody>${history.map(h => `<tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:6px 4px;">${h.fileName || h.id}</td>
+            <td>${h.lineCount || 0}</td>
+            <td>${h.importedBy || '-'}</td>
+            <td>${h.importedAt ? new Date(h.importedAt).toLocaleString() : '-'}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+    }
+  } catch(e) {}
+
+  container.innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+      <div>${scenarioHtml}</div>
+      ${isAdmin ? `<button class="btn btn-sm" onclick="showNewScenarioModal()">+ 新增 Scenario</button>
+      ${strategyCurrentScenario ? `<button class="btn btn-sm" onclick="cloneScenario()">複製</button>` : ''}` : ''}
+    </div>
+    ${uploadHtml}
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <h4 style="font-size:14px;margin:0;">Forecast ${year} (NT$M)</h4>
+      <span style="font-size:11px;color:#999;">點擊數字直接編輯 · 按 Enter 儲存</span>
+    </div>
+    ${fcViewToggle}
+    ${forecastTable}
+    ${historyHtml}`;
+
+  // Setup drag & drop
+  if (isAdmin) {
+    const dz = document.getElementById('forecastDropZone');
+    if (dz) {
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = '#2196f3'; });
+      dz.addEventListener('dragleave', () => { dz.style.borderColor = '#d0d0d0'; });
+      dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = '#d0d0d0'; const f = e.dataTransfer.files[0]; if (f) uploadForecastFile(f); });
+    }
+  }
+}
+
+async function handleForecastUpload() {
+  const input = document.getElementById('forecastFileInput');
+  if (input.files[0]) uploadForecastFile(input.files[0]);
+}
+
+async function uploadForecastFile(file) {
+  const status = document.getElementById('forecastUploadStatus');
+  if (status) status.textContent = '上傳中...';
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (strategyCurrentScenario) {
+      formData.append('scenarioId', strategyCurrentScenario);
+      formData.append('clearExisting', 'true');
+    }
+    const res = await fetch('/api/strategy/import', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.ok) {
+      if (status) status.innerHTML = `<span style="color:#4caf50;">✅ 匯入成功: ${data.imported} 筆 (${data.summary.pnlCount} P&L + ${data.summary.komCount} KOM)</span>`;
+      if (data.scenarioId) strategyCurrentScenario = data.scenarioId;
+      await loadScenarios();
+      setTimeout(() => loadStrategyForecast(), 1000);
+    } else {
+      if (status) status.innerHTML = `<span style="color:#c62828;">❌ ${data.error}</span>`;
+    }
+  } catch(e) {
+    if (status) status.innerHTML = `<span style="color:#c62828;">❌ ${e.message}</span>`;
+  }
+}
+
+async function showNewScenarioModal() {
+  const name = prompt('Scenario 名稱:');
+  if (!name) return;
+  try {
+    const res = await fetch('/api/strategy/scenarios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, type: 'base' }),
+    });
+    const scn = await res.json();
+    strategyCurrentScenario = scn.id;
+    await loadScenarios();
+    loadStrategyForecast();
+  } catch(e) { alert('建立失敗: ' + e.message); }
+}
+
+async function cloneScenario() {
+  const name = prompt('新 Scenario 名稱:', '');
+  if (!name) return;
+  const type = prompt('類型 (base/stretch/conservative/custom):', 'stretch');
+  try {
+    const res = await fetch(`/api/strategy/scenarios/${strategyCurrentScenario}/clone`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, type }),
+    });
+    const scn = await res.json();
+    strategyCurrentScenario = scn.id;
+    await loadScenarios();
+    loadStrategyForecast();
+  } catch(e) { alert('複製失敗: ' + e.message); }
+}
+
+// --- Forecast inline edit helpers ---
+async function saveForecastCell(lineId, metricKey, value) {
+  const numVal = parseFloat(value);
+  if (isNaN(numVal)) return;
+  try {
+    await fetch(`/api/strategy/forecast/${lineId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ metrics: { [metricKey]: numVal } }),
+    });
+  } catch(e) { console.error('Save forecast cell error:', e); alert('儲存失敗: ' + e.message); }
+}
+
+async function applyGrowthRate() {
+  const market = prompt('套用市場 (留空=全部, 或輸入 台灣/北美/新加坡):', '');
+  const biz = prompt('套用商業模式 (留空=全部, 或輸入 卡車運輸/跨境物流 等):', '');
+  const rate = parseFloat(prompt('成長率 % (例: 20 代表 +20%):', ''));
+  if (isNaN(rate)) { alert('請輸入有效數字'); return; }
+
+  const year = new Date().getFullYear();
+  try {
+    const res = await fetch(`/api/strategy/forecast?scenarioId=${strategyCurrentScenario}&periodType=quarter&year=${year}`);
+    const lines = await res.json();
+    const filtered = lines.filter(l => {
+      if (market && l.market !== market) return false;
+      if (biz && l.businessModel !== biz) return false;
+      if (l.market === 'Total' && l.businessModel === 'Total') return false; // skip total row
+      return true;
+    });
+    if (filtered.length === 0) { alert('沒有符合條件的 forecast 行'); return; }
+    if (!confirm(`將對 ${filtered.length} 筆 forecast 套用 ${rate > 0 ? '+' : ''}${rate}% 成長率，確定嗎?`)) return;
+
+    const multiplier = 1 + rate / 100;
+    const updates = filtered.map(l => ({
+      id: l.id,
+      metrics: {
+        revenue: (l.metrics?.revenue || 0) * multiplier,
+        grossProfit: (l.metrics?.grossProfit || 0) * multiplier,
+        cogs: (l.metrics?.cogs || 0) * multiplier,
+        opex: (l.metrics?.opex || 0) * multiplier,
+        operatingProfit: (l.metrics?.operatingProfit || 0) * multiplier,
+      }
+    }));
+    const bulkRes = await fetch('/api/strategy/forecast/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates }),
+    });
+    const result = await bulkRes.json();
+    alert(`✅ 已套用 ${rate}% 成長率到 ${result.updated} 筆`);
+    loadStrategyForecast();
+  } catch(e) { alert('套用失敗: ' + e.message); }
+}
+
+async function addForecastRow() {
+  if (!strategyCurrentScenario) { alert('請先選擇 Scenario'); return; }
+  const scn = strategyScenarios.find(s => s.id === strategyCurrentScenario);
+  const market = prompt(`市場 (${(scn?.markets || []).join('/')}):`);
+  if (!market) return;
+  const biz = prompt(`商業模式 (${(scn?.businessModels || []).join('/')}):`);
+  if (!biz) return;
+  const year = new Date().getFullYear();
+  const revenue = parseFloat(prompt('Q1 營收 (NT$M):', '0')) || 0;
+
+  try {
+    // Create 4 quarters
+    const quarters = [`${year}-Q1`,`${year}-Q2`,`${year}-Q3`,`${year}-Q4`];
+    for (const q of quarters) {
+      await fetch('/api/strategy/forecast/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          updates: [{ scenarioId: strategyCurrentScenario, market, businessModel: biz, periodType: 'quarter', periodKey: q, metrics: { revenue: q === quarters[0] ? revenue : 0 } }]
+        }),
+      });
+    }
+    alert('✅ 已新增 forecast 行');
+    loadStrategyForecast();
+  } catch(e) { alert('新增失敗: ' + e.message); }
+}
+
+// --- Sub-tab C: KPI Center ---
+async function loadStrategyKpiCenter() {
+  const container = document.getElementById('strategyKpiSub');
+  container.innerHTML = '<div class="loading">載入中...</div>';
+  await loadScenarios();
+  if (!strategyCurrentScenario) { container.innerHTML = '<div style="color:#999;text-align:center;padding:40px;">請先建立 Scenario</div>'; return; }
+
+  try {
+    const year = new Date().getFullYear();
+    const res = await fetch(`/api/strategy/kpi/calculate?scenarioId=${strategyCurrentScenario}&year=${year}`);
+    const data = await res.json();
+
+    const kpiRows = (data.kpis || []).map(k => {
+      const color = k.statusColor === 'green' ? '#4caf50' : k.statusColor === 'yellow' ? '#ff9800' : '#f44336';
+      const dot = `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${color};margin-right:6px;"></span>`;
+      return `<tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:10px 8px;">${dot}${k.name}</td>
+        <td style="text-align:center;">${k.nameEn}</td>
+        <td style="text-align:right;font-weight:600;font-size:15px;">${k.formatted}</td>
+      </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
+        <div>${scenarioSelector()}</div>
+        <div style="font-size:13px;color:#666;">年度: ${year}</div>
+      </div>
+      <div class="card" style="max-width:700px;">
+        <div class="card-header"><span>KPI 達成率</span></div>
+        <div class="card-body">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="border-bottom:2px solid #e0e0e0;">
+              <th style="text-align:left;padding:8px;">指標</th>
+              <th style="text-align:center;">English</th>
+              <th style="text-align:right;">數值</th>
+            </tr></thead>
+            <tbody>${kpiRows || '<tr><td colspan="3" style="text-align:center;color:#999;padding:20px;">尚無 KPI 資料</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <h4 style="font-size:14px;">Forecast 摘要 (NT$M)</h4>
+        <div class="kpi-grid">
+          ${kpiCard('Forecast 營收', (data.forecast?.revenue || 0).toFixed(1) + 'M', '', false)}
+          ${kpiCard('Forecast 毛利', (data.forecast?.grossProfit || 0).toFixed(1) + 'M', '', false)}
+          ${kpiCard('Forecast OPEX', (data.forecast?.opex || 0).toFixed(1) + 'M', '', false)}
+          ${kpiCard('Forecast 營業利益', (data.forecast?.operatingProfit || 0).toFixed(1) + 'M', '', false)}
+        </div>
+      </div>`;
+  } catch(e) {
+    container.innerHTML = `<div style="color:#c62828;padding:20px;">KPI 載入失敗: ${e.message}</div>`;
+  }
+}
+
+// --- Sub-tab D: Gap & Strategy ---
+async function loadStrategyGap() {
+  const container = document.getElementById('strategyGapSub');
+  container.innerHTML = '<div class="loading">載入中...</div>';
+  await loadScenarios();
+
+  try {
+    const year = new Date().getFullYear();
+    const [coverageRes, strategiesRes] = await Promise.all([
+      strategyCurrentScenario ? fetch(`/api/strategy/coverage?scenarioId=${strategyCurrentScenario}&year=${year}`) : Promise.resolve({ json: () => ({}) }),
+      fetch('/api/strategy/strategies'),
+    ]);
+    const coverage = strategyCurrentScenario ? await coverageRes.json() : {};
+    const strategies = await strategiesRes.json();
+
+    const strategyCards = strategies.map(s => {
+      const statusColors = { in_progress: '#2196f3', completed: '#4caf50', planned: '#ff9800' };
+      const statusLabels = { in_progress: '進行中', completed: '已完成', planned: '規劃中' };
+      const totalMs = (s.milestones || []).length;
+      const doneMs = (s.milestones || []).filter(m => m.completed).length;
+      const pct = totalMs > 0 ? Math.round(doneMs / totalMs * 100) : 0;
+      return `<div class="card" style="margin-bottom:12px;">
+        <div class="card-body" style="padding:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div>
+              <span style="font-weight:600;font-size:14px;">${s.title}</span>
+              <span style="margin-left:8px;padding:2px 8px;border-radius:10px;font-size:11px;color:white;background:${statusColors[s.status] || '#999'};">${statusLabels[s.status] || s.status}</span>
+              ${s.priority === 'high' ? '<span style="margin-left:4px;color:#f44336;font-size:11px;">🔥 高優先</span>' : ''}
+            </div>
+            <div style="font-size:12px;color:#666;">${s.owner || '-'}</div>
+          </div>
+          <div style="font-size:12px;color:#666;margin-bottom:8px;">${s.description || ''}</div>
+          ${s.targetMarket || s.targetBusinessModel ? `<div style="font-size:11px;color:#999;margin-bottom:6px;">目標: ${s.targetMarket || ''} ${s.targetBusinessModel || ''}</div>` : ''}
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;height:6px;background:#e0e0e0;border-radius:3px;"><div style="height:100%;width:${pct}%;background:#4caf50;border-radius:3px;"></div></div>
+            <span style="font-size:11px;color:#666;">${doneMs}/${totalMs} 里程碑</span>
+          </div>
+          ${totalMs > 0 ? `<div style="margin-top:8px;font-size:11px;">
+            ${(s.milestones || []).map(m => `<div style="padding:2px 0;${m.completed ? 'color:#4caf50;text-decoration:line-through;' : 'color:#333;'}">
+              ${m.completed ? '✅' : '⬜'} ${m.title} ${m.dueDate ? `<span style="color:#999;">(${m.dueDate})</span>` : ''}
+            </div>`).join('')}
+          </div>` : ''}
+          <div style="margin-top:8px;display:flex;gap:6px;">
+            <button class="btn btn-sm" onclick="editStrategy('${s.id}')">編輯</button>
+            <button class="btn btn-sm" onclick="addMilestone('${s.id}')">+ 里程碑</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('') || '<div style="color:#999;text-align:center;padding:20px;">尚無策略，請新增</div>';
+
+    container.innerHTML = `
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+        <div>${scenarioSelector()}</div>
+        <button class="btn btn-primary btn-sm" onclick="showCreateStrategy()">+ 新增策略</button>
+      </div>
+      ${strategyCurrentScenario ? `
+      <div class="kpi-grid" style="margin-bottom:16px;">
+        ${kpiCard('目標營收', (coverage.targetRevenue || 0).toFixed(1) + 'M', 'Forecast', false)}
+        ${kpiCard('目標缺口', (coverage.forecastGap || 0).toFixed(1) + 'M', 'Gap', false)}
+        ${kpiCard('Pipeline Coverage', coverage.coverageFormatted || '0x', coverage.activeLeadsCount + ' leads', false)}
+        ${kpiCard('加權 Pipeline', (coverage.weightedPipeline || 0).toFixed(1) + 'M', 'Weighted', false)}
+      </div>` : ''}
+      <h4 style="font-size:14px;margin-bottom:12px;">策略列表</h4>
+      ${strategyCards}`;
+  } catch(e) {
+    container.innerHTML = `<div style="color:#c62828;padding:20px;">載入失敗: ${e.message}</div>`;
+  }
+}
+
+async function showCreateStrategy() {
+  const title = prompt('策略標題:');
+  if (!title) return;
+  try {
+    await fetch('/api/strategy/strategies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, status: 'planned', priority: 'medium' }),
+    });
+    loadStrategyGap();
+  } catch(e) { alert('建立失敗: ' + e.message); }
+}
+
+async function editStrategy(id) {
+  const str = await (await fetch(`/api/strategy/strategies/${id}`)).json();
+  const newTitle = prompt('標題:', str.title);
+  if (newTitle === null) return;
+  const newStatus = prompt('狀態 (planned/in_progress/completed):', str.status);
+  const newOwner = prompt('負責人:', str.owner || '');
+  const newMarket = prompt('目標市場:', str.targetMarket || '');
+  const newBiz = prompt('目標商業模式:', str.targetBusinessModel || '');
+  try {
+    await fetch(`/api/strategy/strategies/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: newTitle, status: newStatus, owner: newOwner, targetMarket: newMarket, targetBusinessModel: newBiz }),
+    });
+    loadStrategyGap();
+  } catch(e) { alert('更新失敗: ' + e.message); }
+}
+
+async function addMilestone(strategyId) {
+  const title = prompt('里程碑標題:');
+  if (!title) return;
+  const dueDate = prompt('截止日 (YYYY-MM-DD):', '');
+  try {
+    await fetch(`/api/strategy/strategies/${strategyId}/milestones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, dueDate: dueDate || null }),
+    });
+    loadStrategyGap();
+  } catch(e) { alert('新增失敗: ' + e.message); }
+}
+
+function closeStrategyModal() {
+  document.getElementById('strategyModal').style.display = 'none';
+}
+
+// --- Sub-tab E: Settings ---
+async function loadStrategySettings() {
+  const container = document.getElementById('strategySettingsSub');
+  container.innerHTML = '<div class="loading">載入中...</div>';
+  if (userRole !== 'admin') { container.innerHTML = '<div style="color:#999;text-align:center;padding:40px;">僅管理員可存取設定</div>'; return; }
+
+  try {
+    const [kpiRes, auditRes, scenariosRes] = await Promise.all([
+      fetch('/api/strategy/kpi/definitions?all=true'),
+      fetch('/api/strategy/audit?limit=30'),
+      fetch('/api/strategy/scenarios'),
+    ]);
+    const kpis = await kpiRes.json();
+    const audit = await auditRes.json();
+    const scenarios = await scenariosRes.json();
+
+    const kpiTable = kpis.map(k => `<tr style="border-bottom:1px solid #f0f0f0;">
+      <td style="padding:8px 4px;">${k.name}</td>
+      <td>${k.code}</td>
+      <td style="text-align:center;">${k.displayUnit}</td>
+      <td style="text-align:center;color:#4caf50;">${k.thresholdGreen}</td>
+      <td style="text-align:center;color:#ff9800;">${k.thresholdYellow}</td>
+      <td style="text-align:center;">${k.isActive ? '✅' : '❌'}</td>
+    </tr>`).join('');
+
+    const auditRows = audit.map(a => `<tr style="border-bottom:1px solid #f0f0f0;">
+      <td style="padding:6px 4px;font-size:11px;">${a.timestamp ? new Date(a.timestamp).toLocaleString() : '-'}</td>
+      <td style="font-size:11px;">${a.userId}</td>
+      <td style="font-size:11px;">${a.action}</td>
+      <td style="font-size:11px;">${a.entity}</td>
+      <td style="font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.detail || ''}</td>
+    </tr>`).join('');
+
+    const scenarioList = scenarios.map(s => `<tr style="border-bottom:1px solid #f0f0f0;">
+      <td style="padding:8px 4px;">${s.name}</td>
+      <td>${s.type}</td>
+      <td><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:${s.status === 'published' ? '#e8f5e9' : s.status === 'draft' ? '#fff3e0' : '#f5f5f5'};color:${s.status === 'published' ? '#2e7d32' : '#333'};">${s.status}</span></td>
+      <td style="font-size:11px;">${s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</td>
+      <td>
+        ${s.status === 'draft' ? `<button class="btn btn-sm" onclick="publishScenario('${s.id}')">發布</button>` : ''}
+        ${s.status !== 'archived' ? `<button class="btn btn-sm" onclick="archiveScenario('${s.id}')">封存</button>` : ''}
+      </td>
+    </tr>`).join('');
+
+    container.innerHTML = `
+      <h4 style="font-size:14px;margin-bottom:12px;">Scenario 管理</h4>
+      <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:24px;">
+        <thead><tr style="border-bottom:2px solid #e0e0e0;"><th style="text-align:left;padding:8px 4px;">名稱</th><th>類型</th><th>狀態</th><th>建立日期</th><th>操作</th></tr></thead>
+        <tbody>${scenarioList || '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">尚無 Scenario</td></tr>'}</tbody>
+      </table>
+
+      <h4 style="font-size:14px;margin-bottom:12px;">KPI 定義</h4>
+      <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:24px;">
+        <thead><tr style="border-bottom:2px solid #e0e0e0;">
+          <th style="text-align:left;padding:8px 4px;">名稱</th><th>Code</th><th style="text-align:center;">單位</th>
+          <th style="text-align:center;">綠燈</th><th style="text-align:center;">黃燈</th><th style="text-align:center;">啟用</th>
+        </tr></thead>
+        <tbody>${kpiTable}</tbody>
+      </table>
+
+      <h4 style="font-size:14px;margin-bottom:12px;">審計紀錄 (最近 30 筆)</h4>
+      <table style="width:100%;font-size:11px;border-collapse:collapse;">
+        <thead><tr style="border-bottom:2px solid #e0e0e0;">
+          <th style="text-align:left;padding:6px 4px;">時間</th><th>使用者</th><th>動作</th><th>對象</th><th>詳情</th>
+        </tr></thead>
+        <tbody>${auditRows || '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">尚無紀錄</td></tr>'}</tbody>
+      </table>`;
+  } catch(e) {
+    container.innerHTML = `<div style="color:#c62828;padding:20px;">設定載入失敗: ${e.message}</div>`;
+  }
+}
+
+async function publishScenario(id) {
+  try {
+    await fetch(`/api/strategy/scenarios/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'published' }) });
+    loadStrategySettings();
+  } catch(e) { alert('發布失敗: ' + e.message); }
+}
+
+async function archiveScenario(id) {
+  if (!confirm('確定要封存此 Scenario?')) return;
+  try {
+    await fetch(`/api/strategy/scenarios/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'archived' }) });
+    loadStrategySettings();
+  } catch(e) { alert('封存失敗: ' + e.message); }
 }
 
 // Init
