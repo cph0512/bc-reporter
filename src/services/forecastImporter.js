@@ -68,142 +68,147 @@ function parsePnLSheet(ws) {
     return values;
   }
 
-  // === Parse key rows ===
-  // Row indices (0-based) from the actual Excel:
-  const ROW_MAP = {
-    // Revenue by market
-    totalRevenue: 4,
-    tw_revenue: 9,
-    na_revenue: 10,
-    sg_revenue: 11,
-    // Revenue by business model
-    trucking_revenue: 20,
-    crossborder_revenue: 21,
-    lastmile_revenue: 22,
-    software_revenue: 23,
-    warehouse_revenue: 24,
-    // Financials
-    totalGrossProfit: 33,
-    totalOpex: 36,
-    rd_expense: 37,
-    sm_expense: 38,
-    ga_expense: 39,
-    operatingProfit: 46,
-    netIncome: 51,
-  };
-
-  // Market revenue rows
-  const marketRows = [
-    { row: ROW_MAP.tw_revenue, market: '台灣' },
-    { row: ROW_MAP.na_revenue, market: '北美' },
-    { row: ROW_MAP.sg_revenue, market: '新加坡' },
-  ];
-
-  // Business model revenue rows
-  const bizRows = [
-    { row: ROW_MAP.trucking_revenue, biz: '卡車運輸' },
-    { row: ROW_MAP.crossborder_revenue, biz: '跨境物流' },
-    { row: ROW_MAP.lastmile_revenue, biz: '終端配送' },
-    { row: ROW_MAP.software_revenue, biz: '軟體服務' },
-    { row: ROW_MAP.warehouse_revenue, biz: '倉儲' },
-  ];
-
-  // Extract total-level quarterly data
-  const totalRevenueQ = extractQuarterly(data[ROW_MAP.totalRevenue] || []);
-  const totalGrossProfitQ = extractQuarterly(data[ROW_MAP.totalGrossProfit] || []);
-  const totalOpexQ = extractQuarterly(data[ROW_MAP.totalOpex] || []);
-  const operatingProfitQ = extractQuarterly(data[ROW_MAP.operatingProfit] || []);
-
-  // Build total-level forecast lines (quarterly)
-  for (const periodKey of Object.keys(totalRevenueQ)) {
-    lines.push({
-      market: 'Total',
-      businessModel: 'Total',
-      periodType: 'quarter',
-      periodKey,
-      metrics: {
-        revenue: totalRevenueQ[periodKey] || 0,
-        grossProfit: totalGrossProfitQ[periodKey] || 0,
-        opex: totalOpexQ[periodKey] || 0,
-        operatingProfit: operatingProfitQ[periodKey] || 0,
-      },
-    });
-  }
-
-  // Extract total-level annual data
-  const totalRevenueA = extractAnnual(data[ROW_MAP.totalRevenue] || []);
-  const totalGrossProfitA = extractAnnual(data[ROW_MAP.totalGrossProfit] || []);
-  const totalOpexA = extractAnnual(data[ROW_MAP.totalOpex] || []);
-  const operatingProfitA = extractAnnual(data[ROW_MAP.operatingProfit] || []);
-  const netIncomeA = extractAnnual(data[ROW_MAP.netIncome] || []);
-
-  for (const year of Object.keys(totalRevenueA)) {
-    lines.push({
-      market: 'Total',
-      businessModel: 'Total',
-      periodType: 'year',
-      periodKey: year,
-      metrics: {
-        revenue: totalRevenueA[year] || 0,
-        grossProfit: totalGrossProfitA[year] || 0,
-        opex: totalOpexA[year] || 0,
-        operatingProfit: operatingProfitA[year] || 0,
-        netIncome: netIncomeA[year] || 0,
-      },
-    });
-  }
-
-  // Market-level quarterly
-  for (const { row, market } of marketRows) {
-    const qValues = extractQuarterly(data[row] || []);
-    for (const [periodKey, revenue] of Object.entries(qValues)) {
-      lines.push({
-        market,
-        businessModel: 'Total',
-        periodType: 'quarter',
-        periodKey,
-        metrics: { revenue },
-      });
+  // === Helper to push lines for both quarterly and annual ===
+  function pushLines(market, businessModel, metricName, rowIdx) {
+    if (!data[rowIdx]) return;
+    const qValues = extractQuarterly(data[rowIdx]);
+    for (const [pk, val] of Object.entries(qValues)) {
+      lines.push({ market, businessModel, periodType: 'quarter', periodKey: pk,
+        metrics: { [metricName]: val }, _row: rowIdx, _label: metricName });
     }
-    // Annual
-    const aValues = extractAnnual(data[row] || []);
-    for (const [year, revenue] of Object.entries(aValues)) {
-      lines.push({
-        market,
-        businessModel: 'Total',
-        periodType: 'year',
-        periodKey: year,
-        metrics: { revenue },
-      });
+    const aValues = extractAnnual(data[rowIdx]);
+    for (const [pk, val] of Object.entries(aValues)) {
+      lines.push({ market, businessModel, periodType: 'year', periodKey: pk,
+        metrics: { [metricName]: val }, _row: rowIdx, _label: metricName });
     }
   }
 
-  // Business model quarterly
-  for (const { row, biz } of bizRows) {
-    const qValues = extractQuarterly(data[row] || []);
-    for (const [periodKey, revenue] of Object.entries(qValues)) {
-      lines.push({
-        market: 'Total',
-        businessModel: biz,
-        periodType: 'quarter',
-        periodKey,
-        metrics: { revenue },
-      });
+  // === Parse ALL key rows from the P&L Forecast sheet ===
+  // Top-level P&L summary (rows 4-51)
+  pushLines('Total', 'Total', 'revenue', 4);
+  pushLines('Total', 'Total', 'grossProfit', 33);
+  pushLines('Total', 'Total', 'grossMargin', 34);
+  pushLines('Total', 'Total', 'opex', 36);
+  pushLines('Total', 'Total', 'rd', 37);
+  pushLines('Total', 'Total', 'sm', 38);
+  pushLines('Total', 'Total', 'ga', 39);
+  pushLines('Total', 'Total', 'opexRatio', 41);
+  pushLines('Total', 'Total', 'operatingProfit', 46);
+  pushLines('Total', 'Total', 'operatingMargin', 47);
+  pushLines('Total', 'Total', 'netIncome', 51);
+  pushLines('Total', 'Total', 'netMargin', 52);
+
+  // Revenue by market (rows 9-11)
+  pushLines('台灣', 'Total', 'revenue', 9);
+  pushLines('北美', 'Total', 'revenue', 10);
+  pushLines('新加坡', 'Total', 'revenue', 11);
+
+  // Revenue by business model (rows 20-24)
+  pushLines('Total', '卡車運輸', 'revenue', 20);
+  pushLines('Total', '跨境物流', 'revenue', 21);
+  pushLines('Total', '終端配送', 'revenue', 22);
+  pushLines('Total', '軟體服務', 'revenue', 23);
+  pushLines('Total', '倉儲', 'revenue', 24);
+
+  // === Detailed breakdown: each biz model → market → revenue/cogs/grossProfit ===
+
+  // 卡車運輸 (rows 54-90)
+  pushLines('Total', '卡車運輸', 'grossProfit', 56);
+  pushLines('Total', '卡車運輸', 'grossMargin', 57);
+  // 台灣
+  pushLines('台灣', '卡車運輸', 'activeCustomers', 59);
+  pushLines('台灣', '卡車運輸', 'totalOrders', 60);
+  pushLines('台灣', '卡車運輸', 'revenue', 61);
+  pushLines('台灣', '卡車運輸', 'cogs', 62);
+  pushLines('台灣', '卡車運輸', 'grossProfit', 63);
+  pushLines('台灣', '卡車運輸', 'grossMargin', 64);
+  // 北美
+  pushLines('北美', '卡車運輸', 'activeCustomers', 71);
+  pushLines('北美', '卡車運輸', 'totalOrders', 72);
+  pushLines('北美', '卡車運輸', 'revenue', 73);
+  pushLines('北美', '卡車運輸', 'cogs', 74);
+  pushLines('北美', '卡車運輸', 'grossProfit', 75);
+  pushLines('北美', '卡車運輸', 'grossMargin', 76);
+  // 新加坡
+  pushLines('新加坡', '卡車運輸', 'activeCustomers', 82);
+  pushLines('新加坡', '卡車運輸', 'totalOrders', 83);
+  pushLines('新加坡', '卡車運輸', 'revenue', 84);
+  pushLines('新加坡', '卡車運輸', 'cogs', 85);
+  pushLines('新加坡', '卡車運輸', 'grossProfit', 86);
+  pushLines('新加坡', '卡車運輸', 'grossMargin', 87);
+
+  // 跨境物流 (rows 93-135)
+  pushLines('Total', '跨境物流', 'grossProfit', 95);
+  pushLines('Total', '跨境物流', 'grossMargin', 96);
+  // 台灣
+  pushLines('台灣', '跨境物流', 'activeCustomers', 98);
+  pushLines('台灣', '跨境物流', 'totalOrders', 99);
+  pushLines('台灣', '跨境物流', 'revenue', 101);
+  pushLines('台灣', '跨境物流', 'cogs', 102);
+  pushLines('台灣', '跨境物流', 'grossProfit', 103);
+  // 北美
+  pushLines('北美', '跨境物流', 'activeCustomers', 111);
+  pushLines('北美', '跨境物流', 'totalOrders', 112);
+  pushLines('北美', '跨境物流', 'revenue', 114);
+  pushLines('北美', '跨境物流', 'cogs', 115);
+  pushLines('北美', '跨境物流', 'grossProfit', 116);
+
+  // 終端配送 (rows 138-173)
+  pushLines('Total', '終端配送', 'grossProfit', 140);
+  pushLines('Total', '終端配送', 'grossMargin', 141);
+  // 台灣
+  pushLines('台灣', '終端配送', 'activeCustomers', 143);
+  pushLines('台灣', '終端配送', 'revenue', 145);
+  pushLines('台灣', '終端配送', 'cogs', 146);
+  pushLines('台灣', '終端配送', 'grossProfit', 147);
+  // 北美
+  pushLines('北美', '終端配送', 'activeCustomers', 154);
+  pushLines('北美', '終端配送', 'revenue', 156);
+  pushLines('北美', '終端配送', 'cogs', 157);
+  pushLines('北美', '終端配送', 'grossProfit', 158);
+  // 新加坡
+  pushLines('新加坡', '終端配送', 'activeCustomers', 165);
+  pushLines('新加坡', '終端配送', 'revenue', 167);
+  pushLines('新加坡', '終端配送', 'cogs', 168);
+  pushLines('新加坡', '終端配送', 'grossProfit', 169);
+
+  // 軟體服務 (rows 176-235)
+  pushLines('Total', '軟體服務', 'grossProfit', 178);
+  pushLines('Total', '軟體服務', 'grossMargin', 179);
+  // 台灣
+  pushLines('台灣', '軟體服務', 'revenue', 194);
+  pushLines('台灣', '軟體服務', 'cogs', 195);
+  pushLines('台灣', '軟體服務', 'grossProfit', 196);
+  // 北美
+  pushLines('北美', '軟體服務', 'revenue', 213);
+  pushLines('北美', '軟體服務', 'cogs', 214);
+  pushLines('北美', '軟體服務', 'grossProfit', 215);
+
+  // 倉儲 (rows 238-275)
+  pushLines('Total', '倉儲', 'grossProfit', 240);
+  pushLines('Total', '倉儲', 'grossMargin', 241);
+  // 台灣
+  pushLines('台灣', '倉儲', 'activeCustomers', 243);
+  pushLines('台灣', '倉儲', 'revenue', 246);
+  pushLines('台灣', '倉儲', 'cogs', 250);
+  pushLines('台灣', '倉儲', 'grossProfit', 251);
+  // 北美
+  pushLines('北美', '倉儲', 'activeCustomers', 262);
+  pushLines('北美', '倉儲', 'revenue', 265);
+  pushLines('北美', '倉儲', 'cogs', 269);
+  pushLines('北美', '倉儲', 'grossProfit', 270);
+
+  // === Merge lines with same market+biz+period into single objects ===
+  const merged = {};
+  for (const line of lines) {
+    const key = `${line.market}|${line.businessModel}|${line.periodType}|${line.periodKey}`;
+    if (!merged[key]) {
+      merged[key] = { market: line.market, businessModel: line.businessModel, periodType: line.periodType, periodKey: line.periodKey, metrics: {} };
     }
-    // Annual
-    const aValues = extractAnnual(data[row] || []);
-    for (const [year, revenue] of Object.entries(aValues)) {
-      lines.push({
-        market: 'Total',
-        businessModel: biz,
-        periodType: 'year',
-        periodKey: year,
-        metrics: { revenue },
-      });
-    }
+    Object.assign(merged[key].metrics, line.metrics);
   }
 
-  return lines;
+  return Object.values(merged);
 }
 
 /**
