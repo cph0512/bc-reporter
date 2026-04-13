@@ -11,9 +11,9 @@ router.get('/users', (req, res) => {
   res.json(userStore.getAll());
 });
 
-// GET /api/admin/users-export — full export for deployment sync (includes hashes)
+// GET /api/admin/users-export — full export for deployment sync (strips passwordHash)
 router.get('/users-export', (req, res) => {
-  res.json(userStore.getAllRaw());
+  res.json(userStore.getAll());
 });
 
 // GET /api/admin/pipeline-export — full pipeline data for deployment sync
