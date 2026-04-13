@@ -69,10 +69,14 @@ function parseSheetRaw(ws, sheetName) {
 
   for (let r = startRow; r < data.length; r++) {
     const row = data[r];
-    // Get label from col A (index 0) or col B (index 1) — BBTruck uses col B primarily
+    // Get label from col A (項目名稱) + col B (單位)
+    // BBTruck P&L: col A = item name (總營收, 台灣...), col B = unit (NT$M, %, NT$)
     const colA = String(row[0] || '').trim();
     const colB = String(row[1] || '').trim();
-    const label = colB || colA;
+
+    // Build label: prefer colA (item name), append unit from colB if it's a unit indicator
+    const isUnit = /^(NT\$|US\$|%|KG|CBM|TWD|USD|元|M$)/i.test(colB);
+    const label = colA ? (isUnit && colB ? `${colA} (${colB})` : colA) : colB;
 
     if (!label) continue; // skip empty rows
 
@@ -82,7 +86,7 @@ function parseSheetRaw(ws, sheetName) {
     const indent = getIndentLevel(label, colA, colB);
 
     // Track current section
-    if (isHeader) currentSection = label;
+    if (isHeader) currentSection = colA || label;
 
     // Extract cell values for every column
     const cells = {};
