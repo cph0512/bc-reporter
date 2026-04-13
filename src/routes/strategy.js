@@ -6,8 +6,8 @@ const multer = require('multer');
 const router = express.Router();
 const strategyStore = require('../services/strategyStore');
 const strategyKpiService = require('../services/strategyKpiService');
-const { parseForcastExcel, extractScenarioMeta } = require('../services/forecastImporter');
-const { requireAdmin } = require('../middleware/auth');
+const { parseForcastExcel, extractScenarioMeta, parseSheetRaw } = require('../services/forecastImporter');
+const { requireAdmin, requireStrategyRole } = require('../middleware/auth');
 
 // Multer config for Excel upload (memory storage, parse from buffer)
 const upload = multer({
@@ -39,7 +39,7 @@ router.get('/scenarios/:id', (req, res) => {
   }
 });
 
-router.post('/scenarios', requireAdmin, (req, res) => {
+router.post('/scenarios', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     const scn = strategyStore.createScenario({
       ...req.body,
@@ -51,7 +51,7 @@ router.post('/scenarios', requireAdmin, (req, res) => {
   }
 });
 
-router.put('/scenarios/:id', requireAdmin, (req, res) => {
+router.put('/scenarios/:id', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     const scn = strategyStore.updateScenario(req.params.id, req.body, req.session.user?.username);
     res.json(scn);
@@ -60,7 +60,7 @@ router.put('/scenarios/:id', requireAdmin, (req, res) => {
   }
 });
 
-router.post('/scenarios/:id/clone', requireAdmin, (req, res) => {
+router.post('/scenarios/:id/clone', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     const { name, type } = req.body;
     const scn = strategyStore.cloneScenario(req.params.id, name, type, req.session.user?.username);
@@ -70,7 +70,7 @@ router.post('/scenarios/:id/clone', requireAdmin, (req, res) => {
   }
 });
 
-router.delete('/scenarios/:id', requireAdmin, (req, res) => {
+router.delete('/scenarios/:id', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     strategyStore.deleteScenario(req.params.id, req.session.user?.username);
     res.json({ ok: true });
@@ -81,7 +81,7 @@ router.delete('/scenarios/:id', requireAdmin, (req, res) => {
 
 // ===== Forecast Import =====
 
-router.post('/import', requireAdmin, upload.single('file'), (req, res) => {
+router.post('/import', requireStrategyRole('finance_editor'), upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
@@ -126,6 +126,7 @@ router.post('/import', requireAdmin, upload.single('file'), (req, res) => {
       imported: count,
       summary: result.summary,
       batchId,
+      sheets: result.sheets.map(s => ({ name: s.name, columns: s.columns.length, rows: s.rows.length })),
     });
   } catch (err) {
     console.error('Import error:', err);
@@ -159,16 +160,64 @@ router.get('/forecast', (req, res) => {
   }
 });
 
-router.put('/forecast/:id', requireAdmin, (req, res) => {
+// Grid view — returns rows × columns like original Excel
+router.get('/forecast/grid', (req, res) => {
   try {
-    const line = strategyStore.updateForecastLine(req.params.id, req.body.metrics, req.session.user?.username);
+    const lines = strategyStore.getForecastLines({
+      scenarioId: req.query.scenarioId,
+      periodType: req.query.periodType,
+      year: req.query.year,
+    });
+    if (lines.length === 0) return res.json({ columns: [], rows: [] });
+
+    // Collect all unique period keys as columns (sorted)
+    const periodSet = new Set();
+    lines.forEach(l => periodSet.add(l.periodKey));
+    const columns = [...periodSet].sort();
+
+    // Group lines by rowLabel + rowIndex to preserve Excel row identity
+    const rowMap = new Map(); // key = rowIndex or rowLabel → { label, cells, ... }
+    lines.forEach(l => {
+      const key = l.rowIndex != null ? `r${l.rowIndex}` : l.rowLabel;
+      if (!rowMap.has(key)) {
+        rowMap.set(key, {
+          rowIndex: l.rowIndex,
+          label: l.rowLabel || `${l.market}/${l.businessModel}`,
+          section: l.section || '',
+          indent: l.indent || 0,
+          isHeader: l.isHeader || false,
+          isSummary: l.isSummary || false,
+          source: l.source || '',
+          cells: {}, // periodKey → { id, value }
+        });
+      }
+      rowMap.get(key).cells[l.periodKey] = { id: l.id, value: l.value ?? Object.values(l.metrics || {})[0] ?? 0 };
+    });
+
+    // Sort rows by rowIndex (original Excel order)
+    const rows = [...rowMap.values()].sort((a, b) => (a.rowIndex ?? 999) - (b.rowIndex ?? 999));
+
+    res.json({ columns, rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/forecast/:id', requireStrategyRole('finance_editor'), (req, res) => {
+  try {
+    // Support both { value: 123 } (cell-level) and { metrics: {...} } (legacy)
+    const updates = {};
+    if (req.body.value !== undefined) updates.value = req.body.value;
+    if (req.body.metrics) updates.metrics = req.body.metrics;
+    if (req.body.rowLabel !== undefined) updates.rowLabel = req.body.rowLabel;
+    const line = strategyStore.updateForecastLine(req.params.id, updates, req.session.user?.username);
     res.json(line);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-router.post('/forecast/bulk', requireAdmin, (req, res) => {
+router.post('/forecast/bulk', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     const count = strategyStore.bulkUpdateForecastLines(req.body.updates, req.session.user?.username);
     res.json({ ok: true, updated: count });
@@ -188,7 +237,7 @@ router.get('/kpi/definitions', (req, res) => {
   }
 });
 
-router.post('/kpi/definitions', requireAdmin, (req, res) => {
+router.post('/kpi/definitions', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     const kpi = strategyStore.createKpiDefinition(req.body, req.session.user?.username);
     res.status(201).json(kpi);
@@ -197,7 +246,7 @@ router.post('/kpi/definitions', requireAdmin, (req, res) => {
   }
 });
 
-router.put('/kpi/definitions/:id', requireAdmin, (req, res) => {
+router.put('/kpi/definitions/:id', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     const kpi = strategyStore.updateKpiDefinition(req.params.id, req.body, req.session.user?.username);
     res.json(kpi);
@@ -276,7 +325,7 @@ router.get('/strategies/:id', (req, res) => {
   }
 });
 
-router.post('/strategies', (req, res) => {
+router.post('/strategies', requireStrategyRole('finance_editor', 'sales_manager'), (req, res) => {
   try {
     const str = strategyStore.createStrategy({
       ...req.body,
@@ -288,7 +337,7 @@ router.post('/strategies', (req, res) => {
   }
 });
 
-router.put('/strategies/:id', (req, res) => {
+router.put('/strategies/:id', requireStrategyRole('finance_editor', 'sales_manager'), (req, res) => {
   try {
     const str = strategyStore.updateStrategy(req.params.id, req.body, req.session.user?.username);
     res.json(str);
@@ -307,7 +356,7 @@ router.delete('/strategies/:id', requireAdmin, (req, res) => {
 });
 
 // Milestones
-router.post('/strategies/:id/milestones', (req, res) => {
+router.post('/strategies/:id/milestones', requireStrategyRole('finance_editor', 'sales_manager'), (req, res) => {
   try {
     const ms = strategyStore.addMilestone(req.params.id, req.body, req.session.user?.username);
     res.status(201).json(ms);
@@ -316,7 +365,7 @@ router.post('/strategies/:id/milestones', (req, res) => {
   }
 });
 
-router.put('/strategies/:id/milestones/:msId', (req, res) => {
+router.put('/strategies/:id/milestones/:msId', requireStrategyRole('finance_editor', 'sales_manager'), (req, res) => {
   try {
     const ms = strategyStore.updateMilestone(req.params.id, req.params.msId, req.body, req.session.user?.username);
     res.json(ms);
@@ -325,7 +374,7 @@ router.put('/strategies/:id/milestones/:msId', (req, res) => {
   }
 });
 
-router.delete('/strategies/:id/milestones/:msId', (req, res) => {
+router.delete('/strategies/:id/milestones/:msId', requireStrategyRole('finance_editor', 'sales_manager'), (req, res) => {
   try {
     strategyStore.deleteMilestone(req.params.id, req.params.msId, req.session.user?.username);
     res.json({ ok: true });
@@ -336,7 +385,7 @@ router.delete('/strategies/:id/milestones/:msId', (req, res) => {
 
 // ===== Audit Log & Revert =====
 
-router.get('/audit', requireAdmin, (req, res) => {
+router.get('/audit', requireStrategyRole('finance_editor', 'sales_manager'), (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     res.json(strategyStore.getAuditLog(limit));
@@ -345,7 +394,7 @@ router.get('/audit', requireAdmin, (req, res) => {
   }
 });
 
-router.post('/audit/:id/revert', requireAdmin, (req, res) => {
+router.post('/audit/:id/revert', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     const result = strategyStore.revertAudit(req.params.id, req.session.user?.username);
     res.json(result);
@@ -364,7 +413,7 @@ router.get('/snapshots', (req, res) => {
   }
 });
 
-router.post('/snapshots', requireAdmin, (req, res) => {
+router.post('/snapshots', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     const result = strategyStore.createSnapshot(req.body.scenarioId, req.body.name, req.session.user?.username);
     res.status(201).json(result);
@@ -373,7 +422,7 @@ router.post('/snapshots', requireAdmin, (req, res) => {
   }
 });
 
-router.post('/snapshots/:id/restore', requireAdmin, (req, res) => {
+router.post('/snapshots/:id/restore', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     const result = strategyStore.restoreSnapshot(req.params.id, req.session.user?.username);
     res.json(result);

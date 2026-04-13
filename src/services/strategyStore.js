@@ -187,23 +187,36 @@ const strategyStore = {
     return lines;
   },
 
-  updateForecastLine(id, metricUpdates, userId) {
+  updateForecastLine(id, updates, userId) {
     const data = readData();
     const fl = data.forecastLines.find(l => l.id === id);
     if (!fl) throw new Error('Forecast line not found');
-    const oldMetrics = JSON.parse(JSON.stringify(fl.metrics));
-    Object.assign(fl.metrics, metricUpdates);
+
+    const oldValue = { value: fl.value, metrics: fl.metrics ? JSON.parse(JSON.stringify(fl.metrics)) : {} };
+
+    // Support both cell-level value and legacy metrics update
+    if (updates.value !== undefined) {
+      fl.value = parseFloat(updates.value);
+    }
+    if (updates.metrics) {
+      if (!fl.metrics) fl.metrics = {};
+      Object.assign(fl.metrics, updates.metrics);
+    }
+    if (updates.rowLabel !== undefined) fl.rowLabel = updates.rowLabel;
+
     fl.inputMode = 'manual';
     fl.updatedBy = userId;
     fl.updatedAt = new Date().toISOString();
+
+    const label = fl.rowLabel || `${fl.market}/${fl.businessModel}`;
     addAudit(data, {
       action: 'update',
       entity: 'forecastLine',
       entityId: id,
-      detail: `${fl.market}/${fl.businessModel}/${fl.periodKey}: ${JSON.stringify(metricUpdates)}`,
+      detail: `${label}/${fl.periodKey}: ${fl.value !== undefined ? fl.value : JSON.stringify(updates.metrics || {})}`,
       userId,
-      oldValue: oldMetrics,
-      newValue: { ...fl.metrics },
+      oldValue,
+      newValue: { value: fl.value, metrics: fl.metrics },
     });
     writeData(data);
     return fl;
@@ -342,7 +355,6 @@ const strategyStore = {
 
   bulkImportForecastLines(scenarioId, lines, batchId, userId) {
     const data = readData();
-    // Remove existing lines for this scenario + batch (re-import)
     const now = new Date().toISOString();
     let counter = data.forecastLines.reduce((m, fl) => {
       const n = parseInt(fl.id.replace('fl_', ''), 10);
@@ -352,10 +364,22 @@ const strategyStore = {
     const newLines = lines.map(line => ({
       id: `fl_${++counter}`,
       scenarioId,
-      market: line.market || 'Total',
-      businessModel: line.businessModel || 'Total',
+      // Original Excel row metadata (cell-level)
+      rowLabel: line.rowLabel || '',
+      rowIndex: line.rowIndex ?? null,
+      section: line.section || '',
+      indent: line.indent || 0,
+      isHeader: line.isHeader || false,
+      isSummary: line.isSummary || false,
+      source: line.source || '',
+      // Period
       periodType: line.periodType || 'quarter',
       periodKey: line.periodKey,
+      // Cell value (single number for this row × column)
+      value: line.value ?? null,
+      // Legacy fields
+      market: line.market || 'Total',
+      businessModel: line.businessModel || 'Total',
       metrics: line.metrics || {},
       inputMode: 'imported',
       importBatch: batchId,

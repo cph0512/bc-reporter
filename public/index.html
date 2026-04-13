@@ -1037,6 +1037,7 @@ let userDashboards = []; // empty = all dashboards
 let userRole = 'user';
 let userDisplayName = '';
 let userCanExport = false;
+let userStrategyRole = 'viewer'; // finance_editor | sales_manager | viewer
 
 (async () => {
   try {
@@ -1048,6 +1049,7 @@ let userCanExport = false;
     if (user.role === 'admin') document.getElementById('adminLink').style.display = 'inline-flex';
 
     userRole = user.role;
+    userStrategyRole = user.role === 'admin' ? 'finance_editor' : (user.strategyRole || 'viewer');
     userDashboards = user.role === 'admin' ? [] : (user.dashboards || []);
     userCanExport = user.role === 'admin' || user.canExport === true;
 
@@ -6000,9 +6002,9 @@ function closeTwsModal() {
 }
 
 async function addTwStock() {
-  const code = document.getElementById('twsAddCode').value.trim();
-  const name = document.getElementById('twsAddName').value.trim();
-  const market = document.getElementById('twsAddMarket').value;
+  const code = document.getElementById('twsAddCode')?.value?.trim() || document.getElementById('twsNewCode')?.value?.trim();
+  const name = document.getElementById('twsAddName')?.value?.trim() || document.getElementById('twsNewName')?.value?.trim();
+  const market = document.getElementById('twsAddMarket')?.value || document.getElementById('twsNewMarket')?.value || 'sii';
 
   if (!code || !name) {
     alert(getLang() === 'en' ? 'Stock code and name are required' : '股票代碼和名稱為必填');
@@ -6010,306 +6012,178 @@ async function addTwStock() {
   }
 
   try {
-    const year = new Date().getFullYear();
-    const [overviewRes, coverageRes] = await Promise.all([
-      fetch(`/api/strategy/kpi/overview?scenarioId=${strategyCurrentScenario}&year=${year}`),
-      fetch(`/api/strategy/coverage?scenarioId=${strategyCurrentScenario}&year=${year}`),
-    ]);
-    const overview = await overviewRes.json();
-    const coverage = await coverageRes.json();
-
-    strategyCharts.forEach(c => c.destroy()); strategyCharts = [];
-
-    // KPI Cards
-    const kpiHtml = (overview.kpis || []).map(k => {
-      const color = k.statusColor === 'green' ? '#4caf50' : k.statusColor === 'yellow' ? '#ff9800' : '#f44336';
-      return `<div class="kpi-card" style="border-left:4px solid ${color};">
-        <div class="kpi-label">${k.name}</div>
-        <div class="kpi-value">${k.formatted}</div>
-        <div class="kpi-sub">${k.nameEn}</div>
-      </div>`;
-    }).join('');
-
-    // Coverage card
-    const covColor = coverage.coverage >= 3 ? '#4caf50' : coverage.coverage >= 1.5 ? '#ff9800' : '#f44336';
-    const coverageCard = `<div class="kpi-card" style="border-left:4px solid ${covColor};">
-      <div class="kpi-label">Pipeline Coverage</div>
-      <div class="kpi-value">${coverage.coverageFormatted}</div>
-      <div class="kpi-sub">Gap: ${(coverage.forecastGap || 0).toFixed(1)}M / Pipeline: ${(coverage.weightedPipeline || 0).toFixed(1)}M</div>
-    </div>`;
-
-    container.innerHTML = `
-      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
-        <div>${scenarioSelector()}</div>
-        <div style="font-size:13px;color:#666;">年度: ${year}</div>
-      </div>
-      <div class="kpi-grid">${kpiHtml}${coverageCard}</div>
-      <div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-        <div class="card"><div class="card-header"><span>Forecast vs Actual (Quarterly)</span></div><div class="card-body"><canvas id="chartStratForecastVsActual"></canvas></div></div>
-        <div class="card"><div class="card-header"><span>商業模式營收占比</span></div><div class="card-body"><canvas id="chartStratBizBreakdown"></canvas></div></div>
-      </div>
-      <div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div class="card"><div class="card-header"><span>市場別營收</span></div><div class="card-body"><canvas id="chartStratMarketBreakdown"></canvas></div></div>
-        <div class="card"><div class="card-header"><span>Pipeline 明細 (Top 10)</span></div><div class="card-body">
-          <table style="width:100%;font-size:12px;border-collapse:collapse;">
-            <thead><tr style="border-bottom:2px solid #e0e0e0;text-align:left;">
-              <th style="padding:8px 4px;">公司</th><th>狀態</th><th style="text-align:right;">估值</th><th style="text-align:right;">機率</th><th style="text-align:right;">加權</th>
-            </tr></thead>
-            <tbody>${(coverage.leadDetails || []).slice(0, 10).map(l => `<tr style="border-bottom:1px solid #f0f0f0;">
-              <td style="padding:6px 4px;">${l.company}</td><td>${l.status}</td>
-              <td style="text-align:right;">${(l.value/1000000).toFixed(1)}M</td>
-              <td style="text-align:right;">${(l.probability*100).toFixed(0)}%</td>
-              <td style="text-align:right;">${(l.weighted/1000000).toFixed(1)}M</td>
-            </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">尚無 Pipeline 資料</td></tr>'}
-            </tbody>
-          </table>
-        </div></div>
-      </div>`;
-
-    // Quarterly forecast vs actual chart
-    const qData = overview.quarterlyData || [];
-    if (qData.length > 0) {
-      const ctx1 = document.getElementById('chartStratForecastVsActual');
-      if (ctx1) {
-        strategyCharts.push(new Chart(ctx1, {
-          type: 'bar',
-          data: {
-            labels: qData.map(q => q.quarter),
-            datasets: [
-              { label: 'Forecast', data: qData.map(q => q.forecast?.revenue?.toFixed(1) || 0), backgroundColor: 'rgba(54,162,235,0.7)', borderRadius: 4 },
-              { label: 'Actual', data: qData.map(q => 0), backgroundColor: 'rgba(255,99,132,0.7)', borderRadius: 4 },
-            ]
-          },
-          options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { title: { display: true, text: 'NT$M' } } } }
-        }));
-      }
+    const res = await fetch('/api/tw-stock/watchlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, name, market }),
+    });
+    const result = await res.json();
+    if (res.ok) {
+      closeTwsModal();
+      await loadTwStock();
+    } else {
+      alert(result.error || '新增失敗');
     }
-
-    // Biz model breakdown pie
-    const bizData = overview.bizBreakdown || [];
-    if (bizData.length > 0) {
-      const ctx2 = document.getElementById('chartStratBizBreakdown');
-      if (ctx2) {
-        strategyCharts.push(new Chart(ctx2, {
-          type: 'doughnut',
-          data: {
-            labels: bizData.map(b => b.businessModel),
-            datasets: [{ data: bizData.map(b => b.revenue?.toFixed(1) || 0), backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF'] }]
-          },
-          options: { responsive: true, plugins: { legend: { position: 'right' } } }
-        }));
-      }
-    }
-
-    // Market breakdown bar
-    const mktData = overview.marketBreakdown || [];
-    if (mktData.length > 0) {
-      const ctx3 = document.getElementById('chartStratMarketBreakdown');
-      if (ctx3) {
-        strategyCharts.push(new Chart(ctx3, {
-          type: 'bar',
-          data: {
-            labels: mktData.map(m => m.market),
-            datasets: [{ label: '營收 (NT$M)', data: mktData.map(m => m.revenue?.toFixed(1) || 0), backgroundColor: ['#4caf50','#2196f3','#ff9800'], borderRadius: 4 }]
-          },
-          options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
-        }));
-      }
-    }
-
-  } catch(e) {
-    console.error('Strategy overview error:', e);
-    container.innerHTML = `<div style="color:#c62828;padding:20px;">載入失敗: ${e.message}</div>`;
+  } catch (err) {
+    alert('新增失敗');
   }
 }
 
 // --- Sub-tab B: Forecast Editor ---
-let fcPeriodType = 'quarter'; // 'quarter' or 'year'
-let fcYear = new Date().getFullYear();
+let fcPeriodType = 'quarter'; // quarter | year | month
+let fcFilterYear = new Date().getFullYear();
 
 async function loadStrategyForecast() {
   const container = document.getElementById('strategyForecastSub');
   container.innerHTML = '<div class="loading">載入中...</div>';
   await loadScenarios();
-  const isAdmin = userRole === 'admin';
 
-  if (!strategyCurrentScenario) {
-    container.innerHTML = `<div style="text-align:center;padding:40px;color:#999;">
-      ${scenarioSelector()}<br><br>尚無 Scenario，請上傳 Excel 或新增 Scenario
-      ${isAdmin ? `<br><br><input type="file" id="forecastFileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleForecastUpload()">
-        <button class="btn btn-primary btn-sm" onclick="document.getElementById('forecastFileInput').click()">選擇檔案上傳</button>` : ''}
-    </div>`;
-    return;
+  const canEditForecast = userRole === 'admin' || userStrategyRole === 'finance_editor';
+
+  let scenarioHtml = scenarioSelector('onScenarioChange()');
+  let uploadHtml = '';
+  if (canEditForecast) {
+    uploadHtml = `
+      <div style="margin:16px 0;padding:20px;border:2px dashed #d0d0d0;border-radius:10px;text-align:center;background:#fafafa;" id="forecastDropZone">
+        <p style="color:#666;margin-bottom:8px;">拖放 Excel 檔案至此，或</p>
+        <input type="file" id="forecastFileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleForecastUpload()">
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('forecastFileInput').click()">選擇檔案上傳</button>
+        <div id="forecastUploadStatus" style="margin-top:8px;font-size:12px;color:#999;"></div>
+      </div>`;
   }
 
-  // Fetch ALL lines for this scenario + year (both quarter and year)
-  const [qRes, yRes] = await Promise.all([
-    fetch(`/api/strategy/forecast?scenarioId=${strategyCurrentScenario}&periodType=quarter&year=${fcYear}`),
-    fetch(`/api/strategy/forecast?scenarioId=${strategyCurrentScenario}&periodType=year&year=${fcYear}`),
-  ]);
-  const qLines = await qRes.json();
-  const yLines = await yRes.json();
+  // Period type toggle
+  const periodToggle = `<div style="display:flex;gap:4px;">
+    ${['quarter','year','month'].map(pt => `<button class="btn btn-sm" style="${fcPeriodType===pt?'background:#1a1a2e;color:#fff;':'background:#f0f0f0;'}" onclick="fcPeriodType='${pt}';loadStrategyForecast()">${pt==='quarter'?'季':pt==='year'?'年':'月'}</button>`).join('')}
+  </div>`;
 
-  // Build lookup: key = market|biz|periodKey → merged metrics
-  const lookup = {};
-  [...qLines, ...yLines].forEach(l => {
-    const k = `${l.market}|${l.businessModel}|${l.periodKey}`;
-    if (!lookup[k]) lookup[k] = { ...l };
-    else Object.assign(lookup[k].metrics, l.metrics);
-  });
-  const getVal = (market, biz, period, metric) => lookup[`${market}|${biz}|${period}`]?.metrics?.[metric] || 0;
-  const getLine = (market, biz, period) => lookup[`${market}|${biz}|${period}`];
+  // Year filter
+  const yearSelect = `<select onchange="fcFilterYear=parseInt(this.value);loadStrategyForecast()" style="padding:4px 8px;border:1px solid #d0d0d0;border-radius:4px;font-size:12px;">
+    ${[2022,2023,2024,2025,2026,2027,2028,2029,2030].map(y => `<option value="${y}" ${y===fcFilterYear?'selected':''}>${y}</option>`).join('')}
+  </select>`;
 
-  const periods = fcPeriodType === 'quarter'
-    ? [`${fcYear}-Q1`, `${fcYear}-Q2`, `${fcYear}-Q3`, `${fcYear}-Q4`]
-    : [String(fcYear)];
-  const pLabels = fcPeriodType === 'quarter' ? ['Q1','Q2','Q3','Q4'] : [String(fcYear)];
-  const showAnnual = fcPeriodType === 'quarter'; // Show annual total col when viewing quarters
+  // Load forecast grid
+  let forecastTable = '<div style="color:#999;text-align:center;padding:40px;">選擇 Scenario 後顯示 Forecast 資料</div>';
+  let fcToolbar = '';
+  if (strategyCurrentScenario) {
+    try {
+      const res = await fetch(`/api/strategy/forecast/grid?scenarioId=${strategyCurrentScenario}&periodType=${fcPeriodType}&year=${fcFilterYear}`);
+      const grid = await res.json();
+      if (grid.rows && grid.rows.length > 0) {
+        const cols = grid.columns;
+        // Build header
+        let headerCells = cols.map(c => {
+          const short = c.replace(`${fcFilterYear}-`,'').replace(`${fcFilterYear}`,'FY');
+          return `<th style="text-align:right;padding:8px 4px;min-width:80px;white-space:nowrap;">${short}</th>`;
+        }).join('');
 
-  // Cell renderer
-  const cell = (val, style) => {
-    if (val === 0 || val === undefined) return `<td style="text-align:right;padding:4px 6px;color:#ccc;${style || ''}">-</td>`;
-    return `<td style="text-align:right;padding:4px 6px;font-variant-numeric:tabular-nums;${style || ''}">${val.toFixed(1)}</td>`;
-  };
-  const editCell = (lineId, metric, val, style) => {
-    if (!isAdmin || !lineId) return cell(val, style);
-    return `<td style="text-align:right;padding:0;${style || ''}"><input type="number" step="0.1" value="${(val||0).toFixed(1)}" style="width:75px;text-align:right;border:1px solid transparent;padding:4px 3px;font-size:11px;background:transparent;font-variant-numeric:tabular-nums;" onfocus="this.style.borderColor='#2196f3';this.style.background='#e3f2fd'" onblur="this.style.borderColor='transparent';this.style.background='transparent';saveForecastCell('${lineId}','${metric}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>`;
-  };
+        // Build rows
+        let tableRows = '';
+        let prevSection = '';
+        for (const row of grid.rows) {
+          // Section separator
+          if (row.section && row.section !== prevSection) {
+            tableRows += `<tr><td colspan="${cols.length+1}" style="padding:10px 4px 4px;font-weight:700;font-size:13px;color:#1a1a2e;border-bottom:2px solid #e0e0e0;background:#f0f4ff;">${row.section}</td></tr>`;
+            prevSection = row.section;
+          }
 
-  // Row builder
-  const row = (label, market, biz, metric, opts = {}) => {
-    const { indent, bold, bg, border, editable } = opts;
-    const stl = `${bold ? 'font-weight:600;' : ''}${bg ? 'background:'+bg+';' : ''}${border ? 'border-bottom:2px solid '+border+';' : 'border-bottom:1px solid #f0f0f0;'}`;
-    const lblStl = indent ? 'padding-left:' + (indent * 16) + 'px;' : '';
-    let html = `<tr style="${stl}"><td style="padding:4px 6px;white-space:nowrap;font-size:12px;${lblStl}">${label}</td>`;
-    let total = 0;
-    for (const p of periods) {
-      const v = getVal(market, biz, p, metric);
-      total += v;
-      const line = getLine(market, biz, p);
-      if (editable && line) html += editCell(line.id, metric, v);
-      else html += cell(v);
-    }
-    if (showAnnual) {
-      // Use year line if available, else sum quarters
-      const yearVal = getVal(market, biz, String(fcYear), metric);
-      html += cell(yearVal || total, 'background:#f0f4ff;font-weight:600;');
-    }
-    html += '</tr>';
-    return html;
-  };
+          // Row styling
+          const isSum = row.isSummary;
+          const isHdr = row.isHeader && !Object.keys(row.cells).length;
+          if (isHdr) continue; // skip pure header rows with no data
 
-  // Section header
-  const section = (title, colspan) => `<tr><td colspan="${colspan}" style="padding:12px 6px 4px;font-weight:700;font-size:13px;color:#1a1a2e;border-bottom:2px solid #1a1a2e;">${title}</td></tr>`;
-  const subSection = (title, colspan) => `<tr><td colspan="${colspan}" style="padding:8px 6px 3px;font-weight:600;font-size:12px;color:#555;border-bottom:1px solid #ddd;">${title}</td></tr>`;
+          const rowBg = isSum ? 'background:#f8f9fa;font-weight:600;' : '';
+          const indent = row.indent > 0 ? `padding-left:${row.indent * 16 + 4}px;` : 'padding-left:4px;';
 
-  const colCount = periods.length + 1 + (showAnnual ? 1 : 0);
-  const markets = ['台灣', '北美', '新加坡'];
-  const bizModels = ['卡車運輸', '跨境物流', '終端配送', '軟體服務', '倉儲'];
+          tableRows += `<tr style="border-bottom:1px solid #f0f0f0;${rowBg}">`;
+          tableRows += `<td style="${indent}white-space:nowrap;font-size:12px;min-width:200px;max-width:300px;overflow:hidden;text-overflow:ellipsis;" title="${row.label}">${row.label}</td>`;
 
-  let t = '';
+          for (const colKey of cols) {
+            const cell = row.cells[colKey];
+            if (cell) {
+              const val = typeof cell.value === 'number' ? cell.value : 0;
+              const display = Math.abs(val) >= 1000000 ? (val/1000000).toFixed(2)+'M' : Math.abs(val) >= 1000 ? (val/1000).toFixed(1)+'K' : val.toFixed(1);
+              const color = val < 0 ? 'color:#c62828;' : '';
+              if (canEditForecast) {
+                tableRows += `<td style="text-align:right;padding:0;">
+                  <input type="number" step="any" value="${val}" data-id="${cell.id}" style="width:90px;text-align:right;border:1px solid transparent;padding:5px 4px;font-size:12px;background:transparent;font-variant-numeric:tabular-nums;${color}"
+                    onfocus="this.style.borderColor='#2196f3';this.style.background='#e3f2fd'"
+                    onblur="this.style.borderColor='transparent';this.style.background='transparent';saveForecastCellValue(this.dataset.id,this.value)"
+                    onkeydown="if(event.key==='Enter'){this.blur()}"
+                  >
+                </td>`;
+              } else {
+                tableRows += `<td style="text-align:right;padding:5px 6px;font-variant-numeric:tabular-nums;${color}">${display}</td>`;
+              }
+            } else {
+              tableRows += `<td style="text-align:right;padding:5px 6px;color:#ddd;">-</td>`;
+            }
+          }
+          tableRows += `</tr>`;
+        }
 
-  // === P&L Summary ===
-  t += section('📊 損益表摘要 (NT$M)', colCount);
-  t += row('總營收', 'Total', 'Total', 'revenue', { bold: true, bg: '#e8f5e9', editable: true });
-  t += row('　總毛利', 'Total', 'Total', 'grossProfit', { indent: 1, editable: true });
-  t += row('　毛利率', 'Total', 'Total', 'grossMargin', { indent: 1 });
-  t += row('營運費用 (OPEX)', 'Total', 'Total', 'opex', { bold: true, bg: '#fff3e0', editable: true });
-  t += row('　研發 R&D', 'Total', 'Total', 'rd', { indent: 1, editable: true });
-  t += row('　銷售 S&M', 'Total', 'Total', 'sm', { indent: 1, editable: true });
-  t += row('　管理 G&A', 'Total', 'Total', 'ga', { indent: 1, editable: true });
-  t += row('營業利益', 'Total', 'Total', 'operatingProfit', { bold: true, bg: '#e3f2fd', border: '#1a1a2e' });
-  t += row('淨利', 'Total', 'Total', 'netIncome', { bold: true });
+        forecastTable = `<div style="overflow-x:auto;max-height:70vh;overflow-y:auto;">
+          <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:8px;">
+            <thead style="position:sticky;top:0;z-index:2;"><tr style="border-bottom:2px solid #1a1a2e;background:#f8f9fa;">
+              <th style="text-align:left;padding:8px 4px;min-width:200px;position:sticky;left:0;background:#f8f9fa;z-index:3;">項目 (${grid.rows.length} rows)</th>
+              ${headerCells}
+            </tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>`;
 
-  // === Revenue by Market ===
-  t += section('📍 營收拆分 — 市場', colCount);
-  for (const m of markets) {
-    t += row(m, m, 'Total', 'revenue', { bold: true, editable: true });
-  }
-
-  // === Revenue by Business Model ===
-  t += section('🏭 營收拆分 — 商業模式', colCount);
-  for (const biz of bizModels) {
-    t += row(biz, 'Total', biz, 'revenue', { bold: true, editable: true });
-    t += row('　毛利', 'Total', biz, 'grossProfit', { indent: 1 });
-  }
-
-  // === Detailed Breakdown per Biz Model ===
-  for (const biz of bizModels) {
-    t += section(`📋 ${biz} — 市場明細`, colCount);
-    for (const m of markets) {
-      const hasRevenue = periods.some(p => getVal(m, biz, p, 'revenue') > 0);
-      if (!hasRevenue) continue;
-      t += subSection(`${m}`, colCount);
-      t += row('　營收', m, biz, 'revenue', { indent: 1, editable: true });
-      t += row('　成本 (COGS)', m, biz, 'cogs', { indent: 1, editable: true });
-      t += row('　毛利', m, biz, 'grossProfit', { indent: 1 });
-      t += row('　毛利率', m, biz, 'grossMargin', { indent: 1 });
-      const hasCust = periods.some(p => getVal(m, biz, p, 'activeCustomers') > 0);
-      if (hasCust) {
-        t += row('　活躍客戶數', m, biz, 'activeCustomers', { indent: 1 });
-        t += row('　總訂單量', m, biz, 'totalOrders', { indent: 1 });
+        if (canEditForecast) {
+          fcToolbar = `<div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;">
+            <button class="btn btn-sm" onclick="applyGrowthRate()">📈 套用成長率</button>
+            <button class="btn btn-sm" onclick="addForecastRow()">+ 新增行</button>
+            <button class="btn btn-sm" style="margin-left:auto;background:#fff3e0;color:#e65100;" onclick="loadStrategyForecast()">🔄 重新載入</button>
+          </div>`;
+        }
       }
-    }
+    } catch(e) { console.error('Load forecast error:', e); }
   }
 
   // Import history
   let historyHtml = '';
   try {
-    const hRes = await fetch(`/api/strategy/import/history?scenarioId=${strategyCurrentScenario}`);
+    const hRes = await fetch(`/api/strategy/import/history${strategyCurrentScenario ? '?scenarioId=' + strategyCurrentScenario : ''}`);
     const history = await hRes.json();
     if (history.length > 0) {
-      historyHtml = `<div style="margin-top:20px;"><h4 style="font-size:14px;margin-bottom:8px;">匯入紀錄</h4>
+      historyHtml = `<div style="margin-top:20px;">
+        <h4 style="font-size:14px;margin-bottom:8px;">匯入紀錄</h4>
         <table style="width:100%;font-size:12px;border-collapse:collapse;">
-        <thead><tr style="border-bottom:2px solid #e0e0e0;"><th style="text-align:left;padding:6px 4px;">檔案</th><th>筆數</th><th>匯入者</th><th>時間</th></tr></thead>
-        <tbody>${history.map(h => `<tr style="border-bottom:1px solid #f0f0f0;">
-          <td style="padding:6px 4px;">${h.fileName || h.id}</td><td>${h.lineCount||0}</td><td>${h.importedBy||'-'}</td>
-          <td>${h.importedAt ? new Date(h.importedAt).toLocaleString() : '-'}</td></tr>`).join('')}</tbody></table></div>`;
+          <thead><tr style="border-bottom:2px solid #e0e0e0;"><th style="text-align:left;padding:6px 4px;">檔案</th><th>筆數</th><th>匯入者</th><th>時間</th></tr></thead>
+          <tbody>${history.map(h => `<tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:6px 4px;">${h.fileName || h.id}</td>
+            <td>${h.lineCount || 0}</td>
+            <td>${h.importedBy || '-'}</td>
+            <td>${h.importedAt ? new Date(h.importedAt).toLocaleString() : '-'}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
     }
   } catch(e) {}
 
   container.innerHTML = `
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-      <div>${scenarioSelector()}</div>
-      ${isAdmin ? `<button class="btn btn-sm" onclick="showNewScenarioModal()">+ 新增 Scenario</button>
-        ${strategyCurrentScenario ? `<button class="btn btn-sm" onclick="cloneScenario()">複製</button>` : ''}` : ''}
-      <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-        <button class="btn btn-sm ${fcPeriodType==='quarter'?'btn-primary':''}" onclick="fcPeriodType='quarter';loadStrategyForecast()">季</button>
-        <button class="btn btn-sm ${fcPeriodType==='year'?'btn-primary':''}" onclick="fcPeriodType='year';loadStrategyForecast()">年</button>
-        <select onchange="fcYear=+this.value;loadStrategyForecast()" style="padding:4px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
-          ${[2024,2025,2026,2027,2028,2029,2030].map(y => `<option value="${y}" ${y===fcYear?'selected':''}>${y}</option>`).join('')}
-        </select>
-      </div>
+      <div>${scenarioHtml}</div>
+      ${canEditForecast ? `<button class="btn btn-sm" onclick="showNewScenarioModal()">+ 新增 Scenario</button>
+      ${strategyCurrentScenario ? `<button class="btn btn-sm" onclick="cloneScenario()">複製</button>` : ''}` : ''}
+      <span style="flex:1;"></span>
+      ${periodToggle}
+      ${yearSelect}
     </div>
-    ${isAdmin ? `<div style="margin:8px 0;padding:14px;border:2px dashed #d0d0d0;border-radius:10px;text-align:center;background:#fafafa;" id="forecastDropZone">
-      <input type="file" id="forecastFileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleForecastUpload()">
-      <span style="color:#666;font-size:13px;">拖放 Excel 檔案至此，或</span>
-      <button class="btn btn-sm" onclick="document.getElementById('forecastFileInput').click()" style="margin-left:8px;">選擇檔案上傳</button>
-      <div id="forecastUploadStatus" style="margin-top:4px;font-size:12px;color:#999;"></div>
-    </div>` : ''}
-    <div style="display:flex;align-items:center;gap:12px;margin:8px 0;flex-wrap:wrap;">
+    ${uploadHtml}
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <h4 style="font-size:14px;margin:0;">Forecast — Excel 原始結構</h4>
       <span style="font-size:11px;color:#999;">點擊數字直接編輯 · 按 Enter 儲存 · 與 Excel 完全一致</span>
-      ${isAdmin ? `<div style="margin-left:auto;display:flex;gap:6px;">
-        <button class="btn btn-sm" onclick="applyGrowthRate()">📈 套用成長率</button>
-        <button class="btn btn-sm" onclick="addForecastRow()">+ 新增行</button>
-        <button class="btn btn-sm" style="background:#fff3e0;color:#e65100;" onclick="loadStrategyForecast()">🔄 重新載入</button>
-      </div>` : ''}
     </div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;font-size:11px;border-collapse:collapse;min-width:600px;">
-        <thead><tr style="border-bottom:2px solid #1a1a2e;background:#1a1a2e;color:#fff;">
-          <th style="text-align:left;padding:6px;min-width:180px;">項目 (${fcYear})</th>
-          ${pLabels.map(p => `<th style="text-align:right;padding:6px;min-width:85px;">${p}</th>`).join('')}
-          ${showAnnual ? '<th style="text-align:right;padding:6px;min-width:85px;background:#2a2a4e;">年度</th>' : ''}
-        </tr></thead>
-        <tbody>${t}</tbody>
-      </table>
-    </div>
+    ${fcToolbar}
+    ${forecastTable}
     ${historyHtml}`;
 
   // Setup drag & drop
-  if (isAdmin) {
+  if (canEditForecast) {
     const dz = document.getElementById('forecastDropZone');
     if (dz) {
       dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = '#2196f3'; });
@@ -6393,6 +6267,19 @@ async function saveForecastCell(lineId, metricKey, value) {
       body: JSON.stringify({ metrics: { [metricKey]: numVal } }),
     });
   } catch(e) { console.error('Save forecast cell error:', e); alert('儲存失敗: ' + e.message); }
+}
+
+// Cell-level value save (new grid mode)
+async function saveForecastCellValue(lineId, value) {
+  const numVal = parseFloat(value);
+  if (isNaN(numVal)) return;
+  try {
+    await fetch(`/api/strategy/forecast/${lineId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: numVal }),
+    });
+  } catch(e) { console.error('Save cell error:', e); alert('儲存失敗: ' + e.message); }
 }
 
 async function applyGrowthRate() {
@@ -6720,29 +6607,6 @@ async function archiveScenario(id) {
     await fetch(`/api/strategy/scenarios/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'archived' }) });
     loadStrategySettings();
   } catch(e) { alert('封存失敗: ' + e.message); }
-}
-
-async function addTwStock() {
-  const code = document.getElementById('twsNewCode')?.value?.trim();
-  const name = document.getElementById('twsNewName')?.value?.trim();
-  const market = document.getElementById('twsNewMarket')?.value || 'TWSE';
-  if (!code) { alert('請輸入股票代號'); return; }
-  try {
-    const res = await fetch('/api/tw-stock/watchlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, name, market }),
-    });
-    const result = await res.json();
-    if (res.ok) {
-      closeTwsModal();
-      await loadTwStock();
-    } else {
-      alert(result.error || '新增失敗');
-    }
-  } catch (err) {
-    alert('新增失敗');
-  }
 }
 
 async function removeTwStock(code) {

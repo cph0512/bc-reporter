@@ -39,4 +39,20 @@ function requireDashboard(dashboardName) {
   };
 }
 
-module.exports = { requireAuth, requireAdmin, requireManagerOrAdmin, requireDashboard };
+/**
+ * Strategy War Room role guard.
+ * strategyRole field on user: 'finance_editor' | 'sales_manager' | 'viewer'
+ * Admin always passes. Accepts an array of allowed roles.
+ */
+function requireStrategyRole(...allowedRoles) {
+  return (req, res, next) => {
+    const user = req.session?.user;
+    if (!user) return res.status(401).json({ error: 'Not authenticated' });
+    if (user.role === 'admin') return next(); // admin bypasses all
+    const sr = user.strategyRole || 'viewer';
+    if (allowedRoles.includes(sr)) return next();
+    return res.status(403).json({ error: `Strategy access denied. Required: ${allowedRoles.join(' or ')}` });
+  };
+}
+
+module.exports = { requireAuth, requireAdmin, requireManagerOrAdmin, requireDashboard, requireStrategyRole };
