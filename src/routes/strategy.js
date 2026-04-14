@@ -388,7 +388,7 @@ router.delete('/strategies/:id/milestones/:msId', requireStrategyRole('finance_e
 router.get('/audit', requireStrategyRole('finance_editor', 'sales_manager'), (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
-    res.json(strategyStore.getAuditLog(limit));
+    res.json(strategyStore.getAuditLog(limit, { scenarioId: req.query.scenarioId }));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

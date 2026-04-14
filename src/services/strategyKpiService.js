@@ -160,27 +160,72 @@ const strategyKpiService = {
   // ===== Internal helpers =====
 
   _aggregateForecast(lines, year, quarter) {
-    let filtered;
     if (quarter) {
-      // Match quarterly lines for specific quarter
       const qKey = `${year}-Q${quarter}`;
-      filtered = lines.filter(l => l.periodKey === qKey && l.market === 'Total' && l.businessModel === 'Total');
-    } else {
-      // Match annual line, or sum quarterly
-      const annualLine = lines.find(l => l.periodKey === String(year) && l.periodType === 'year' && l.market === 'Total' && l.businessModel === 'Total');
-      if (annualLine) return { ...annualLine.metrics };
-
-      // Sum quarterly
-      filtered = lines.filter(l => l.periodType === 'quarter' && l.periodKey.startsWith(String(year)) && l.market === 'Total' && l.businessModel === 'Total');
+      return this._aggregateForecastPeriod(lines.filter(l => l.periodKey === qKey));
     }
 
+    const annualLines = lines.filter(l => l.periodType === 'year' && l.periodKey === String(year));
+    if (annualLines.length > 0) {
+      return this._aggregateForecastPeriod(annualLines);
+    }
+
+    const quarterlyLines = lines.filter(l => l.periodType === 'quarter' && l.periodKey.startsWith(String(year)));
     const agg = { revenue: 0, grossProfit: 0, opex: 0, operatingProfit: 0, netIncome: 0 };
-    for (const line of filtered) {
-      for (const key of Object.keys(agg)) {
-        agg[key] += (line.metrics && line.metrics[key]) || 0;
+
+    const quarterKeys = [...new Set(quarterlyLines.map(line => line.periodKey))];
+    for (const periodKey of quarterKeys) {
+      const periodAgg = this._aggregateForecastPeriod(quarterlyLines.filter(line => line.periodKey === periodKey));
+      for (const [key, value] of Object.entries(periodAgg)) {
+        agg[key] += value || 0;
       }
     }
+
     return agg;
+  },
+
+  _aggregateForecastPeriod(lines) {
+    const metrics = ['revenue', 'grossProfit', 'opex', 'operatingProfit', 'netIncome'];
+    const result = {};
+
+    for (const metric of metrics) {
+      result[metric] = this._pickMetricValue(lines, metric);
+    }
+
+    return result;
+  },
+
+  _pickMetricValue(lines, metricCode) {
+    const candidates = this._metricLabelMatchers(metricCode);
+
+    for (const matcher of candidates) {
+      const line = lines.find(item => matcher.test(this._normalizeForecastLabel(item.rowLabel || '')));
+      if (!line) continue;
+
+      if (typeof line.metrics?.[metricCode] === 'number') return line.metrics[metricCode];
+      if (typeof line.value === 'number') return line.value;
+    }
+
+    return 0;
+  },
+
+  _normalizeForecastLabel(label) {
+    return String(label || '')
+      .replace(/[（(].*?[)）]/g, '')
+      .replace(/\s+/g, '')
+      .toLowerCase();
+  },
+
+  _metricLabelMatchers(metricCode) {
+    const map = {
+      revenue: [/^總營收$/, /^營收合計$/, /^營收$/, /^revenue$/i],
+      grossProfit: [/^總毛利$/, /^毛利合計$/, /^毛利$/, /^grossprofit$/i],
+      opex: [/^營運費用$/, /^營業費用合計$/, /^其他費用$/, /^opex$/i],
+      operatingProfit: [/^營業利益$/, /^operatingprofit$/i, /^operatingincome$/i],
+      netIncome: [/^稅後淨利$/, /^淨利$/, /^netincome$/i],
+    };
+
+    return map[metricCode] || [];
   },
 
   async _fetchBCActuals(reportEngine, companyId, year, quarter) {

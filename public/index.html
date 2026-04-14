@@ -6032,6 +6032,7 @@ async function addTwStock() {
 // --- Sub-tab B: Forecast Editor ---
 let fcPeriodType = 'quarter'; // quarter | year | month
 let fcFilterYear = new Date().getFullYear();
+let strategyForecastGridState = { columns: [], rows: [] };
 
 async function loadStrategyForecast() {
   const container = document.getElementById('strategyForecastSub');
@@ -6039,6 +6040,8 @@ async function loadStrategyForecast() {
   await loadScenarios();
 
   const canEditForecast = userRole === 'admin' || userStrategyRole === 'finance_editor';
+  const currentScenario = strategyScenarios.find(s => s.id === strategyCurrentScenario);
+  strategyForecastGridState = { columns: [], rows: [] };
 
   let scenarioHtml = scenarioSelector('onScenarioChange()');
   let uploadHtml = '';
@@ -6052,17 +6055,14 @@ async function loadStrategyForecast() {
       </div>`;
   }
 
-  // Period type toggle
   const periodToggle = `<div style="display:flex;gap:4px;">
     ${['quarter','year','month'].map(pt => `<button class="btn btn-sm" style="${fcPeriodType===pt?'background:#1a1a2e;color:#fff;':'background:#f0f0f0;'}" onclick="fcPeriodType='${pt}';loadStrategyForecast()">${pt==='quarter'?'季':pt==='year'?'年':'月'}</button>`).join('')}
   </div>`;
 
-  // Year filter
   const yearSelect = `<select onchange="fcFilterYear=parseInt(this.value);loadStrategyForecast()" style="padding:4px 8px;border:1px solid #d0d0d0;border-radius:4px;font-size:12px;">
     ${[2022,2023,2024,2025,2026,2027,2028,2029,2030].map(y => `<option value="${y}" ${y===fcFilterYear?'selected':''}>${y}</option>`).join('')}
   </select>`;
 
-  // Load forecast grid
   let forecastTable = '<div style="color:#999;text-align:center;padding:40px;">選擇 Scenario 後顯示 Forecast 資料</div>';
   let fcToolbar = '';
   if (strategyCurrentScenario) {
@@ -6070,27 +6070,24 @@ async function loadStrategyForecast() {
       const res = await fetch(`/api/strategy/forecast/grid?scenarioId=${strategyCurrentScenario}&periodType=${fcPeriodType}&year=${fcFilterYear}`);
       const grid = await res.json();
       if (grid.rows && grid.rows.length > 0) {
+        strategyForecastGridState = { columns: grid.columns || [], rows: grid.rows || [] };
         const cols = grid.columns;
-        // Build header
-        let headerCells = cols.map(c => {
-          const short = c.replace(`${fcFilterYear}-`,'').replace(`${fcFilterYear}`,'FY');
+        const headerCells = cols.map(c => {
+          const short = c.replace(`${fcFilterYear}-`, '').replace(`${fcFilterYear}`, 'FY');
           return `<th style="text-align:right;padding:8px 4px;min-width:80px;white-space:nowrap;">${short}</th>`;
         }).join('');
 
-        // Build rows
         let tableRows = '';
         let prevSection = '';
         for (const row of grid.rows) {
-          // Section separator
           if (row.section && row.section !== prevSection) {
-            tableRows += `<tr><td colspan="${cols.length+1}" style="padding:10px 4px 4px;font-weight:700;font-size:13px;color:#1a1a2e;border-bottom:2px solid #e0e0e0;background:#f0f4ff;">${row.section}</td></tr>`;
+            tableRows += `<tr><td colspan="${cols.length + 1}" style="padding:10px 4px 4px;font-weight:700;font-size:13px;color:#1a1a2e;border-bottom:2px solid #e0e0e0;background:#f0f4ff;">${row.section}</td></tr>`;
             prevSection = row.section;
           }
 
-          // Row styling
           const isSum = row.isSummary;
           const isHdr = row.isHeader && !Object.keys(row.cells).length;
-          if (isHdr) continue; // skip pure header rows with no data
+          if (isHdr) continue;
 
           const rowBg = isSum ? 'background:#f8f9fa;font-weight:600;' : '';
           const indent = row.indent > 0 ? `padding-left:${row.indent * 16 + 4}px;` : 'padding-left:4px;';
@@ -6102,7 +6099,7 @@ async function loadStrategyForecast() {
             const cell = row.cells[colKey];
             if (cell) {
               const val = typeof cell.value === 'number' ? cell.value : 0;
-              const display = Math.abs(val) >= 1000000 ? (val/1000000).toFixed(2)+'M' : Math.abs(val) >= 1000 ? (val/1000).toFixed(1)+'K' : val.toFixed(1);
+              const display = Math.abs(val) >= 1000000 ? (val / 1000000).toFixed(2) + 'M' : Math.abs(val) >= 1000 ? (val / 1000).toFixed(1) + 'K' : val.toFixed(1);
               const color = val < 0 ? 'color:#c62828;' : '';
               if (canEditForecast) {
                 tableRows += `<td style="text-align:right;padding:0;">
@@ -6119,7 +6116,7 @@ async function loadStrategyForecast() {
               tableRows += `<td style="text-align:right;padding:5px 6px;color:#ddd;">-</td>`;
             }
           }
-          tableRows += `</tr>`;
+          tableRows += '</tr>';
         }
 
         forecastTable = `<div style="overflow-x:auto;max-height:70vh;overflow-y:auto;">
@@ -6134,16 +6131,18 @@ async function loadStrategyForecast() {
 
         if (canEditForecast) {
           fcToolbar = `<div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;">
-            <button class="btn btn-sm" onclick="applyGrowthRate()">📈 套用成長率</button>
+            <button class="btn btn-sm" onclick="applyGrowthRate()">批次調整成長率</button>
             <button class="btn btn-sm" onclick="addForecastRow()">+ 新增行</button>
-            <button class="btn btn-sm" style="margin-left:auto;background:#fff3e0;color:#e65100;" onclick="loadStrategyForecast()">🔄 重新載入</button>
+            <button class="btn btn-sm" onclick="createForecastSnapshot()">建立版本快照</button>
+            <button class="btn btn-sm" style="margin-left:auto;background:#fff3e0;color:#e65100;" onclick="loadStrategyForecast()">重新載入</button>
           </div>`;
         }
       }
-    } catch(e) { console.error('Load forecast error:', e); }
+    } catch(e) {
+      console.error('Load forecast error:', e);
+    }
   }
 
-  // Import history
   let historyHtml = '';
   try {
     const hRes = await fetch(`/api/strategy/import/history${strategyCurrentScenario ? '?scenarioId=' + strategyCurrentScenario : ''}`);
@@ -6164,6 +6163,75 @@ async function loadStrategyForecast() {
     }
   } catch(e) {}
 
+  let versionHtml = '';
+  if (strategyCurrentScenario) {
+    try {
+      const [snapshotRes, auditRes] = await Promise.all([
+        fetch(`/api/strategy/snapshots?scenarioId=${strategyCurrentScenario}`),
+        fetch(`/api/strategy/audit?scenarioId=${strategyCurrentScenario}&limit=12`),
+      ]);
+      const snapshots = await snapshotRes.json();
+      const audit = await auditRes.json();
+
+      const snapshotRows = snapshots.length > 0
+        ? snapshots.slice(0, 8).map(s => `<tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:8px 4px;">
+              <div style="font-weight:600;">${s.name || '未命名快照'}</div>
+              <div style="font-size:11px;color:#999;">${s.timestamp ? new Date(s.timestamp).toLocaleString() : '-'} · ${s.userId || '-'}</div>
+            </td>
+            <td style="text-align:center;font-size:11px;">${s.lineCount || 0}</td>
+            <td style="text-align:right;">${canEditForecast ? `<button class="btn btn-sm" onclick="restoreForecastSnapshot('${s.id}', '${String(s.name || '').replace(/'/g, "\\'")}')">還原</button>` : ''}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="3" style="text-align:center;color:#999;padding:18px;">尚無版本快照</td></tr>';
+
+      const auditRows = audit.length > 0
+        ? audit.map(a => {
+            const canRevert = canEditForecast && a.entity === 'forecastLine' && a.oldValue;
+            return `<tr style="border-bottom:1px solid #f0f0f0;">
+              <td style="padding:8px 4px;">
+                <div style="font-weight:600;font-size:12px;">${a.detail || a.action}</div>
+                <div style="font-size:11px;color:#999;">${a.timestamp ? new Date(a.timestamp).toLocaleString() : '-'} · ${a.userId || '-'}</div>
+              </td>
+              <td style="text-align:center;font-size:11px;">${a.action}</td>
+              <td style="text-align:right;">${canRevert ? `<button class="btn btn-sm" onclick="revertForecastAudit('${a.id}')">回復</button>` : ''}</td>
+            </tr>`;
+          }).join('')
+        : '<tr><td colspan="3" style="text-align:center;color:#999;padding:18px;">尚無調整紀錄</td></tr>';
+
+      versionHtml = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin:12px 0 16px;">
+          <div class="card">
+            <div class="card-header"><span>版本快照</span></div>
+            <div class="card-body" style="padding:0 12px 12px;">
+              <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                <thead><tr style="border-bottom:2px solid #e0e0e0;"><th style="text-align:left;padding:8px 4px;">名稱</th><th style="text-align:center;">筆數</th><th></th></tr></thead>
+                <tbody>${snapshotRows}</tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span>最近異動</span></div>
+            <div class="card-body" style="padding:0 12px 12px;">
+              <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                <thead><tr style="border-bottom:2px solid #e0e0e0;"><th style="text-align:left;padding:8px 4px;">內容</th><th style="text-align:center;">動作</th><th></th></tr></thead>
+                <tbody>${auditRows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+    } catch(e) {
+      console.error('Load forecast version data error:', e);
+    }
+  }
+
+  const scenarioMetaHtml = currentScenario ? `
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:12px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;">
+      <div style="font-weight:700;">${currentScenario.name}</div>
+      <span style="padding:2px 8px;border-radius:10px;font-size:11px;background:${currentScenario.status === 'published' ? '#e8f5e9' : currentScenario.status === 'draft' ? '#fff3e0' : '#f3f4f6'};color:${currentScenario.status === 'published' ? '#2e7d32' : '#374151'};">${currentScenario.status}</span>
+      <span style="font-size:12px;color:#6b7280;">${currentScenario.type || 'custom'} · ${currentScenario.startPeriod || '-'}-${currentScenario.endPeriod || '-'}</span>
+      <span style="font-size:12px;color:#6b7280;">最後更新 ${currentScenario.updatedAt ? new Date(currentScenario.updatedAt).toLocaleString() : '-'}</span>
+    </div>` : '';
+
   container.innerHTML = `
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
       <div>${scenarioHtml}</div>
@@ -6173,16 +6241,17 @@ async function loadStrategyForecast() {
       ${periodToggle}
       ${yearSelect}
     </div>
+    ${scenarioMetaHtml}
     ${uploadHtml}
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <h4 style="font-size:14px;margin:0;">Forecast — Excel 原始結構</h4>
-      <span style="font-size:11px;color:#999;">點擊數字直接編輯 · 按 Enter 儲存 · 與 Excel 完全一致</span>
+      <span style="font-size:11px;color:#999;">保留 Excel 列欄結構，可直接改值、批次調整、建立快照與回復</span>
     </div>
     ${fcToolbar}
+    ${versionHtml}
     ${forecastTable}
     ${historyHtml}`;
 
-  // Setup drag & drop
   if (canEditForecast) {
     const dz = document.getElementById('forecastDropZone');
     if (dz) {
@@ -6256,6 +6325,54 @@ async function cloneScenario() {
   } catch(e) { alert('複製失敗: ' + e.message); }
 }
 
+async function createForecastSnapshot() {
+  if (!strategyCurrentScenario) { alert('請先選擇 Scenario'); return; }
+  const defaultName = `${fcFilterYear} ${fcPeriodType} snapshot`;
+  const name = prompt('快照名稱:', defaultName);
+  if (!name) return;
+
+  try {
+    const res = await fetch('/api/strategy/snapshots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenarioId: strategyCurrentScenario, name }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '建立快照失敗');
+    alert(`已建立快照：${data.name || name}`);
+    loadStrategyForecast();
+  } catch(e) {
+    alert('建立快照失敗: ' + e.message);
+  }
+}
+
+async function restoreForecastSnapshot(snapshotId, snapshotName) {
+  if (!confirm(`確定要還原到版本「${snapshotName || snapshotId}」嗎？目前內容會先自動備份。`)) return;
+
+  try {
+    const res = await fetch(`/api/strategy/snapshots/${snapshotId}/restore`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '還原失敗');
+    alert(`已還原 ${data.restoredLines || 0} 筆 Forecast`);
+    loadStrategyForecast();
+  } catch(e) {
+    alert('還原失敗: ' + e.message);
+  }
+}
+
+async function revertForecastAudit(auditId) {
+  if (!confirm('確定要回復這筆異動嗎？')) return;
+
+  try {
+    const res = await fetch(`/api/strategy/audit/${auditId}/revert`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '回復失敗');
+    loadStrategyForecast();
+  } catch(e) {
+    alert('回復失敗: ' + e.message);
+  }
+}
+
 // --- Forecast inline edit helpers ---
 async function saveForecastCell(lineId, metricKey, value) {
   const numVal = parseFloat(value);
@@ -6283,19 +6400,17 @@ async function saveForecastCellValue(lineId, value) {
 }
 
 async function applyGrowthRate() {
-  const market = prompt('套用市場 (留空=全部, 或輸入 台灣/北美/新加坡):', '');
-  const biz = prompt('套用商業模式 (留空=全部, 或輸入 卡車運輸/跨境物流 等):', '');
+  if (!strategyCurrentScenario) { alert('請先選擇 Scenario'); return; }
+  const keyword = prompt('套用列名稱關鍵字（留空代表目前年度 / 期間全部資料列）:', '');
   const rate = parseFloat(prompt('成長率 % (例: 20 代表 +20%):', ''));
   if (isNaN(rate)) { alert('請輸入有效數字'); return; }
 
-  const year = new Date().getFullYear();
   try {
-    const res = await fetch(`/api/strategy/forecast?scenarioId=${strategyCurrentScenario}&periodType=quarter&year=${year}`);
+    const res = await fetch(`/api/strategy/forecast?scenarioId=${strategyCurrentScenario}&periodType=${fcPeriodType}&year=${fcFilterYear}`);
     const lines = await res.json();
     const filtered = lines.filter(l => {
-      if (market && l.market !== market) return false;
-      if (biz && l.businessModel !== biz) return false;
-      if (l.market === 'Total' && l.businessModel === 'Total') return false; // skip total row
+      if (l.isHeader || l.isSummary) return false;
+      if (keyword && !String(l.rowLabel || '').includes(keyword)) return false;
       return true;
     });
     if (filtered.length === 0) { alert('沒有符合條件的 forecast 行'); return; }
@@ -6304,13 +6419,7 @@ async function applyGrowthRate() {
     const multiplier = 1 + rate / 100;
     const updates = filtered.map(l => ({
       id: l.id,
-      metrics: {
-        revenue: (l.metrics?.revenue || 0) * multiplier,
-        grossProfit: (l.metrics?.grossProfit || 0) * multiplier,
-        cogs: (l.metrics?.cogs || 0) * multiplier,
-        opex: (l.metrics?.opex || 0) * multiplier,
-        operatingProfit: (l.metrics?.operatingProfit || 0) * multiplier,
-      }
+      value: Number(((l.value || 0) * multiplier).toFixed(6)),
     }));
     const bulkRes = await fetch('/api/strategy/forecast/bulk', {
       method: 'POST',
@@ -6325,27 +6434,33 @@ async function applyGrowthRate() {
 
 async function addForecastRow() {
   if (!strategyCurrentScenario) { alert('請先選擇 Scenario'); return; }
-  const scn = strategyScenarios.find(s => s.id === strategyCurrentScenario);
-  const market = prompt(`市場 (${(scn?.markets || []).join('/')}):`);
-  if (!market) return;
-  const biz = prompt(`商業模式 (${(scn?.businessModels || []).join('/')}):`);
-  if (!biz) return;
-  const year = new Date().getFullYear();
-  const revenue = parseFloat(prompt('Q1 營收 (NT$M):', '0')) || 0;
+  const columns = strategyForecastGridState.columns || [];
+  if (columns.length === 0) { alert('目前沒有可用欄位，請先切換到有資料的年度 / 期間'); return; }
+
+  const rowLabel = prompt('新列名稱（例如：新客戶專案、台灣 / 新通路）:');
+  if (!rowLabel) return;
+  const section = prompt('Section（可留空）:', '');
+  const defaultValue = parseFloat(prompt(`預設值（會先填入目前畫面 ${columns.length} 個欄位，可之後逐格再改）:`, '0'));
+  if (Number.isNaN(defaultValue)) { alert('請輸入有效數字'); return; }
 
   try {
-    // Create 4 quarters
-    const quarters = [`${year}-Q1`,`${year}-Q2`,`${year}-Q3`,`${year}-Q4`];
-    for (const q of quarters) {
-      await fetch('/api/strategy/forecast/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          updates: [{ scenarioId: strategyCurrentScenario, market, businessModel: biz, periodType: 'quarter', periodKey: q, metrics: { revenue: q === quarters[0] ? revenue : 0 } }]
-        }),
-      });
-    }
-    alert('✅ 已新增 forecast 行');
+    const updates = columns.map(periodKey => ({
+      scenarioId: strategyCurrentScenario,
+      rowLabel,
+      section,
+      periodType: fcPeriodType,
+      periodKey,
+      value: defaultValue,
+      source: 'manual',
+    }));
+    const res = await fetch('/api/strategy/forecast/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '新增失敗');
+    alert(`已新增 ${data.updated || updates.length} 格 Forecast`);
     loadStrategyForecast();
   } catch(e) { alert('新增失敗: ' + e.message); }
 }

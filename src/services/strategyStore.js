@@ -67,6 +67,75 @@ function addAudit(data, { action, entity, entityId, detail, userId, oldValue, ne
   }
 }
 
+function cloneJson(value) {
+  return value == null ? value : JSON.parse(JSON.stringify(value));
+}
+
+function normalizeNumericValue(value) {
+  const num = typeof value === 'number' ? value : parseFloat(value);
+  if (Number.isNaN(num)) throw new Error('數值格式不正確');
+  return num;
+}
+
+function buildForecastLineLabel(line) {
+  return line.rowLabel || [line.market, line.businessModel].filter(Boolean).join(' / ') || 'Untitled row';
+}
+
+function buildForecastLineAuditValue(line) {
+  return {
+    value: line.value ?? null,
+    metrics: cloneJson(line.metrics || {}),
+    rowLabel: line.rowLabel || '',
+    section: line.section || '',
+    indent: line.indent || 0,
+  };
+}
+
+function inferMetricValue(update) {
+  if (update.value !== undefined) return normalizeNumericValue(update.value);
+
+  if (update.metrics && typeof update.metrics === 'object') {
+    const firstNumeric = Object.values(update.metrics).find(v => typeof v === 'number' && !Number.isNaN(v));
+    if (firstNumeric !== undefined) return firstNumeric;
+  }
+
+  return 0;
+}
+
+function inferPeriodType(periodKey, fallback = 'quarter') {
+  if (!periodKey) return fallback;
+  if (/^\d{4}-Q[1-4]$/.test(periodKey)) return 'quarter';
+  if (/^\d{4}-\d{2}$/.test(periodKey)) return 'month';
+  if (/^\d{4}$/.test(periodKey)) return 'year';
+  return fallback;
+}
+
+function nextForecastLineId(data) {
+  const max = data.forecastLines.reduce((m, fl) => {
+    const n = parseInt(fl.id.replace('fl_', ''), 10);
+    return n > m ? n : m;
+  }, 0);
+  return `fl_${max + 1}`;
+}
+
+function matchesScenarioAudit(data, audit, scenarioId) {
+  if (!scenarioId) return true;
+  if (audit.entity === 'scenario') return audit.entityId === scenarioId;
+  if (audit.entity !== 'forecastLine') return false;
+
+  if (audit.entityId?.startsWith('scn_')) return audit.entityId === scenarioId;
+
+  const line = data.forecastLines.find(fl => fl.id === audit.entityId);
+  if (line) return line.scenarioId === scenarioId;
+
+  const snapshotLines = audit.oldValue?.lines;
+  if (Array.isArray(snapshotLines) && snapshotLines.length > 0) {
+    return snapshotLines.some(lineItem => lineItem.scenarioId === scenarioId);
+  }
+
+  return false;
+}
+
 const strategyStore = {
   // Raw data for sync export
   getRawData() { return readData(); },
@@ -192,23 +261,28 @@ const strategyStore = {
     const fl = data.forecastLines.find(l => l.id === id);
     if (!fl) throw new Error('Forecast line not found');
 
-    const oldValue = { value: fl.value, metrics: fl.metrics ? JSON.parse(JSON.stringify(fl.metrics)) : {} };
+    const oldValue = buildForecastLineAuditValue(fl);
 
     // Support both cell-level value and legacy metrics update
     if (updates.value !== undefined) {
-      fl.value = parseFloat(updates.value);
+      fl.value = normalizeNumericValue(updates.value);
     }
     if (updates.metrics) {
       if (!fl.metrics) fl.metrics = {};
       Object.assign(fl.metrics, updates.metrics);
+      if (updates.value === undefined) {
+        fl.value = inferMetricValue(updates);
+      }
     }
     if (updates.rowLabel !== undefined) fl.rowLabel = updates.rowLabel;
+    if (updates.section !== undefined) fl.section = updates.section;
+    if (updates.indent !== undefined) fl.indent = updates.indent;
 
     fl.inputMode = 'manual';
     fl.updatedBy = userId;
     fl.updatedAt = new Date().toISOString();
 
-    const label = fl.rowLabel || `${fl.market}/${fl.businessModel}`;
+    const label = buildForecastLineLabel(fl);
     addAudit(data, {
       action: 'update',
       entity: 'forecastLine',
@@ -216,7 +290,7 @@ const strategyStore = {
       detail: `${label}/${fl.periodKey}: ${fl.value !== undefined ? fl.value : JSON.stringify(updates.metrics || {})}`,
       userId,
       oldValue,
-      newValue: { value: fl.value, metrics: fl.metrics },
+      newValue: buildForecastLineAuditValue(fl),
     });
     writeData(data);
     return fl;
@@ -232,8 +306,12 @@ const strategyStore = {
     if (audit.entity === 'forecastLine' && audit.entityId) {
       const fl = data.forecastLines.find(l => l.id === audit.entityId);
       if (!fl) throw new Error('Forecast line not found (may have been deleted)');
-      const currentMetrics = JSON.parse(JSON.stringify(fl.metrics));
-      fl.metrics = { ...fl.metrics, ...audit.oldValue };
+      const currentValue = buildForecastLineAuditValue(fl);
+      if (audit.oldValue.value !== undefined) fl.value = audit.oldValue.value;
+      if (audit.oldValue.metrics !== undefined) fl.metrics = cloneJson(audit.oldValue.metrics);
+      if (audit.oldValue.rowLabel !== undefined) fl.rowLabel = audit.oldValue.rowLabel;
+      if (audit.oldValue.section !== undefined) fl.section = audit.oldValue.section;
+      if (audit.oldValue.indent !== undefined) fl.indent = audit.oldValue.indent;
       fl.inputMode = 'reverted';
       fl.updatedBy = userId;
       fl.updatedAt = new Date().toISOString();
@@ -241,10 +319,10 @@ const strategyStore = {
         action: 'revert',
         entity: 'forecastLine',
         entityId: fl.id,
-        detail: `Reverted ${fl.market}/${fl.businessModel}/${fl.periodKey} to values before ${audit.timestamp}`,
+        detail: `Reverted ${buildForecastLineLabel(fl)}/${fl.periodKey} to values before ${audit.timestamp}`,
         userId,
-        oldValue: currentMetrics,
-        newValue: { ...fl.metrics },
+        oldValue: currentValue,
+        newValue: buildForecastLineAuditValue(fl),
       });
     } else {
       throw new Error('此類型紀錄不支援還原');
@@ -338,17 +416,98 @@ const strategyStore = {
     const data = readData();
     const now = new Date().toISOString();
     let count = 0;
-    for (const { id, metrics } of updates) {
-      const fl = data.forecastLines.find(l => l.id === id);
-      if (fl) {
-        Object.assign(fl.metrics, metrics);
+    if (!Array.isArray(updates)) throw new Error('updates 必須為陣列');
+
+    for (const update of updates) {
+      if (update.id) {
+        const fl = data.forecastLines.find(l => l.id === update.id);
+        if (!fl) continue;
+
+        const oldValue = buildForecastLineAuditValue(fl);
+
+        if (update.value !== undefined) {
+          fl.value = normalizeNumericValue(update.value);
+        }
+
+        if (update.metrics) {
+          fl.metrics = { ...(fl.metrics || {}), ...update.metrics };
+          if (update.value === undefined) {
+            fl.value = inferMetricValue(update);
+          }
+        }
+
+        if (update.rowLabel !== undefined) fl.rowLabel = update.rowLabel;
+        if (update.section !== undefined) fl.section = update.section;
+        if (update.indent !== undefined) fl.indent = update.indent;
+
         fl.inputMode = 'manual';
         fl.updatedBy = userId;
         fl.updatedAt = now;
+
+        addAudit(data, {
+          action: 'bulk_update',
+          entity: 'forecastLine',
+          entityId: fl.id,
+          detail: `Bulk updated ${buildForecastLineLabel(fl)}/${fl.periodKey}`,
+          userId,
+          oldValue,
+          newValue: buildForecastLineAuditValue(fl),
+        });
         count++;
+        continue;
       }
+
+      if (!update.scenarioId || !update.periodKey) continue;
+
+      const nextIdValue = nextForecastLineId(data);
+      const value = inferMetricValue(update);
+      const market = update.market || 'Total';
+      const businessModel = update.businessModel || 'Total';
+      const rowLabel = update.rowLabel
+        || [market !== 'Total' ? market : '', businessModel !== 'Total' ? businessModel : ''].filter(Boolean).join(' / ')
+        || '新 Forecast 行';
+
+      const line = {
+        id: nextIdValue,
+        scenarioId: update.scenarioId,
+        rowLabel,
+        rowIndex: null,
+        section: update.section || '',
+        indent: update.indent || 0,
+        isHeader: false,
+        isSummary: false,
+        source: update.source || 'manual',
+        periodType: update.periodType || inferPeriodType(update.periodKey),
+        periodKey: update.periodKey,
+        value,
+        market,
+        businessModel,
+        metrics: update.metrics || { value },
+        inputMode: 'manual',
+        updatedBy: userId,
+        updatedAt: now,
+      };
+
+      data.forecastLines.push(line);
+      addAudit(data, {
+        action: 'create',
+        entity: 'forecastLine',
+        entityId: line.id,
+        detail: `Created ${buildForecastLineLabel(line)}/${line.periodKey}`,
+        userId,
+        newValue: buildForecastLineAuditValue(line),
+      });
+      count++;
     }
-    addAudit(data, { action: 'bulk_update', entity: 'forecastLine', entityId: null, detail: `Updated ${count} lines`, userId });
+
+    addAudit(data, {
+      action: 'bulk_update',
+      entity: 'forecastLine',
+      entityId: null,
+      detail: `Updated ${count} lines`,
+      userId,
+      newValue: { count },
+    });
     writeData(data);
     return count;
   },
@@ -580,9 +739,12 @@ const strategyStore = {
 
   // ===== Audit Log =====
 
-  getAuditLog(limit = 50) {
+  getAuditLog(limit = 50, filters = {}) {
     const data = readData();
-    return data.auditLog.slice(-limit).reverse();
+    return data.auditLog
+      .filter(audit => matchesScenarioAudit(data, audit, filters.scenarioId))
+      .slice(-limit)
+      .reverse();
   },
 };
 
