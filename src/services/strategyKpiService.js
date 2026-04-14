@@ -13,6 +13,8 @@ const strategyKpiService = {
   async calculateKpis({ scenarioId, companyId, year, quarter, reportEngine }) {
     const scenario = strategyStore.getScenarioById(scenarioId);
     if (!scenario) throw new Error('Scenario not found');
+    const workbookState = strategyStore.getScenarioWorkbook(scenarioId);
+    const forecastVersion = workbookState?.publishedMeta ? 'published' : 'draft';
 
     const kpiDefs = strategyStore.getKpiDefinitions();
     const results = [];
@@ -22,6 +24,7 @@ const strategyKpiService = {
     const forecastLines = strategyStore.getForecastLines({
       scenarioId,
       year: String(year),
+      version: 'published_preferred',
     });
 
     // Aggregate forecast totals for the year/quarter
@@ -56,6 +59,8 @@ const strategyKpiService = {
       companyId: companyId || null,
       kpis: results,
       forecast,
+      forecastVersion,
+      forecastPublishedMeta: workbookState?.publishedMeta || null,
       actuals,
       pipeline,
       strategyExec,
@@ -71,7 +76,7 @@ const strategyKpiService = {
     // Get quarterly breakdown for charts
     const quarterlyData = [];
     for (let q = 1; q <= 4; q++) {
-      const forecastLines = strategyStore.getForecastLines({ scenarioId, year: String(year) });
+      const forecastLines = strategyStore.getForecastLines({ scenarioId, year: String(year), version: 'published_preferred' });
       const qForecast = this._aggregateForecast(forecastLines, year, q);
       quarterlyData.push({
         quarter: `Q${q}`,
@@ -98,7 +103,7 @@ const strategyKpiService = {
    * Calculate pipeline coverage vs forecast gap
    */
   getPipelineCoverage({ scenarioId, year }) {
-    const forecastLines = strategyStore.getForecastLines({ scenarioId, year: String(year) });
+    const forecastLines = strategyStore.getForecastLines({ scenarioId, year: String(year), version: 'published_preferred' });
     const yearForecast = this._aggregateForecast(forecastLines, year, null);
     const targetRevenue = yearForecast.revenue || 0;
 

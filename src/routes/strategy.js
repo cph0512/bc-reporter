@@ -111,19 +111,20 @@ router.post('/import', requireStrategyRole('finance_editor'), upload.single('fil
       targetScenarioId = scn.id;
     }
 
-    // Optionally clear existing lines
     if (clearExisting === 'true' || clearExisting === true) {
       strategyStore.clearScenarioLines(targetScenarioId, userId);
     }
 
-    // Import lines
-    result.allLines._fileName = req.file.originalname;
-    const count = strategyStore.bulkImportForecastLines(targetScenarioId, result.allLines, batchId, userId);
+    const imported = strategyStore.importScenarioWorkbook(targetScenarioId, result.sheets, {
+      batchId,
+      fileName: req.file.originalname,
+      userId,
+    });
 
     res.json({
       ok: true,
       scenarioId: targetScenarioId,
-      imported: count,
+      imported: imported.lineCount,
       summary: result.summary,
       batchId,
       sheets: result.sheets.map(s => ({ name: s.name, columns: s.columns.length, rows: s.rows.length })),
@@ -153,6 +154,8 @@ router.get('/forecast', (req, res) => {
       businessModel: req.query.biz,
       periodType: req.query.periodType,
       year: req.query.year,
+      sheetName: req.query.sheetName,
+      version: req.query.version,
     });
     res.json(lines);
   } catch (err) {
@@ -167,6 +170,8 @@ router.get('/forecast/grid', (req, res) => {
       scenarioId: req.query.scenarioId,
       periodType: req.query.periodType,
       year: req.query.year,
+      sheetName: req.query.sheetName,
+      version: req.query.version || 'draft',
     });
     if (lines.length === 0) return res.json({ columns: [], rows: [] });
 
@@ -203,6 +208,15 @@ router.get('/forecast/grid', (req, res) => {
   }
 });
 
+router.get('/forecast/workbook', (req, res) => {
+  try {
+    if (!req.query.scenarioId) return res.status(400).json({ error: 'scenarioId is required' });
+    res.json(strategyStore.getScenarioWorkbook(req.query.scenarioId, req.query.version || 'draft'));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.put('/forecast/:id', requireStrategyRole('finance_editor'), (req, res) => {
   try {
     // Support both { value: 123 } (cell-level) and { metrics: {...} } (legacy)
@@ -221,6 +235,24 @@ router.post('/forecast/bulk', requireStrategyRole('finance_editor'), (req, res) 
   try {
     const count = strategyStore.bulkUpdateForecastLines(req.body.updates, req.session.user?.username);
     res.json({ ok: true, updated: count });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.post('/forecast/workbook/rows', requireStrategyRole('finance_editor'), (req, res) => {
+  try {
+    const row = strategyStore.addWorkbookRow(req.body.scenarioId, req.body, req.session.user?.username);
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.post('/forecast/publish', requireStrategyRole('finance_editor'), (req, res) => {
+  try {
+    const result = strategyStore.publishScenarioWorkbook(req.body.scenarioId, req.session.user?.username, req.body.note);
+    res.json({ ok: true, published: result });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

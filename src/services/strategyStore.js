@@ -11,6 +11,7 @@ const STRATEGY_FILE = resolveDataFile('strategy.json');
 const DEFAULT_DATA = {
   scenarios: [],
   forecastLines: [],
+  forecastWorkbooks: [],
   kpiDefinitions: [],
   strategies: [],
   importHistory: [],
@@ -24,6 +25,7 @@ function readData() {
     return {
       scenarios: raw.scenarios || [],
       forecastLines: raw.forecastLines || [],
+      forecastWorkbooks: raw.forecastWorkbooks || [],
       kpiDefinitions: raw.kpiDefinitions || [],
       strategies: raw.strategies || [],
       importHistory: raw.importHistory || [],
@@ -136,6 +138,269 @@ function matchesScenarioAudit(data, audit, scenarioId) {
   return false;
 }
 
+function markScenarioUpdated(data, scenarioId, now) {
+  const scenario = data.scenarios.find(item => item.id === scenarioId);
+  if (scenario) scenario.updatedAt = now || new Date().toISOString();
+  return scenario || null;
+}
+
+function sanitizeMetricKey(label) {
+  return String(label || '')
+    .replace(/[（(].*[)）]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^\w\u4e00-\u9fff]/g, '')
+    .toLowerCase()
+    .slice(0, 50) || 'value';
+}
+
+function inferSheetNameFromLine(line) {
+  if (line.sheetName) return line.sheetName;
+  if (line.source === 'kom') return 'KOMs';
+  return 'P&L Forecast';
+}
+
+function inferSourceFromSheetName(sheetName) {
+  return sheetName === 'KOMs' ? 'kom' : 'pnl';
+}
+
+function buildWorkbookRowKey(row) {
+  if (row.rowIndex != null) return `r${row.rowIndex}`;
+  return row.label || row.rowLabel || `row_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function periodSortValue(periodKey) {
+  if (/^\d{4}$/.test(periodKey)) return Number(periodKey) * 100;
+
+  const quarterMatch = periodKey.match(/^(\d{4})-Q([1-4])$/);
+  if (quarterMatch) return Number(quarterMatch[1]) * 100 + Number(quarterMatch[2]) * 10;
+
+  const monthMatch = periodKey.match(/^(\d{4})-(\d{2})$/);
+  if (monthMatch) return Number(monthMatch[1]) * 100 + Number(monthMatch[2]);
+
+  return Number.MAX_SAFE_INTEGER;
+}
+
+function sortPeriodKeys(a, b) {
+  return periodSortValue(a.periodKey || a) - periodSortValue(b.periodKey || b);
+}
+
+function findWorkbookCell(workbook, lineId) {
+  if (!workbook?.sheets) return null;
+  for (const sheet of workbook.sheets) {
+    for (const row of sheet.rows || []) {
+      for (const [periodKey, cell] of Object.entries(row.cells || {})) {
+        if (cell?.id === lineId) {
+          return { sheet, row, periodKey, cell };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function buildWorkbookFromLines(lines, scenarioId) {
+  const sheets = [];
+  const sheetMap = new Map();
+
+  for (const line of lines) {
+    const sheetName = inferSheetNameFromLine(line);
+    if (!sheetMap.has(sheetName)) {
+      const sheet = {
+        id: `sht_${sheetMap.size + 1}`,
+        name: sheetName,
+        source: line.source || inferSourceFromSheetName(sheetName),
+        columns: [],
+        rows: [],
+      };
+      sheet._columns = new Map();
+      sheet._rows = new Map();
+      sheetMap.set(sheetName, sheet);
+      sheets.push(sheet);
+    }
+
+    const sheet = sheetMap.get(sheetName);
+    if (!sheet._columns.has(line.periodKey)) {
+      sheet._columns.set(line.periodKey, {
+        id: `${sheet.id}_col_${line.periodKey.replace(/[^\w]/g, '_')}`,
+        header: line.periodKey,
+        periodKey: line.periodKey,
+        periodType: line.periodType || inferPeriodType(line.periodKey),
+      });
+    }
+
+    const rowKey = line.rowIndex != null ? `r${line.rowIndex}` : line.rowLabel;
+    if (!sheet._rows.has(rowKey)) {
+      sheet._rows.set(rowKey, {
+        id: `${sheet.id}_row_${sheet._rows.size + 1}`,
+        rowIndex: line.rowIndex ?? null,
+        label: line.rowLabel || buildForecastLineLabel(line),
+        section: line.section || '',
+        indent: line.indent || 0,
+        isHeader: line.isHeader || false,
+        isSummary: line.isSummary || false,
+        cells: {},
+      });
+    }
+
+    const row = sheet._rows.get(rowKey);
+    row.cells[line.periodKey] = {
+      id: line.id,
+      value: line.value ?? Object.values(line.metrics || {})[0] ?? null,
+    };
+  }
+
+  return {
+    scenarioId,
+    draft: {
+      sheets: sheets.map(sheet => ({
+        id: sheet.id,
+        name: sheet.name,
+        source: sheet.source,
+        columns: [...sheet._columns.values()].sort(sortPeriodKeys),
+        rows: [...sheet._rows.values()].sort((a, b) => (a.rowIndex ?? 99999) - (b.rowIndex ?? 99999)),
+      })),
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'system',
+    },
+    published: null,
+    publishedMeta: null,
+  };
+}
+
+function buildWorkbookDraftFromParsedSheets(data, scenarioId, parsedSheets, meta = {}) {
+  let counter = data.forecastLines.reduce((m, fl) => {
+    const n = parseInt(fl.id.replace('fl_', ''), 10);
+    return n > m ? n : m;
+  }, 0);
+
+  const sheets = parsedSheets.map((parsedSheet, index) => {
+    const sheetId = `sht_${index + 1}`;
+    const columns = (parsedSheet.columns || []).map((column, colIndex) => ({
+      id: `${sheetId}_col_${colIndex + 1}`,
+      header: column.header || column.periodKey || `Col ${colIndex + 1}`,
+      periodKey: column.periodKey,
+      periodType: column.periodType || inferPeriodType(column.periodKey),
+      colIndex: column.colIndex ?? null,
+    }));
+
+    const rows = (parsedSheet.rows || []).map((row, rowIndex) => {
+      const rowId = `${sheetId}_row_${rowIndex + 1}`;
+      const cells = {};
+
+      for (const column of columns) {
+        if (row.isHeader && !row.cells?.[column.periodKey]) continue;
+        cells[column.periodKey] = {
+          id: `fl_${++counter}`,
+          value: row.cells?.[column.periodKey] ?? null,
+        };
+      }
+
+      return {
+        id: rowId,
+        rowIndex: row.rowIndex ?? rowIndex,
+        label: row.label || '',
+        section: row.section || '',
+        indent: row.indent || 0,
+        isHeader: row.isHeader || false,
+        isSummary: row.isSummary || false,
+        cells,
+      };
+    });
+
+    return {
+      id: sheetId,
+      name: parsedSheet.name || `Sheet ${index + 1}`,
+      source: inferSourceFromSheetName(parsedSheet.name),
+      columns,
+      rows,
+    };
+  });
+
+  return {
+    scenarioId,
+    draft: {
+      sheets,
+      sourceFileName: meta.fileName || null,
+      importBatch: meta.batchId || null,
+      updatedAt: new Date().toISOString(),
+      updatedBy: meta.userId || 'system',
+    },
+    published: null,
+    publishedMeta: null,
+  };
+}
+
+function flattenWorkbookSheetsToForecastLines(sheets, scenarioId, meta = {}) {
+  const now = meta.now || new Date().toISOString();
+  const lines = [];
+
+  for (const sheet of sheets || []) {
+    for (const row of sheet.rows || []) {
+      for (const column of sheet.columns || []) {
+        const cell = row.cells?.[column.periodKey];
+        if (!cell?.id) continue;
+
+        const value = cell.value ?? null;
+        lines.push({
+          id: cell.id,
+          scenarioId,
+          sheetName: sheet.name,
+          rowLabel: row.label || '',
+          rowIndex: row.rowIndex ?? null,
+          section: row.section || '',
+          indent: row.indent || 0,
+          isHeader: row.isHeader || false,
+          isSummary: row.isSummary || false,
+          source: sheet.source || inferSourceFromSheetName(sheet.name),
+          periodType: column.periodType || inferPeriodType(column.periodKey),
+          periodKey: column.periodKey,
+          value,
+          market: 'Total',
+          businessModel: 'Total',
+          metrics: value == null ? {} : { [sanitizeMetricKey(row.label)]: value },
+          inputMode: meta.inputMode || 'manual',
+          importBatch: meta.importBatch || null,
+          updatedBy: meta.userId || 'system',
+          updatedAt: now,
+        });
+      }
+    }
+  }
+
+  return lines;
+}
+
+function workbookDiffSummary(draft, published) {
+  if (!draft?.sheets?.length || !published?.sheets?.length) {
+    return { changedCells: 0, changedRows: 0, hasPublished: Boolean(published?.sheets?.length) };
+  }
+
+  const publishedCells = new Map();
+  for (const sheet of published.sheets) {
+    for (const row of sheet.rows || []) {
+      for (const [periodKey, cell] of Object.entries(row.cells || {})) {
+        publishedCells.set(cell.id, { sheetName: sheet.name, rowId: row.id, periodKey, value: cell.value ?? null });
+      }
+    }
+  }
+
+  let changedCells = 0;
+  const changedRows = new Set();
+  for (const sheet of draft.sheets) {
+    for (const row of sheet.rows || []) {
+      for (const [periodKey, cell] of Object.entries(row.cells || {})) {
+        const publishedCell = publishedCells.get(cell.id);
+        if (!publishedCell || (publishedCell.value ?? null) !== (cell.value ?? null)) {
+          changedCells += 1;
+          changedRows.add(`${sheet.name}:${row.id}`);
+        }
+      }
+    }
+  }
+
+  return { changedCells, changedRows: changedRows.size, hasPublished: true };
+}
+
 const strategyStore = {
   // Raw data for sync export
   getRawData() { return readData(); },
@@ -149,6 +414,34 @@ const strategyStore = {
 
   getScenarioById(id) {
     return readData().scenarios.find(s => s.id === id) || null;
+  },
+
+  ensureScenarioWorkbook(scenarioId, data = null) {
+    const targetData = data || readData();
+    let workbook = targetData.forecastWorkbooks.find(item => item.scenarioId === scenarioId);
+    if (workbook) return workbook;
+
+    const scenarioLines = targetData.forecastLines.filter(line => line.scenarioId === scenarioId);
+    workbook = buildWorkbookFromLines(scenarioLines, scenarioId);
+    targetData.forecastWorkbooks.push(workbook);
+    if (!data) writeData(targetData);
+    return workbook;
+  },
+
+  getScenarioWorkbook(scenarioId, version = 'draft') {
+    const data = readData();
+    const workbook = this.ensureScenarioWorkbook(scenarioId, data);
+    const draft = cloneJson(workbook.draft || { sheets: [] });
+    const published = cloneJson(workbook.published || null);
+
+    return {
+      scenarioId,
+      version,
+      draft,
+      published,
+      publishedMeta: cloneJson(workbook.publishedMeta || null),
+      diffSummary: workbookDiffSummary(draft, published),
+    };
   },
 
   createScenario({ name, type, currency, unit, startPeriod, endPeriod, markets, businessModels, createdBy }) {
@@ -225,6 +518,8 @@ const strategyStore = {
       updatedBy: userId,
     }));
     data.forecastLines.push(...clonedLines);
+    data.forecastWorkbooks = data.forecastWorkbooks.filter(item => item.scenarioId !== newScn.id);
+    data.forecastWorkbooks.push(buildWorkbookFromLines(clonedLines, newScn.id));
     addAudit(data, { action: 'clone', entity: 'scenario', entityId: newScn.id, detail: `Cloned from ${source.name} (${id}), ${clonedLines.length} lines`, userId });
     writeData(data);
     return newScn;
@@ -240,6 +535,7 @@ const strategyStore = {
     // Remove associated forecast lines
     const removedCount = data.forecastLines.filter(fl => fl.scenarioId === id).length;
     data.forecastLines = data.forecastLines.filter(fl => fl.scenarioId !== id);
+    data.forecastWorkbooks = data.forecastWorkbooks.filter(item => item.scenarioId !== id);
     addAudit(data, { action: 'delete', entity: 'scenario', entityId: id, detail: `Deleted ${scn.name}, removed ${removedCount} forecast lines`, userId });
     writeData(data);
   },
@@ -247,12 +543,36 @@ const strategyStore = {
   // ===== Forecast Lines =====
 
   getForecastLines(filters = {}) {
-    let lines = readData().forecastLines;
+    const data = readData();
+    let lines = data.forecastLines;
+
+    if (filters.scenarioId) {
+      const workbook = data.forecastWorkbooks.find(item => item.scenarioId === filters.scenarioId);
+      const wantsDraft = filters.version === 'draft';
+      const wantsPublished = filters.version === 'published';
+      const prefersPublished = !filters.version || filters.version === 'published_preferred';
+
+      if (workbook?.published?.sheets?.length && (wantsPublished || prefersPublished)) {
+        lines = flattenWorkbookSheetsToForecastLines(workbook.published.sheets, filters.scenarioId, {
+          inputMode: 'published',
+          userId: workbook.publishedMeta?.publishedBy || 'system',
+          now: workbook.publishedMeta?.publishedAt || new Date().toISOString(),
+        });
+      } else if (workbook?.draft?.sheets?.length && wantsDraft) {
+        lines = flattenWorkbookSheetsToForecastLines(workbook.draft.sheets, filters.scenarioId, {
+          inputMode: 'manual',
+          userId: workbook.draft.updatedBy || 'system',
+          now: workbook.draft.updatedAt || new Date().toISOString(),
+        });
+      }
+    }
+
     if (filters.scenarioId) lines = lines.filter(fl => fl.scenarioId === filters.scenarioId);
     if (filters.market) lines = lines.filter(fl => fl.market === filters.market);
     if (filters.businessModel) lines = lines.filter(fl => fl.businessModel === filters.businessModel);
     if (filters.periodType) lines = lines.filter(fl => fl.periodType === filters.periodType);
     if (filters.year) lines = lines.filter(fl => fl.periodKey.startsWith(filters.year));
+    if (filters.sheetName) lines = lines.filter(fl => fl.sheetName === filters.sheetName);
     return lines;
   },
 
@@ -260,6 +580,7 @@ const strategyStore = {
     const data = readData();
     const fl = data.forecastLines.find(l => l.id === id);
     if (!fl) throw new Error('Forecast line not found');
+    const workbook = this.ensureScenarioWorkbook(fl.scenarioId, data);
 
     const oldValue = buildForecastLineAuditValue(fl);
 
@@ -281,6 +602,17 @@ const strategyStore = {
     fl.inputMode = 'manual';
     fl.updatedBy = userId;
     fl.updatedAt = new Date().toISOString();
+
+    const workbookCell = findWorkbookCell(workbook.draft, fl.id);
+    if (workbookCell) {
+      workbookCell.cell.value = fl.value ?? null;
+      workbookCell.row.label = fl.rowLabel;
+      workbookCell.row.section = fl.section || '';
+      workbookCell.row.indent = fl.indent || 0;
+      workbook.draft.updatedAt = fl.updatedAt;
+      workbook.draft.updatedBy = userId;
+    }
+    markScenarioUpdated(data, fl.scenarioId, fl.updatedAt);
 
     const label = buildForecastLineLabel(fl);
     addAudit(data, {
@@ -306,6 +638,7 @@ const strategyStore = {
     if (audit.entity === 'forecastLine' && audit.entityId) {
       const fl = data.forecastLines.find(l => l.id === audit.entityId);
       if (!fl) throw new Error('Forecast line not found (may have been deleted)');
+      const workbook = this.ensureScenarioWorkbook(fl.scenarioId, data);
       const currentValue = buildForecastLineAuditValue(fl);
       if (audit.oldValue.value !== undefined) fl.value = audit.oldValue.value;
       if (audit.oldValue.metrics !== undefined) fl.metrics = cloneJson(audit.oldValue.metrics);
@@ -315,6 +648,18 @@ const strategyStore = {
       fl.inputMode = 'reverted';
       fl.updatedBy = userId;
       fl.updatedAt = new Date().toISOString();
+
+      const workbookCell = findWorkbookCell(workbook.draft, fl.id);
+      if (workbookCell) {
+        workbookCell.cell.value = fl.value ?? null;
+        workbookCell.row.label = fl.rowLabel;
+        workbookCell.row.section = fl.section || '';
+        workbookCell.row.indent = fl.indent || 0;
+        workbook.draft.updatedAt = fl.updatedAt;
+        workbook.draft.updatedBy = userId;
+      }
+      markScenarioUpdated(data, fl.scenarioId, fl.updatedAt);
+
       addAudit(data, {
         action: 'revert',
         entity: 'forecastLine',
@@ -337,6 +682,7 @@ const strategyStore = {
     const data = readData();
     const scn = data.scenarios.find(s => s.id === scenarioId);
     if (!scn) throw new Error('Scenario not found');
+    const workbook = this.ensureScenarioWorkbook(scenarioId, data);
     const lines = data.forecastLines.filter(fl => fl.scenarioId === scenarioId);
     const now = new Date().toISOString();
     // Store snapshot as a special audit entry with full data
@@ -351,6 +697,7 @@ const strategyStore = {
         scenario: JSON.parse(JSON.stringify(scn)),
         lineCount: lines.length,
         lines: JSON.parse(JSON.stringify(lines)),
+        workbook: cloneJson(workbook),
       },
       newValue: { snapshotId },
     });
@@ -366,6 +713,7 @@ const strategyStore = {
     const scenarioId = audit.entityId;
     const scn = data.scenarios.find(s => s.id === scenarioId);
     if (!scn) throw new Error('Scenario not found');
+    const workbook = this.ensureScenarioWorkbook(scenarioId, data);
 
     // Record current state before restore
     const currentLines = data.forecastLines.filter(fl => fl.scenarioId === scenarioId);
@@ -379,12 +727,17 @@ const strategyStore = {
         scenario: JSON.parse(JSON.stringify(scn)),
         lineCount: currentLines.length,
         lines: JSON.parse(JSON.stringify(currentLines)),
+        workbook: cloneJson(workbook),
       },
     });
 
     // Remove current lines and replace with snapshot
     data.forecastLines = data.forecastLines.filter(fl => fl.scenarioId !== scenarioId);
     data.forecastLines.push(...JSON.parse(JSON.stringify(audit.oldValue.lines)));
+    data.forecastWorkbooks = data.forecastWorkbooks.filter(item => item.scenarioId !== scenarioId);
+    if (audit.oldValue.workbook) {
+      data.forecastWorkbooks.push(cloneJson(audit.oldValue.workbook));
+    }
 
     addAudit(data, {
       action: 'restore_snapshot',
@@ -422,6 +775,7 @@ const strategyStore = {
       if (update.id) {
         const fl = data.forecastLines.find(l => l.id === update.id);
         if (!fl) continue;
+        const workbook = this.ensureScenarioWorkbook(fl.scenarioId, data);
 
         const oldValue = buildForecastLineAuditValue(fl);
 
@@ -444,6 +798,17 @@ const strategyStore = {
         fl.updatedBy = userId;
         fl.updatedAt = now;
 
+        const workbookCell = findWorkbookCell(workbook.draft, fl.id);
+        if (workbookCell) {
+          workbookCell.cell.value = fl.value ?? null;
+          workbookCell.row.label = fl.rowLabel;
+          workbookCell.row.section = fl.section || '';
+          workbookCell.row.indent = fl.indent || 0;
+          workbook.draft.updatedAt = now;
+          workbook.draft.updatedBy = userId;
+        }
+        markScenarioUpdated(data, fl.scenarioId, now);
+
         addAudit(data, {
           action: 'bulk_update',
           entity: 'forecastLine',
@@ -459,6 +824,29 @@ const strategyStore = {
 
       if (!update.scenarioId || !update.periodKey) continue;
 
+      const workbook = this.ensureScenarioWorkbook(update.scenarioId, data);
+      const draftSheetName = update.sheetName || (workbook.draft.sheets[0]?.name || 'P&L Forecast');
+      let sheet = workbook.draft.sheets.find(item => item.name === draftSheetName);
+      if (!sheet) {
+        sheet = {
+          id: `sht_${workbook.draft.sheets.length + 1}`,
+          name: draftSheetName,
+          source: inferSourceFromSheetName(draftSheetName),
+          columns: [],
+          rows: [],
+        };
+        workbook.draft.sheets.push(sheet);
+      }
+      if (!sheet.columns.find(col => col.periodKey === update.periodKey)) {
+        sheet.columns.push({
+          id: `${sheet.id}_col_${sheet.columns.length + 1}`,
+          header: update.periodKey,
+          periodKey: update.periodKey,
+          periodType: update.periodType || inferPeriodType(update.periodKey),
+        });
+        sheet.columns.sort(sortPeriodKeys);
+      }
+
       const nextIdValue = nextForecastLineId(data);
       const value = inferMetricValue(update);
       const market = update.market || 'Total';
@@ -470,6 +858,7 @@ const strategyStore = {
       const line = {
         id: nextIdValue,
         scenarioId: update.scenarioId,
+        sheetName: sheet.name,
         rowLabel,
         rowIndex: null,
         section: update.section || '',
@@ -489,6 +878,26 @@ const strategyStore = {
       };
 
       data.forecastLines.push(line);
+
+      let row = (sheet.rows || []).find(item => item.label === rowLabel && item.section === (update.section || ''));
+      if (!row) {
+        row = {
+          id: `${sheet.id}_row_${sheet.rows.length + 1}`,
+          rowIndex: sheet.rows.length > 0 ? Math.max(...sheet.rows.map(item => item.rowIndex ?? 0)) + 1 : 1,
+          label: rowLabel,
+          section: update.section || '',
+          indent: update.indent || 0,
+          isHeader: false,
+          isSummary: false,
+          cells: {},
+        };
+        sheet.rows.push(row);
+      }
+      row.cells[update.periodKey] = { id: line.id, value };
+      workbook.draft.updatedAt = now;
+      workbook.draft.updatedBy = userId;
+      markScenarioUpdated(data, update.scenarioId, now);
+
       addAudit(data, {
         action: 'create',
         entity: 'forecastLine',
@@ -510,6 +919,145 @@ const strategyStore = {
     });
     writeData(data);
     return count;
+  },
+
+  importScenarioWorkbook(scenarioId, parsedSheets, { batchId, fileName, userId }) {
+    const data = readData();
+    const now = new Date().toISOString();
+    const workbook = buildWorkbookDraftFromParsedSheets(data, scenarioId, parsedSheets, { batchId, fileName, userId });
+    const draftLines = flattenWorkbookSheetsToForecastLines(workbook.draft.sheets, scenarioId, {
+      inputMode: 'imported',
+      importBatch: batchId,
+      userId,
+      now,
+    });
+
+    data.forecastLines = data.forecastLines.filter(fl => fl.scenarioId !== scenarioId);
+    data.forecastLines.push(...draftLines);
+    data.forecastWorkbooks = data.forecastWorkbooks.filter(item => item.scenarioId !== scenarioId);
+    data.forecastWorkbooks.push(workbook);
+    markScenarioUpdated(data, scenarioId, now);
+
+    data.importHistory.push({
+      id: batchId,
+      scenarioId,
+      fileName: fileName || 'unknown',
+      lineCount: draftLines.length,
+      importedAt: now,
+      importedBy: userId,
+    });
+
+    addAudit(data, {
+      action: 'import_workbook',
+      entity: 'scenario',
+      entityId: scenarioId,
+      detail: `Imported workbook ${fileName || 'unknown'} (${draftLines.length} cells)`,
+      userId,
+      newValue: { batchId, lineCount: draftLines.length, sheetCount: workbook.draft.sheets.length },
+    });
+
+    writeData(data);
+    return {
+      lineCount: draftLines.length,
+      sheetCount: workbook.draft.sheets.length,
+      workbook: cloneJson(workbook),
+    };
+  },
+
+  addWorkbookRow(scenarioId, { sheetName, rowLabel, section, defaultValue = 0 }, userId) {
+    const data = readData();
+    const workbook = this.ensureScenarioWorkbook(scenarioId, data);
+    const now = new Date().toISOString();
+    const sheet = workbook.draft.sheets.find(item => item.name === sheetName) || workbook.draft.sheets[0];
+    if (!sheet) throw new Error('Workbook sheet not found');
+
+    const row = {
+      id: `${sheet.id}_row_${sheet.rows.length + 1}`,
+      rowIndex: sheet.rows.length > 0 ? Math.max(...sheet.rows.map(item => item.rowIndex ?? 0)) + 1 : 1,
+      label: rowLabel,
+      section: section || '',
+      indent: 0,
+      isHeader: false,
+      isSummary: false,
+      cells: {},
+    };
+
+    for (const column of sheet.columns || []) {
+      const lineId = nextForecastLineId(data);
+      row.cells[column.periodKey] = {
+        id: lineId,
+        value: defaultValue,
+      };
+      data.forecastLines.push({
+        id: lineId,
+        scenarioId,
+        sheetName: sheet.name,
+        rowLabel,
+        rowIndex: row.rowIndex,
+        section: row.section,
+        indent: 0,
+        isHeader: false,
+        isSummary: false,
+        source: sheet.source || inferSourceFromSheetName(sheet.name),
+        periodType: column.periodType || inferPeriodType(column.periodKey),
+        periodKey: column.periodKey,
+        value: defaultValue,
+        market: 'Total',
+        businessModel: 'Total',
+        metrics: { [sanitizeMetricKey(rowLabel)]: defaultValue },
+        inputMode: 'manual',
+        updatedBy: userId,
+        updatedAt: now,
+      });
+    }
+
+    sheet.rows.push(row);
+    workbook.draft.updatedAt = now;
+    workbook.draft.updatedBy = userId;
+    markScenarioUpdated(data, scenarioId, now);
+
+    addAudit(data, {
+      action: 'add_workbook_row',
+      entity: 'scenario',
+      entityId: scenarioId,
+      detail: `Added workbook row ${rowLabel} to ${sheet.name}`,
+      userId,
+      newValue: { rowLabel, sheetName: sheet.name, cells: Object.keys(row.cells).length },
+    });
+
+    writeData(data);
+    return cloneJson(row);
+  },
+
+  publishScenarioWorkbook(scenarioId, userId, note) {
+    const data = readData();
+    const workbook = this.ensureScenarioWorkbook(scenarioId, data);
+    const scenario = data.scenarios.find(item => item.id === scenarioId);
+    if (!scenario) throw new Error('Scenario not found');
+
+    const now = new Date().toISOString();
+    const nextVersionNo = (workbook.publishedMeta?.versionNo || 0) + 1;
+    workbook.published = cloneJson(workbook.draft);
+    workbook.publishedMeta = {
+      versionNo: nextVersionNo,
+      publishedAt: now,
+      publishedBy: userId || 'system',
+      note: note || '',
+    };
+    scenario.status = 'published';
+    scenario.updatedAt = now;
+
+    addAudit(data, {
+      action: 'publish',
+      entity: 'scenario',
+      entityId: scenarioId,
+      detail: `Published forecast workbook v${nextVersionNo}${note ? ` — ${note}` : ''}`,
+      userId,
+      newValue: cloneJson(workbook.publishedMeta),
+    });
+
+    writeData(data);
+    return cloneJson(workbook.publishedMeta);
   },
 
   bulkImportForecastLines(scenarioId, lines, batchId, userId) {
@@ -567,6 +1115,11 @@ const strategyStore = {
     const data = readData();
     const count = data.forecastLines.filter(fl => fl.scenarioId === scenarioId).length;
     data.forecastLines = data.forecastLines.filter(fl => fl.scenarioId !== scenarioId);
+    const workbook = data.forecastWorkbooks.find(item => item.scenarioId === scenarioId);
+    if (workbook) {
+      workbook.draft = { sheets: [], updatedAt: new Date().toISOString(), updatedBy: userId || 'system' };
+    }
+    markScenarioUpdated(data, scenarioId, new Date().toISOString());
     addAudit(data, { action: 'clear', entity: 'forecastLine', entityId: scenarioId, detail: `Cleared ${count} lines`, userId });
     writeData(data);
     return count;
