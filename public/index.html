@@ -5594,13 +5594,14 @@ async function loadScenarios() {
 
 function scenarioSelector(onChange) {
   if (!strategyScenarios.length) return '<div style="color:#999;font-size:13px;">尚無 Scenario，請先上傳 Forecast Excel</div>';
-  return `<select id="scenarioSelect" onchange="${onChange || 'onScenarioChange()'}" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+  const changeHandler = onChange || 'onScenarioChange(this)';
+  return `<select data-strategy-scenario-select="1" onchange="${changeHandler}" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
     ${strategyScenarios.map(s => `<option value="${s.id}" ${s.id === strategyCurrentScenario ? 'selected' : ''}>${s.name} (${s.type})</option>`).join('')}
   </select>`;
 }
 
-function onScenarioChange() {
-  strategyCurrentScenario = document.getElementById('scenarioSelect')?.value;
+function onScenarioChange(selectEl) {
+  strategyCurrentScenario = selectEl?.value || strategyCurrentScenario;
   if (strategyCurrentSubView === 'overview') loadStrategyOverview();
   else if (strategyCurrentSubView === 'forecast') loadStrategyForecast();
   else if (strategyCurrentSubView === 'kpi') loadStrategyKpiCenter();
@@ -6108,7 +6109,7 @@ async function loadStrategyForecast() {
   strategyForecastGridState = { columns: [], rows: [] };
   strategyForecastWorkbookState = null;
 
-  let scenarioHtml = scenarioSelector('onScenarioChange()');
+  let scenarioHtml = scenarioSelector('onScenarioChange(this)');
   let uploadHtml = '';
   if (canEditForecast) {
     uploadHtml = `
