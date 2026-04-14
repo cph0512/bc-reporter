@@ -5565,6 +5565,7 @@ let strategyCharts = [];
 let strategyScenarios = [];
 let strategyCurrentScenario = null;
 let strategyCurrentSubView = 'overview';
+let strategySelectedYear = new Date().getFullYear();
 
 function switchStrategySubView(sub) {
   strategyCurrentSubView = sub;
@@ -5592,6 +5593,39 @@ async function loadScenarios() {
   } catch(e) { console.error('Load scenarios error:', e); }
 }
 
+function getCurrentStrategyScenario() {
+  return strategyScenarios.find(s => s.id === strategyCurrentScenario) || null;
+}
+
+function buildScenarioYearList(scenario) {
+  const startYear = parseInt(String(scenario?.startPeriod || '').slice(0, 4), 10);
+  const endYear = parseInt(String(scenario?.endPeriod || '').slice(0, 4), 10);
+
+  if (Number.isFinite(startYear) && Number.isFinite(endYear) && endYear >= startYear) {
+    return Array.from({ length: endYear - startYear + 1 }, (_, index) => startYear + index);
+  }
+
+  return [new Date().getFullYear()];
+}
+
+function ensureStrategySelectedYear(scenario = getCurrentStrategyScenario()) {
+  const years = buildScenarioYearList(scenario);
+  if (!years.includes(strategySelectedYear)) {
+    const currentYear = new Date().getFullYear();
+    strategySelectedYear = years.includes(currentYear) ? currentYear : years[years.length - 1];
+  }
+  fcFilterYear = strategySelectedYear;
+  return years;
+}
+
+function strategyYearSelector(onChange) {
+  const years = ensureStrategySelectedYear();
+  const changeHandler = onChange || 'onStrategyYearChange(this)';
+  return `<select data-strategy-year-select="1" onchange="${changeHandler}" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+    ${years.map(year => `<option value="${year}" ${year === strategySelectedYear ? 'selected' : ''}>${year}</option>`).join('')}
+  </select>`;
+}
+
 function scenarioSelector(onChange) {
   if (!strategyScenarios.length) return '<div style="color:#999;font-size:13px;">尚無 Scenario，請先上傳 Forecast Excel</div>';
   const changeHandler = onChange || 'onScenarioChange(this)';
@@ -5602,6 +5636,19 @@ function scenarioSelector(onChange) {
 
 function onScenarioChange(selectEl) {
   strategyCurrentScenario = selectEl?.value || strategyCurrentScenario;
+  ensureStrategySelectedYear(getCurrentStrategyScenario());
+  if (strategyCurrentSubView === 'overview') loadStrategyOverview();
+  else if (strategyCurrentSubView === 'forecast') loadStrategyForecast();
+  else if (strategyCurrentSubView === 'kpi') loadStrategyKpiCenter();
+  else if (strategyCurrentSubView === 'gap') loadStrategyGap();
+}
+
+function onStrategyYearChange(selectEl) {
+  const nextYear = parseInt(selectEl?.value, 10);
+  if (Number.isFinite(nextYear)) {
+    strategySelectedYear = nextYear;
+    fcFilterYear = nextYear;
+  }
   if (strategyCurrentSubView === 'overview') loadStrategyOverview();
   else if (strategyCurrentSubView === 'forecast') loadStrategyForecast();
   else if (strategyCurrentSubView === 'kpi') loadStrategyKpiCenter();
@@ -5613,6 +5660,8 @@ async function loadStrategyOverview() {
   const container = document.getElementById('strategyOverviewSub');
   container.innerHTML = '<div class="loading">載入中...</div>';
   await loadScenarios();
+  const currentScenario = getCurrentStrategyScenario();
+  ensureStrategySelectedYear(currentScenario);
 
   if (!strategyCurrentScenario) {
     container.innerHTML = `
@@ -5624,7 +5673,7 @@ async function loadStrategyOverview() {
   }
 
   try {
-    const year = new Date().getFullYear();
+    const year = strategySelectedYear;
     const [overviewRes, coverageRes] = await Promise.all([
       fetch(`/api/strategy/kpi/overview?scenarioId=${strategyCurrentScenario}&year=${year}`),
       fetch(`/api/strategy/coverage?scenarioId=${strategyCurrentScenario}&year=${year}`),
@@ -5645,7 +5694,9 @@ async function loadStrategyOverview() {
     container.innerHTML = `
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
         <div>${scenarioSelector()}</div>
+        <div>${strategyYearSelector('onStrategyYearChange(this)')}</div>
         <div style="font-size:13px;color:#666;">年度: ${year}</div>
+        <div style="font-size:12px;color:#999;">Scenario 範圍: ${currentScenario?.startPeriod || '-'} - ${currentScenario?.endPeriod || '-'}</div>
         <div style="font-size:12px;color:#999;">Forecast Source: ${overview.forecastVersion === 'published' ? 'published' : 'draft'}</div>
       </div>
       <div class="kpi-grid">${kpiHtml}${coverageCard}</div>
@@ -6105,7 +6156,8 @@ async function loadStrategyForecast() {
   await loadScenarios();
 
   const canEditForecast = userRole === 'admin' || userStrategyRole === 'finance_editor';
-  const currentScenario = strategyScenarios.find(s => s.id === strategyCurrentScenario);
+  const currentScenario = getCurrentStrategyScenario();
+  const yearOptions = ensureStrategySelectedYear(currentScenario);
   strategyForecastGridState = { columns: [], rows: [] };
   strategyForecastWorkbookState = null;
 
@@ -6125,8 +6177,8 @@ async function loadStrategyForecast() {
     ${['quarter','year','month'].map(pt => `<button class="btn btn-sm" style="${fcPeriodType===pt?'background:#1a1a2e;color:#fff;':'background:#f0f0f0;'}" onclick="fcPeriodType='${pt}';loadStrategyForecast()">${pt==='quarter'?'季':pt==='year'?'年':'月'}</button>`).join('')}
   </div>`;
 
-  const yearSelect = `<select onchange="fcFilterYear=parseInt(this.value);loadStrategyForecast()" style="padding:4px 8px;border:1px solid #d0d0d0;border-radius:4px;font-size:12px;">
-    ${[2022,2023,2024,2025,2026,2027,2028,2029,2030].map(y => `<option value="${y}" ${y===fcFilterYear?'selected':''}>${y}</option>`).join('')}
+  const yearSelect = `<select onchange="onStrategyYearChange(this)" style="padding:4px 8px;border:1px solid #d0d0d0;border-radius:4px;font-size:12px;">
+    ${yearOptions.map(y => `<option value="${y}" ${y===fcFilterYear?'selected':''}>${y}</option>`).join('')}
   </select>`;
 
   let sheetTabsHtml = '';
@@ -6348,6 +6400,7 @@ async function loadStrategyForecast() {
       <div style="font-weight:700;">${currentScenario.name}</div>
       <span style="padding:2px 8px;border-radius:10px;font-size:11px;background:${currentScenario.status === 'published' ? '#e8f5e9' : currentScenario.status === 'draft' ? '#fff3e0' : '#f3f4f6'};color:${currentScenario.status === 'published' ? '#2e7d32' : '#374151'};">${currentScenario.status}</span>
       <span style="font-size:12px;color:#6b7280;">${currentScenario.type || 'custom'} · ${currentScenario.startPeriod || '-'}-${currentScenario.endPeriod || '-'}</span>
+      <span style="font-size:12px;color:#6b7280;">目前顯示：${fcFilterYear} / ${fcPeriodType === 'quarter' ? '季資料' : fcPeriodType === 'year' ? '年度資料' : '月資料'}</span>
       <span style="font-size:12px;color:#6b7280;">最後更新 ${currentScenario.updatedAt ? new Date(currentScenario.updatedAt).toLocaleString() : '-'}</span>
     </div>` : '';
 
@@ -6653,10 +6706,12 @@ async function loadStrategyKpiCenter() {
   const container = document.getElementById('strategyKpiSub');
   container.innerHTML = '<div class="loading">載入中...</div>';
   await loadScenarios();
+  const currentScenario = getCurrentStrategyScenario();
+  ensureStrategySelectedYear(currentScenario);
   if (!strategyCurrentScenario) { container.innerHTML = '<div style="color:#999;text-align:center;padding:40px;">請先建立 Scenario</div>'; return; }
 
   try {
-    const year = new Date().getFullYear();
+    const year = strategySelectedYear;
     const res = await fetch(`/api/strategy/kpi/calculate?scenarioId=${strategyCurrentScenario}&year=${year}`);
     const data = await res.json();
 
@@ -6671,9 +6726,11 @@ async function loadStrategyKpiCenter() {
     }).join('');
 
     container.innerHTML = `
-      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
         <div>${scenarioSelector()}</div>
+        <div>${strategyYearSelector('onStrategyYearChange(this)')}</div>
         <div style="font-size:13px;color:#666;">年度: ${year}</div>
+        <div style="font-size:12px;color:#999;">Scenario 範圍: ${currentScenario?.startPeriod || '-'} - ${currentScenario?.endPeriod || '-'}</div>
         <div style="font-size:12px;color:#999;">Source: ${data.forecastVersion === 'published' ? 'published' : 'draft'}</div>
       </div>
       <div class="card" style="max-width:700px;">
@@ -6708,9 +6765,11 @@ async function loadStrategyGap() {
   const container = document.getElementById('strategyGapSub');
   container.innerHTML = '<div class="loading">載入中...</div>';
   await loadScenarios();
+  const currentScenario = getCurrentStrategyScenario();
+  ensureStrategySelectedYear(currentScenario);
 
   try {
-    const year = new Date().getFullYear();
+    const year = strategySelectedYear;
     const [coverageRes, strategiesRes] = await Promise.all([
       strategyCurrentScenario ? fetch(`/api/strategy/coverage?scenarioId=${strategyCurrentScenario}&year=${year}`) : Promise.resolve({ json: () => ({}) }),
       fetch('/api/strategy/strategies'),
@@ -6756,6 +6815,9 @@ async function loadStrategyGap() {
     container.innerHTML = `
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
         <div>${scenarioSelector()}</div>
+        <div>${strategyYearSelector('onStrategyYearChange(this)')}</div>
+        <div style="font-size:13px;color:#666;">年度: ${year}</div>
+        <div style="font-size:12px;color:#999;">Scenario 範圍: ${currentScenario?.startPeriod || '-'} - ${currentScenario?.endPeriod || '-'}</div>
         <button class="btn btn-primary btn-sm" onclick="showCreateStrategy()">+ 新增策略</button>
       </div>
       ${strategyCurrentScenario ? `
