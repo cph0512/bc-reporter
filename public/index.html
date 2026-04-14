@@ -6133,9 +6133,23 @@ async function loadStrategyForecast() {
   let workflowHtml = '';
   let forecastTable = '<div style="color:#999;text-align:center;padding:40px;">選擇 Scenario 後顯示 Forecast 資料</div>';
   let fcToolbar = '';
+  let historyPromise = Promise.resolve([]);
+  let snapshotPromise = Promise.resolve([]);
+  let auditPromise = Promise.resolve([]);
   if (strategyCurrentScenario) {
     try {
-      const workbookRes = await fetch(`/api/strategy/forecast/workbook?scenarioId=${strategyCurrentScenario}`);
+      const workbookPromise = fetch(`/api/strategy/forecast/workbook?scenarioId=${strategyCurrentScenario}`);
+      historyPromise = fetch(`/api/strategy/import/history?scenarioId=${strategyCurrentScenario}`)
+        .then(res => res.json())
+        .catch(() => []);
+      snapshotPromise = fetch(`/api/strategy/snapshots?scenarioId=${strategyCurrentScenario}`)
+        .then(res => res.json())
+        .catch(() => []);
+      auditPromise = fetch(`/api/strategy/audit?scenarioId=${strategyCurrentScenario}&limit=12`)
+        .then(res => res.json())
+        .catch(() => []);
+
+      const workbookRes = await workbookPromise;
       const workbookState = await workbookRes.json();
       strategyForecastWorkbookState = workbookState;
       const draftSheets = workbookState.draft?.sheets || [];
@@ -6256,8 +6270,7 @@ async function loadStrategyForecast() {
 
   let historyHtml = '';
   try {
-    const hRes = await fetch(`/api/strategy/import/history${strategyCurrentScenario ? '?scenarioId=' + strategyCurrentScenario : ''}`);
-    const history = await hRes.json();
+    const history = await historyPromise;
     if (history.length > 0) {
       historyHtml = `<div style="margin-top:20px;">
         <h4 style="font-size:14px;margin-bottom:8px;">匯入紀錄</h4>
@@ -6277,12 +6290,7 @@ async function loadStrategyForecast() {
   let versionHtml = '';
   if (strategyCurrentScenario) {
     try {
-      const [snapshotRes, auditRes] = await Promise.all([
-        fetch(`/api/strategy/snapshots?scenarioId=${strategyCurrentScenario}`),
-        fetch(`/api/strategy/audit?scenarioId=${strategyCurrentScenario}&limit=12`),
-      ]);
-      const snapshots = await snapshotRes.json();
-      const audit = await auditRes.json();
+      const [snapshots, audit] = await Promise.all([snapshotPromise, auditPromise]);
 
       const snapshotRows = snapshots.length > 0
         ? snapshots.slice(0, 8).map(s => `<tr style="border-bottom:1px solid #f0f0f0;">

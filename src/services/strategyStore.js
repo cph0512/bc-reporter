@@ -18,21 +18,44 @@ const DEFAULT_DATA = {
   auditLog: [],
 };
 
+let strategyDataCache = {
+  mtimeMs: null,
+  data: null,
+};
+
+function normalizeData(raw = {}) {
+  return {
+    scenarios: raw.scenarios || [],
+    forecastLines: raw.forecastLines || [],
+    forecastWorkbooks: raw.forecastWorkbooks || [],
+    kpiDefinitions: raw.kpiDefinitions || [],
+    strategies: raw.strategies || [],
+    importHistory: raw.importHistory || [],
+    auditLog: raw.auditLog || [],
+  };
+}
+
 function readData() {
   try {
-    if (!fs.existsSync(STRATEGY_FILE)) return { ...DEFAULT_DATA };
+    if (!fs.existsSync(STRATEGY_FILE)) {
+      strategyDataCache = { mtimeMs: null, data: normalizeData(DEFAULT_DATA) };
+      return strategyDataCache.data;
+    }
+
+    const stats = fs.statSync(STRATEGY_FILE);
+    if (strategyDataCache.data && strategyDataCache.mtimeMs === stats.mtimeMs) {
+      return strategyDataCache.data;
+    }
+
     const raw = JSON.parse(fs.readFileSync(STRATEGY_FILE, 'utf8'));
-    return {
-      scenarios: raw.scenarios || [],
-      forecastLines: raw.forecastLines || [],
-      forecastWorkbooks: raw.forecastWorkbooks || [],
-      kpiDefinitions: raw.kpiDefinitions || [],
-      strategies: raw.strategies || [],
-      importHistory: raw.importHistory || [],
-      auditLog: raw.auditLog || [],
+    strategyDataCache = {
+      mtimeMs: stats.mtimeMs,
+      data: normalizeData(raw),
     };
+    return strategyDataCache.data;
   } catch {
-    return { ...DEFAULT_DATA };
+    strategyDataCache = { mtimeMs: null, data: normalizeData(DEFAULT_DATA) };
+    return strategyDataCache.data;
   }
 }
 
@@ -40,6 +63,15 @@ function writeData(data) {
   const dir = path.dirname(STRATEGY_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(STRATEGY_FILE, JSON.stringify(data, null, 2), 'utf8');
+  try {
+    const stats = fs.statSync(STRATEGY_FILE);
+    strategyDataCache = {
+      mtimeMs: stats.mtimeMs,
+      data,
+    };
+  } catch {
+    strategyDataCache = { mtimeMs: null, data };
+  }
 }
 
 function nextId(arr, prefix) {
@@ -150,24 +182,6 @@ function nextForecastLineId(data) {
     return n > m ? n : m;
   }, 0);
   return `fl_${max + 1}`;
-}
-
-function matchesScenarioAudit(data, audit, scenarioId) {
-  if (!scenarioId) return true;
-  if (audit.entity === 'scenario') return audit.entityId === scenarioId;
-  if (audit.entity !== 'forecastLine') return false;
-
-  if (audit.entityId?.startsWith('scn_')) return audit.entityId === scenarioId;
-
-  const line = data.forecastLines.find(fl => fl.id === audit.entityId);
-  if (line) return line.scenarioId === scenarioId;
-
-  const snapshotLines = audit.oldValue?.lines;
-  if (Array.isArray(snapshotLines) && snapshotLines.length > 0) {
-    return snapshotLines.some(lineItem => lineItem.scenarioId === scenarioId);
-  }
-
-  return false;
 }
 
 function markScenarioUpdated(data, scenarioId, now) {
@@ -1377,10 +1391,28 @@ const strategyStore = {
 
   getAuditLog(limit = 50, filters = {}) {
     const data = readData();
-    return data.auditLog
-      .filter(audit => matchesScenarioAudit(data, audit, filters.scenarioId))
-      .slice(-limit)
-      .reverse();
+    let auditLog = data.auditLog;
+
+    if (filters.scenarioId) {
+      const scenarioId = filters.scenarioId;
+      const scenarioLineIds = new Set(
+        data.forecastLines
+          .filter(line => line.scenarioId === scenarioId)
+          .map(line => line.id)
+      );
+
+      auditLog = auditLog.filter(audit => {
+        if (audit.entity === 'scenario') return audit.entityId === scenarioId;
+        if (audit.entity !== 'forecastLine') return false;
+        if (audit.entityId?.startsWith('scn_')) return audit.entityId === scenarioId;
+        if (scenarioLineIds.has(audit.entityId)) return true;
+
+        const snapshotLines = audit.oldValue?.lines;
+        return Array.isArray(snapshotLines) && snapshotLines.some(lineItem => lineItem.scenarioId === scenarioId);
+      });
+    }
+
+    return auditLog.slice(-limit).reverse();
   },
 };
 
