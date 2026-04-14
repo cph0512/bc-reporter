@@ -86,11 +86,43 @@ function buildForecastLineLabel(line) {
 function buildForecastLineAuditValue(line) {
   return {
     value: line.value ?? null,
+    formula: line.formula || null,
+    numberFormat: line.numberFormat || null,
+    displayType: line.displayType || 'number',
+    formattedText: line.formattedText || null,
     metrics: cloneJson(line.metrics || {}),
     rowLabel: line.rowLabel || '',
     section: line.section || '',
     indent: line.indent || 0,
   };
+}
+
+function inferDisplayTypeFromLine(line) {
+  if (line.displayType) return line.displayType;
+  if (String(line.numberFormat || '').includes('%')) return 'percent';
+  if (/(\%)/.test(line.rowLabel || '')) return 'percent';
+  if (/\b(NT\$|US\$|TWD|USD)\b/i.test(`${line.rowLabel || ''} ${line.numberFormat || ''}`)) return 'currency';
+  return 'number';
+}
+
+function normalizeWorkbookCellData(cell = {}, fallback = {}) {
+  return {
+    id: cell.id || fallback.id || null,
+    value: cell.value ?? fallback.value ?? null,
+    formula: cell.formula || fallback.formula || null,
+    numberFormat: cell.numberFormat || fallback.numberFormat || null,
+    formattedText: cell.formattedText || fallback.formattedText || null,
+    displayType: cell.displayType || fallback.displayType || 'number',
+    decimals: cell.decimals ?? fallback.decimals ?? 1,
+    rawType: cell.rawType || fallback.rawType || null,
+    readOnly: cell.readOnly ?? fallback.readOnly ?? Boolean(cell.formula || fallback.formula),
+  };
+}
+
+function updateWorkbookCellValue(cell, nextValue) {
+  cell.value = nextValue;
+  cell.formattedText = null;
+  if (!cell.formula) cell.readOnly = false;
 }
 
 function inferMetricValue(update) {
@@ -243,10 +275,16 @@ function buildWorkbookFromLines(lines, scenarioId) {
     }
 
     const row = sheet._rows.get(rowKey);
-    row.cells[line.periodKey] = {
+    row.cells[line.periodKey] = normalizeWorkbookCellData({
       id: line.id,
       value: line.value ?? Object.values(line.metrics || {})[0] ?? null,
-    };
+      formula: line.formula || null,
+      numberFormat: line.numberFormat || null,
+      formattedText: line.formattedText || null,
+      displayType: inferDisplayTypeFromLine(line),
+      decimals: line.decimals ?? 1,
+      readOnly: line.readOnly ?? Boolean(line.formula),
+    });
   }
 
   return {
@@ -289,10 +327,13 @@ function buildWorkbookDraftFromParsedSheets(data, scenarioId, parsedSheets, meta
 
       for (const column of columns) {
         if (row.isHeader && !row.cells?.[column.periodKey]) continue;
-        cells[column.periodKey] = {
+        cells[column.periodKey] = normalizeWorkbookCellData({
           id: `fl_${++counter}`,
-          value: row.cells?.[column.periodKey] ?? null,
-        };
+          ...(row.cells?.[column.periodKey] || {}),
+        }, {
+          displayType: 'number',
+          decimals: 1,
+        });
       }
 
       return {
@@ -355,6 +396,12 @@ function flattenWorkbookSheetsToForecastLines(sheets, scenarioId, meta = {}) {
           periodType: column.periodType || inferPeriodType(column.periodKey),
           periodKey: column.periodKey,
           value,
+          formula: cell.formula || null,
+          numberFormat: cell.numberFormat || null,
+          formattedText: cell.formattedText || null,
+          displayType: cell.displayType || 'number',
+          decimals: cell.decimals ?? 1,
+          readOnly: cell.readOnly ?? Boolean(cell.formula),
           market: 'Total',
           businessModel: 'Total',
           metrics: value == null ? {} : { [sanitizeMetricKey(row.label)]: value },
@@ -581,11 +628,13 @@ const strategyStore = {
     const fl = data.forecastLines.find(l => l.id === id);
     if (!fl) throw new Error('Forecast line not found');
     const workbook = this.ensureScenarioWorkbook(fl.scenarioId, data);
+    const workbookCell = findWorkbookCell(workbook.draft, fl.id);
 
     const oldValue = buildForecastLineAuditValue(fl);
 
     // Support both cell-level value and legacy metrics update
     if (updates.value !== undefined) {
+      if (workbookCell?.cell?.formula) throw new Error('公式儲存格目前為唯讀，請保留 Excel 公式');
       fl.value = normalizeNumericValue(updates.value);
     }
     if (updates.metrics) {
@@ -603,9 +652,8 @@ const strategyStore = {
     fl.updatedBy = userId;
     fl.updatedAt = new Date().toISOString();
 
-    const workbookCell = findWorkbookCell(workbook.draft, fl.id);
     if (workbookCell) {
-      workbookCell.cell.value = fl.value ?? null;
+      updateWorkbookCellValue(workbookCell.cell, fl.value ?? null);
       workbookCell.row.label = fl.rowLabel;
       workbookCell.row.section = fl.section || '';
       workbookCell.row.indent = fl.indent || 0;
@@ -651,7 +699,7 @@ const strategyStore = {
 
       const workbookCell = findWorkbookCell(workbook.draft, fl.id);
       if (workbookCell) {
-        workbookCell.cell.value = fl.value ?? null;
+        updateWorkbookCellValue(workbookCell.cell, fl.value ?? null);
         workbookCell.row.label = fl.rowLabel;
         workbookCell.row.section = fl.section || '';
         workbookCell.row.indent = fl.indent || 0;
@@ -776,10 +824,12 @@ const strategyStore = {
         const fl = data.forecastLines.find(l => l.id === update.id);
         if (!fl) continue;
         const workbook = this.ensureScenarioWorkbook(fl.scenarioId, data);
+        const workbookCell = findWorkbookCell(workbook.draft, fl.id);
 
         const oldValue = buildForecastLineAuditValue(fl);
 
         if (update.value !== undefined) {
+          if (workbookCell?.cell?.formula) throw new Error(`公式儲存格不可直接修改: ${buildForecastLineLabel(fl)}/${fl.periodKey}`);
           fl.value = normalizeNumericValue(update.value);
         }
 
@@ -798,9 +848,8 @@ const strategyStore = {
         fl.updatedBy = userId;
         fl.updatedAt = now;
 
-        const workbookCell = findWorkbookCell(workbook.draft, fl.id);
         if (workbookCell) {
-          workbookCell.cell.value = fl.value ?? null;
+          updateWorkbookCellValue(workbookCell.cell, fl.value ?? null);
           workbookCell.row.label = fl.rowLabel;
           workbookCell.row.section = fl.section || '';
           workbookCell.row.indent = fl.indent || 0;
@@ -869,6 +918,12 @@ const strategyStore = {
         periodType: update.periodType || inferPeriodType(update.periodKey),
         periodKey: update.periodKey,
         value,
+        formula: null,
+        numberFormat: update.numberFormat || null,
+        formattedText: null,
+        displayType: update.displayType || 'number',
+        decimals: update.decimals ?? 1,
+        readOnly: false,
         market,
         businessModel,
         metrics: update.metrics || { value },
@@ -893,7 +948,15 @@ const strategyStore = {
         };
         sheet.rows.push(row);
       }
-      row.cells[update.periodKey] = { id: line.id, value };
+      row.cells[update.periodKey] = normalizeWorkbookCellData({
+        id: line.id,
+        value,
+        formula: null,
+        numberFormat: update.numberFormat || null,
+        displayType: update.displayType || 'number',
+        decimals: update.decimals ?? 1,
+        readOnly: false,
+      });
       workbook.draft.updatedAt = now;
       workbook.draft.updatedBy = userId;
       markScenarioUpdated(data, update.scenarioId, now);
@@ -964,7 +1027,15 @@ const strategyStore = {
     };
   },
 
-  addWorkbookRow(scenarioId, { sheetName, rowLabel, section, defaultValue = 0 }, userId) {
+  addWorkbookRow(scenarioId, {
+    sheetName,
+    rowLabel,
+    section,
+    defaultValue = 0,
+    displayType = 'number',
+    numberFormat = null,
+    decimals = 1,
+  }, userId) {
     const data = readData();
     const workbook = this.ensureScenarioWorkbook(scenarioId, data);
     const now = new Date().toISOString();
@@ -984,10 +1055,16 @@ const strategyStore = {
 
     for (const column of sheet.columns || []) {
       const lineId = nextForecastLineId(data);
-      row.cells[column.periodKey] = {
+      row.cells[column.periodKey] = normalizeWorkbookCellData({
         id: lineId,
         value: defaultValue,
-      };
+        formula: null,
+        numberFormat,
+        formattedText: null,
+        displayType,
+        decimals,
+        readOnly: false,
+      });
       data.forecastLines.push({
         id: lineId,
         scenarioId,
@@ -1002,6 +1079,12 @@ const strategyStore = {
         periodType: column.periodType || inferPeriodType(column.periodKey),
         periodKey: column.periodKey,
         value: defaultValue,
+        formula: null,
+        numberFormat,
+        formattedText: null,
+        displayType,
+        decimals,
+        readOnly: false,
         market: 'Total',
         businessModel: 'Total',
         metrics: { [sanitizeMetricKey(rowLabel)]: defaultValue },
