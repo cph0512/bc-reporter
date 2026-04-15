@@ -5621,9 +5621,12 @@ function ensureStrategySelectedYear(scenario = getCurrentStrategyScenario()) {
 function strategyYearSelector(onChange) {
   const years = ensureStrategySelectedYear();
   const changeHandler = onChange || 'onStrategyYearChange(this)';
-  return `<select data-strategy-year-select="1" onchange="${changeHandler}" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
-    ${years.map(year => `<option value="${year}" ${year === strategySelectedYear ? 'selected' : ''}>${year}</option>`).join('')}
-  </select>`;
+  return `<label style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:8px;background:#fff;font-size:13px;">
+    <span style="font-weight:600;color:#374151;">年份</span>
+    <select data-strategy-year-select="1" onchange="${changeHandler}" style="padding:4px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;background:#fff;min-width:92px;">
+      ${years.map(year => `<option value="${year}" ${year === strategySelectedYear ? 'selected' : ''}>${year}</option>`).join('')}
+    </select>
+  </label>`;
 }
 
 function scenarioSelector(onChange) {
@@ -6177,9 +6180,12 @@ async function loadStrategyForecast() {
     ${['quarter','year','month'].map(pt => `<button class="btn btn-sm" style="${fcPeriodType===pt?'background:#1a1a2e;color:#fff;':'background:#f0f0f0;'}" onclick="fcPeriodType='${pt}';loadStrategyForecast()">${pt==='quarter'?'季':pt==='year'?'年':'月'}</button>`).join('')}
   </div>`;
 
-  const yearSelect = `<select onchange="onStrategyYearChange(this)" style="padding:4px 8px;border:1px solid #d0d0d0;border-radius:4px;font-size:12px;">
-    ${yearOptions.map(y => `<option value="${y}" ${y===fcFilterYear?'selected':''}>${y}</option>`).join('')}
-  </select>`;
+  const yearSelect = `<label style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:8px;background:#fff;font-size:13px;">
+    <span style="font-weight:600;color:#374151;">年份</span>
+    <select onchange="onStrategyYearChange(this)" style="padding:4px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;background:#fff;min-width:92px;">
+      ${yearOptions.map(y => `<option value="${y}" ${y===fcFilterYear?'selected':''}>${y}</option>`).join('')}
+    </select>
+  </label>`;
 
   let sheetTabsHtml = '';
   let workflowHtml = '';
