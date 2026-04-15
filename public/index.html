@@ -6095,6 +6095,14 @@ let strategyCurrentForecastSheet = 'P&L Forecast';
 function switchStrategyForecastSheet(sheetName) {
   strategyCurrentForecastSheet = sheetName;
   normalizeForecastPeriodType(sheetName);
+  if (strategyForecastWorkbookState?.draft?.sheets?.length) {
+    const targetSheet = strategyForecastWorkbookState.draft.sheets.find(sheet => sheet.name === sheetName);
+    if (targetSheet) {
+      const preferredYear = pickDefaultForecastYearForSheet(targetSheet);
+      strategySelectedYear = preferredYear;
+      fcFilterYear = preferredYear;
+    }
+  }
   loadStrategyForecast();
 }
 
@@ -6110,6 +6118,49 @@ function normalizeForecastPeriodType(sheetName) {
     fcPeriodType = availableModes[0];
   }
   return fcPeriodType;
+}
+
+function getForecastSheetYearMeta(sheet) {
+  const yearMap = new Map();
+  for (const column of sheet?.columns || []) {
+    const year = parseInt(String(column.periodKey || '').slice(0, 4), 10);
+    if (!Number.isFinite(year)) continue;
+    const current = yearMap.get(year) || { year, count: 0, yearColumn: false };
+    current.count += 1;
+    if (column.periodType === 'year') current.yearColumn = true;
+    yearMap.set(year, current);
+  }
+  return [...yearMap.values()].sort((a, b) => a.year - b.year);
+}
+
+function pickDefaultForecastYearForSheet(sheet) {
+  const metas = getForecastSheetYearMeta(sheet);
+  if (metas.length === 0) return strategySelectedYear;
+
+  if (sheet?.name === 'KOMs') {
+    const latestFullYear = [...metas].reverse().find(item => item.count >= 12);
+    return latestFullYear ? latestFullYear.year : metas[metas.length - 1].year;
+  }
+
+  const current = metas.find(item => item.year === strategySelectedYear);
+  if (current) return current.year;
+  return metas[metas.length - 1].year;
+}
+
+function buildForecastYearSelector(sheet) {
+  const metas = getForecastSheetYearMeta(sheet);
+  const options = metas.length > 0
+    ? metas
+    : buildScenarioYearList(getCurrentStrategyScenario()).map(year => ({ year, count: 0, yearColumn: true }));
+  return `<label style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:8px;background:#fff;font-size:13px;">
+    <span style="font-weight:600;color:#374151;">年份</span>
+    <select onchange="onStrategyYearChange(this)" style="padding:4px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;background:#fff;min-width:110px;">
+      ${options.map(item => {
+        const suffix = sheet?.name === 'KOMs' ? ` (${item.count}個月)` : '';
+        return `<option value="${item.year}" ${item.year===fcFilterYear?'selected':''}>${item.year}${suffix}</option>`;
+      }).join('')}
+    </select>
+  </label>`;
 }
 
 function getFilteredWorkbookColumns(sheet) {
@@ -6230,7 +6281,7 @@ async function loadStrategyForecast() {
 
   const canEditForecast = userRole === 'admin' || userStrategyRole === 'finance_editor';
   const currentScenario = getCurrentStrategyScenario();
-  const yearOptions = ensureStrategySelectedYear(currentScenario);
+  ensureStrategySelectedYear(currentScenario);
   strategyForecastGridState = { columns: [], rows: [] };
   strategyForecastWorkbookState = null;
 
@@ -6248,12 +6299,7 @@ async function loadStrategyForecast() {
 
   let periodToggle = '';
 
-  const yearSelect = `<label style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:8px;background:#fff;font-size:13px;">
-    <span style="font-weight:600;color:#374151;">年份</span>
-    <select onchange="onStrategyYearChange(this)" style="padding:4px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;background:#fff;min-width:92px;">
-      ${yearOptions.map(y => `<option value="${y}" ${y===fcFilterYear?'selected':''}>${y}</option>`).join('')}
-    </select>
-  </label>`;
+  let yearSelect = '';
 
   let sheetTabsHtml = '';
   let workflowHtml = '';
@@ -6287,6 +6333,13 @@ async function loadStrategyForecast() {
 
         const currentSheet = draftSheets.find(sheet => sheet.name === strategyCurrentForecastSheet) || draftSheets[0];
         normalizeForecastPeriodType(currentSheet.name);
+        const yearMetas = getForecastSheetYearMeta(currentSheet);
+        if (!yearMetas.some(item => item.year === fcFilterYear)) {
+          const fallbackYear = pickDefaultForecastYearForSheet(currentSheet);
+          strategySelectedYear = fallbackYear;
+          fcFilterYear = fallbackYear;
+        }
+        yearSelect = buildForecastYearSelector(currentSheet);
         periodToggle = `<div style="display:flex;gap:4px;">
           ${getForecastAvailablePeriodModes(currentSheet.name).map(pt => {
             const label = currentSheet.name === 'P&L Forecast'
@@ -6315,6 +6368,7 @@ async function loadStrategyForecast() {
             <div><strong>Draft Workbook</strong>：${draftSheets.length} sheets</div>
             <div style="font-size:12px;color:#6b7280;">目前 Sheet：${currentSheet.name}</div>
             <div style="font-size:12px;color:#6b7280;">目前欄位：${currentSheet.name === 'P&L Forecast' && fcPeriodType === 'quarter' ? `${fcFilterYear} 年度總計 + Q1~Q4` : currentSheet.name === 'P&L Forecast' && fcPeriodType === 'year' ? '2022-2030 年度欄位' : `${fcFilterYear} ${fcPeriodType === 'month' ? '月度明細' : '季度明細'}`}</div>
+            ${currentSheet.name === 'KOMs' ? `<div style="font-size:12px;color:#6b7280;">${fcFilterYear} 目前匯入 ${(yearMetas.find(item => item.year === fcFilterYear)?.count || 0)} 個月資料</div>` : ''}
             <div style="font-size:12px;color:#6b7280;">本視圖資料覆蓋：${coverageStats.filled}/${coverageStats.total} cells</div>
             <div style="font-size:12px;color:#6b7280;">Published：${publishedMeta ? `v${publishedMeta.versionNo} · ${new Date(publishedMeta.publishedAt).toLocaleString()}` : '尚未發布'}</div>
             <div style="font-size:12px;color:#6b7280;">Draft 差異：${diffSummary.hasPublished ? `${diffSummary.changedRows} rows / ${diffSummary.changedCells} cells` : '尚未有 published 可比較'}</div>
@@ -6400,6 +6454,7 @@ async function loadStrategyForecast() {
           </div>`;
         }
       } else {
+        yearSelect = buildForecastYearSelector(null);
         periodToggle = `<div style="display:flex;gap:4px;">
           <button class="btn btn-sm" style="background:#1a1a2e;color:#fff;">年 + 季</button>
         </div>`;
@@ -6412,6 +6467,7 @@ async function loadStrategyForecast() {
 
   if (!periodToggle) {
     normalizeForecastPeriodType(strategyCurrentForecastSheet);
+    yearSelect = yearSelect || buildForecastYearSelector(null);
     periodToggle = `<div style="display:flex;gap:4px;">
       ${getForecastAvailablePeriodModes(strategyCurrentForecastSheet).map(pt => {
         const label = strategyCurrentForecastSheet === 'P&L Forecast'
