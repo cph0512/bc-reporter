@@ -6094,17 +6094,55 @@ let strategyCurrentForecastSheet = 'P&L Forecast';
 
 function switchStrategyForecastSheet(sheetName) {
   strategyCurrentForecastSheet = sheetName;
+  if (sheetName === 'KOMs' && fcPeriodType !== 'month') fcPeriodType = 'month';
+  if (sheetName === 'P&L Forecast' && fcPeriodType === 'month') fcPeriodType = 'quarter';
   loadStrategyForecast();
 }
 
 function getFilteredWorkbookColumns(sheet) {
   const allColumns = sheet?.columns || [];
+  if (allColumns.length === 0) return [];
+
+  const isPnlSheet = sheet?.name === 'P&L Forecast';
+  if (isPnlSheet && fcPeriodType === 'quarter') {
+    const annual = allColumns.find(col => col.periodType === 'year' && col.periodKey === String(fcFilterYear));
+    const quarters = allColumns.filter(col => col.periodType === 'quarter' && String(col.periodKey || '').startsWith(`${fcFilterYear}-`));
+    const combined = [annual, ...quarters].filter(Boolean);
+    return combined.length > 0 ? combined : allColumns;
+  }
+
+  if (isPnlSheet && fcPeriodType === 'year') {
+    const years = allColumns.filter(col => col.periodType === 'year');
+    return years.length > 0 ? years : allColumns;
+  }
+
   const filtered = allColumns.filter(col => {
     if (fcPeriodType && col.periodType !== fcPeriodType) return false;
     if (fcPeriodType === 'year') return col.periodKey === String(fcFilterYear);
     return String(col.periodKey || '').startsWith(String(fcFilterYear));
   });
   return filtered.length > 0 ? filtered : allColumns;
+}
+
+function formatForecastColumnLabel(column) {
+  if (!column) return '';
+
+  if (column.periodType === 'year') {
+    const year = String(column.periodKey || '');
+    return /^20\d{2}$/.test(year) ? `FY${year.slice(2)}` : year;
+  }
+
+  if (column.periodType === 'quarter') {
+    const match = String(column.periodKey || '').match(/Q([1-4])$/);
+    if (match) return `Q${match[1]}`;
+  }
+
+  if (column.periodType === 'month') {
+    const match = String(column.periodKey || '').match(/-(\d{2})$/);
+    if (match) return match[1];
+  }
+
+  return column.header || column.periodKey || '';
 }
 
 function getForecastCellDisplayType(cell) {
@@ -6161,6 +6199,7 @@ async function loadStrategyForecast() {
   const canEditForecast = userRole === 'admin' || userStrategyRole === 'finance_editor';
   const currentScenario = getCurrentStrategyScenario();
   const yearOptions = ensureStrategySelectedYear(currentScenario);
+  const isPnlSheetMode = strategyCurrentForecastSheet === 'P&L Forecast';
   strategyForecastGridState = { columns: [], rows: [] };
   strategyForecastWorkbookState = null;
 
@@ -6177,7 +6216,12 @@ async function loadStrategyForecast() {
   }
 
   const periodToggle = `<div style="display:flex;gap:4px;">
-    ${['quarter','year','month'].map(pt => `<button class="btn btn-sm" style="${fcPeriodType===pt?'background:#1a1a2e;color:#fff;':'background:#f0f0f0;'}" onclick="fcPeriodType='${pt}';loadStrategyForecast()">${pt==='quarter'?'季':pt==='year'?'年':'月'}</button>`).join('')}
+    ${['quarter','year','month'].map(pt => {
+      const label = isPnlSheetMode
+        ? (pt === 'quarter' ? '年 + 季' : pt === 'year' ? '全年' : '月')
+        : (pt === 'quarter' ? '季' : pt === 'year' ? '年' : '月');
+      return `<button class="btn btn-sm" style="${fcPeriodType===pt?'background:#1a1a2e;color:#fff;':'background:#f0f0f0;'}" onclick="fcPeriodType='${pt}';loadStrategyForecast()">${label}</button>`;
+    }).join('')}
   </div>`;
 
   const yearSelect = `<label style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:8px;background:#fff;font-size:13px;">
@@ -6236,12 +6280,13 @@ async function loadStrategyForecast() {
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:12px;">
             <div><strong>Draft Workbook</strong>：${draftSheets.length} sheets</div>
             <div style="font-size:12px;color:#6b7280;">目前 Sheet：${currentSheet.name}</div>
+            <div style="font-size:12px;color:#6b7280;">目前欄位：${currentSheet.name === 'P&L Forecast' && fcPeriodType === 'quarter' ? `${fcFilterYear} 年度總計 + Q1~Q4` : currentSheet.name === 'P&L Forecast' && fcPeriodType === 'year' ? '2022-2030 年度欄位' : `${fcFilterYear} ${fcPeriodType === 'month' ? '月度明細' : '季度明細'}`}</div>
             <div style="font-size:12px;color:#6b7280;">Published：${publishedMeta ? `v${publishedMeta.versionNo} · ${new Date(publishedMeta.publishedAt).toLocaleString()}` : '尚未發布'}</div>
             <div style="font-size:12px;color:#6b7280;">Draft 差異：${diffSummary.hasPublished ? `${diffSummary.changedRows} rows / ${diffSummary.changedCells} cells` : '尚未有 published 可比較'}</div>
           </div>`;
 
         const headerCells = cols.map(c => {
-          const short = c.periodKey.replace(`${fcFilterYear}-`, '').replace(`${fcFilterYear}`, 'FY');
+          const short = formatForecastColumnLabel(c);
           return `<th style="text-align:right;padding:8px 4px;min-width:80px;white-space:nowrap;">${short}</th>`;
         }).join('');
 
