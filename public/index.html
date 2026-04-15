@@ -6158,6 +6158,25 @@ function formatForecastColumnLabel(column) {
   return column.header || column.periodKey || '';
 }
 
+function hasForecastCellValue(cell) {
+  return typeof cell?.value === 'number' && Number.isFinite(cell.value);
+}
+
+function hasForecastCellContent(cell) {
+  return hasForecastCellValue(cell) || Boolean(cell?.formattedText) || Boolean(cell?.formula);
+}
+
+function computeForecastCoverage(rows, columns) {
+  const stats = { filled: 0, total: 0 };
+  for (const row of rows || []) {
+    for (const column of columns || []) {
+      stats.total += 1;
+      if (hasForecastCellContent(row.cells?.[column.periodKey])) stats.filled += 1;
+    }
+  }
+  return stats;
+}
+
 function getForecastCellDisplayType(cell) {
   if (cell?.displayType) return cell.displayType;
   if (String(cell?.numberFormat || '').includes('%')) return 'percent';
@@ -6277,6 +6296,7 @@ async function loadStrategyForecast() {
           }).join('')}
         </div>`;
         const cols = getFilteredWorkbookColumns(currentSheet);
+        const coverageStats = computeForecastCoverage(currentSheet.rows || [], cols);
         strategyForecastGridState = { columns: cols.map(col => col.periodKey), rows: currentSheet.rows || [] };
 
         sheetTabsHtml = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0;">
@@ -6295,6 +6315,7 @@ async function loadStrategyForecast() {
             <div><strong>Draft Workbook</strong>：${draftSheets.length} sheets</div>
             <div style="font-size:12px;color:#6b7280;">目前 Sheet：${currentSheet.name}</div>
             <div style="font-size:12px;color:#6b7280;">目前欄位：${currentSheet.name === 'P&L Forecast' && fcPeriodType === 'quarter' ? `${fcFilterYear} 年度總計 + Q1~Q4` : currentSheet.name === 'P&L Forecast' && fcPeriodType === 'year' ? '2022-2030 年度欄位' : `${fcFilterYear} ${fcPeriodType === 'month' ? '月度明細' : '季度明細'}`}</div>
+            <div style="font-size:12px;color:#6b7280;">本視圖資料覆蓋：${coverageStats.filled}/${coverageStats.total} cells</div>
             <div style="font-size:12px;color:#6b7280;">Published：${publishedMeta ? `v${publishedMeta.versionNo} · ${new Date(publishedMeta.publishedAt).toLocaleString()}` : '尚未發布'}</div>
             <div style="font-size:12px;color:#6b7280;">Draft 差異：${diffSummary.hasPublished ? `${diffSummary.changedRows} rows / ${diffSummary.changedCells} cells` : '尚未有 published 可比較'}</div>
           </div>`;
@@ -6325,17 +6346,18 @@ async function loadStrategyForecast() {
           for (const column of cols) {
             const cell = row.cells?.[column.periodKey];
             if (cell) {
-              const val = typeof cell.value === 'number' ? cell.value : 0;
-              const display = formatForecastCellText(cell);
+              const hasValue = hasForecastCellValue(cell);
+              const val = hasValue ? cell.value : null;
+              const display = hasForecastCellContent(cell) ? formatForecastCellText(cell) : '-';
               const editorValue = formatForecastEditorValue(cell);
               const displayType = getForecastCellDisplayType(cell);
               const decimals = getForecastCellDecimals(cell);
-              const color = val < 0 ? 'color:#c62828;' : '';
+              const color = hasValue && val < 0 ? 'color:#c62828;' : '';
               const isFormulaCell = Boolean(cell.formula || cell.readOnly);
               if (canEditForecast && !isFormulaCell) {
                 tableRows += `<td style="text-align:right;padding:0;">
                   <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;padding-right:4px;">
-                    <input type="text" inputmode="decimal" value="${escHtml(editorValue)}" data-id="${cell.id}" data-display-type="${displayType}" data-decimals="${decimals}" data-raw-value="${val}" data-formatted-text="${escHtml(cell.formattedText || '')}" style="width:${displayType === 'percent' ? '72px' : '96px'};text-align:right;border:1px solid transparent;padding:5px 4px;font-size:12px;background:transparent;font-variant-numeric:tabular-nums;${color}"
+                    <input type="text" inputmode="decimal" value="${escHtml(editorValue)}" placeholder="-" data-id="${cell.id}" data-display-type="${displayType}" data-decimals="${decimals}" data-raw-value="${hasValue ? val : ''}" data-formatted-text="${escHtml(cell.formattedText || '')}" style="width:${displayType === 'percent' ? '72px' : '96px'};text-align:right;border:1px solid transparent;padding:5px 4px;font-size:12px;background:transparent;font-variant-numeric:tabular-nums;${color}"
                       onfocus="this.style.borderColor='#2196f3';this.style.background='#e3f2fd'"
                       onblur="this.style.borderColor='transparent';this.style.background='transparent';saveForecastCellValue(this)"
                       onkeydown="if(event.key==='Enter'){this.blur()}"
