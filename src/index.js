@@ -68,9 +68,16 @@ app.use(session({
 
 // ===== Public Routes (no auth) =====
 
+function sendNoStoreFile(res, filePath) {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.sendFile(filePath);
+}
+
 // Login page
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/login.html'));
+  sendNoStoreFile(res, path.join(__dirname, '../public/login.html'));
 });
 
 // Auth API (login/logout/me) — with login rate limiting (規範 §5.1)
@@ -271,7 +278,7 @@ app.get('/api/external/contacts/stats', (req, res) => {
 
 // ===== Protected: Dashboard & Admin =====
 app.get('/', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  sendNoStoreFile(res, path.join(__dirname, '../public/index.html'));
 });
 app.get('/admin', requireAuth, requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin.html'));
