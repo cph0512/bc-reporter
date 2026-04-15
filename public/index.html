@@ -6094,9 +6094,22 @@ let strategyCurrentForecastSheet = 'P&L Forecast';
 
 function switchStrategyForecastSheet(sheetName) {
   strategyCurrentForecastSheet = sheetName;
-  if (sheetName === 'KOMs' && fcPeriodType !== 'month') fcPeriodType = 'month';
-  if (sheetName === 'P&L Forecast' && fcPeriodType === 'month') fcPeriodType = 'quarter';
+  normalizeForecastPeriodType(sheetName);
   loadStrategyForecast();
+}
+
+function getForecastAvailablePeriodModes(sheetName) {
+  if (sheetName === 'P&L Forecast') return ['quarter', 'year'];
+  if (sheetName === 'KOMs') return ['month'];
+  return ['quarter', 'year', 'month'];
+}
+
+function normalizeForecastPeriodType(sheetName) {
+  const availableModes = getForecastAvailablePeriodModes(sheetName);
+  if (!availableModes.includes(fcPeriodType)) {
+    fcPeriodType = availableModes[0];
+  }
+  return fcPeriodType;
 }
 
 function getFilteredWorkbookColumns(sheet) {
@@ -6199,7 +6212,6 @@ async function loadStrategyForecast() {
   const canEditForecast = userRole === 'admin' || userStrategyRole === 'finance_editor';
   const currentScenario = getCurrentStrategyScenario();
   const yearOptions = ensureStrategySelectedYear(currentScenario);
-  const isPnlSheetMode = strategyCurrentForecastSheet === 'P&L Forecast';
   strategyForecastGridState = { columns: [], rows: [] };
   strategyForecastWorkbookState = null;
 
@@ -6215,14 +6227,7 @@ async function loadStrategyForecast() {
       </div>`;
   }
 
-  const periodToggle = `<div style="display:flex;gap:4px;">
-    ${['quarter','year','month'].map(pt => {
-      const label = isPnlSheetMode
-        ? (pt === 'quarter' ? '年 + 季' : pt === 'year' ? '全年' : '月')
-        : (pt === 'quarter' ? '季' : pt === 'year' ? '年' : '月');
-      return `<button class="btn btn-sm" style="${fcPeriodType===pt?'background:#1a1a2e;color:#fff;':'background:#f0f0f0;'}" onclick="fcPeriodType='${pt}';loadStrategyForecast()">${label}</button>`;
-    }).join('')}
-  </div>`;
+  let periodToggle = '';
 
   const yearSelect = `<label style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:8px;background:#fff;font-size:13px;">
     <span style="font-weight:600;color:#374151;">年份</span>
@@ -6262,6 +6267,15 @@ async function loadStrategyForecast() {
         }
 
         const currentSheet = draftSheets.find(sheet => sheet.name === strategyCurrentForecastSheet) || draftSheets[0];
+        normalizeForecastPeriodType(currentSheet.name);
+        periodToggle = `<div style="display:flex;gap:4px;">
+          ${getForecastAvailablePeriodModes(currentSheet.name).map(pt => {
+            const label = currentSheet.name === 'P&L Forecast'
+              ? (pt === 'quarter' ? '年 + 季' : '全年')
+              : pt === 'month' ? '月度明細' : pt === 'quarter' ? '季' : '年';
+            return `<button class="btn btn-sm" style="${fcPeriodType===pt?'background:#1a1a2e;color:#fff;':'background:#f0f0f0;'}" onclick="fcPeriodType='${pt}';loadStrategyForecast()">${label}</button>`;
+          }).join('')}
+        </div>`;
         const cols = getFilteredWorkbookColumns(currentSheet);
         strategyForecastGridState = { columns: cols.map(col => col.periodKey), rows: currentSheet.rows || [] };
 
@@ -6364,11 +6378,26 @@ async function loadStrategyForecast() {
           </div>`;
         }
       } else {
+        periodToggle = `<div style="display:flex;gap:4px;">
+          <button class="btn btn-sm" style="background:#1a1a2e;color:#fff;">年 + 季</button>
+        </div>`;
         forecastTable = '<div style="color:#999;text-align:center;padding:40px;">尚未匯入 workbook，請先上傳 Forecast Excel</div>';
       }
     } catch(e) {
       console.error('Load forecast error:', e);
     }
+  }
+
+  if (!periodToggle) {
+    normalizeForecastPeriodType(strategyCurrentForecastSheet);
+    periodToggle = `<div style="display:flex;gap:4px;">
+      ${getForecastAvailablePeriodModes(strategyCurrentForecastSheet).map(pt => {
+        const label = strategyCurrentForecastSheet === 'P&L Forecast'
+          ? (pt === 'quarter' ? '年 + 季' : '全年')
+          : pt === 'month' ? '月度明細' : pt === 'quarter' ? '季' : '年';
+        return `<button class="btn btn-sm" style="${fcPeriodType===pt?'background:#1a1a2e;color:#fff;':'background:#f0f0f0;'}" onclick="fcPeriodType='${pt}';loadStrategyForecast()">${label}</button>`;
+      }).join('')}
+    </div>`;
   }
 
   let historyHtml = '';
