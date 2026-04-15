@@ -130,11 +130,13 @@ function buildForecastLineAuditValue(line) {
 }
 
 function inferDisplayTypeFromLine(line) {
-  if (line.displayType) return line.displayType;
+  if (line.displayType && line.displayType !== 'number') return line.displayType;
   if (String(line.numberFormat || '').includes('%')) return 'percent';
   if (/(\%)/.test(line.rowLabel || '')) return 'percent';
+  if (/(CAGR|毛利率|費用率|營業利益率|淨利率|稅率|占比|佔比|比重|ratio|margin|share|rate|收益率|報酬率)/i.test(`${line.rowLabel || ''} ${line.section || ''}`)) return 'percent';
+  if (/^(台灣|北美|新加坡|卡車運輸|跨境物流|終端配送|軟體服務|倉儲)$/u.test(String(line.rowLabel || '').trim())) return 'percent';
   if (/\b(NT\$|US\$|TWD|USD)\b/i.test(`${line.rowLabel || ''} ${line.numberFormat || ''}`)) return 'currency';
-  return 'number';
+  return line.displayType || 'number';
 }
 
 function normalizeWorkbookCellData(cell = {}, fallback = {}) {

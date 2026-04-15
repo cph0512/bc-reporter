@@ -6228,10 +6228,19 @@ function computeForecastCoverage(rows, columns) {
   return stats;
 }
 
-function getForecastCellDisplayType(cell) {
-  if (cell?.displayType) return cell.displayType;
-  if (String(cell?.numberFormat || '').includes('%')) return 'percent';
-  return 'number';
+function inferForecastDisplayTypeFromLabel(rowLabel, section = '') {
+  const hint = `${rowLabel || ''} ${section || ''}`;
+  if (/(CAGR|毛利率|費用率|營業利益率|淨利率|稅率|占比|佔比|比重|ratio|margin|share|rate|收益率|報酬率)/i.test(hint)) return 'percent';
+  if (/^(台灣|北美|新加坡|卡車運輸|跨境物流|終端配送|軟體服務|倉儲)$/u.test(String(rowLabel || '').trim())) return 'percent';
+  return null;
+}
+
+function getForecastCellDisplayType(cell, rowLabel = '', section = '') {
+  if (cell?.displayType && cell.displayType !== 'number') return cell.displayType;
+  if (String(cell?.numberFormat || '').includes('%') || String(cell?.formattedText || '').includes('%')) return 'percent';
+  const inferredFromLabel = inferForecastDisplayTypeFromLabel(rowLabel, section);
+  if (inferredFromLabel) return inferredFromLabel;
+  return cell?.displayType || 'number';
 }
 
 function getForecastCellDecimals(cell) {
@@ -6239,7 +6248,7 @@ function getForecastCellDecimals(cell) {
   return Number.isFinite(decimals) && decimals >= 0 ? decimals : 1;
 }
 
-function formatForecastCellText(cell) {
+function formatForecastCellText(cell, rowLabel = '', section = '') {
   if (!cell) return '-';
   if (cell.formattedText && (cell.formula || cell.readOnly)) return String(cell.formattedText);
 
@@ -6247,7 +6256,7 @@ function formatForecastCellText(cell) {
   if (!Number.isFinite(value)) return '-';
 
   const decimals = getForecastCellDecimals(cell);
-  const displayType = getForecastCellDisplayType(cell);
+  const displayType = getForecastCellDisplayType(cell, rowLabel, section);
   const displayValue = displayType === 'percent' ? value * 100 : value;
   const text = displayValue.toLocaleString(undefined, {
     minimumFractionDigits: decimals,
@@ -6256,12 +6265,12 @@ function formatForecastCellText(cell) {
   return displayType === 'percent' ? `${text}%` : text;
 }
 
-function formatForecastEditorValue(cell) {
+function formatForecastEditorValue(cell, rowLabel = '', section = '') {
   if (!cell) return '';
   const value = Number(cell.value);
   if (!Number.isFinite(value)) return '';
   const decimals = getForecastCellDecimals(cell);
-  const displayType = getForecastCellDisplayType(cell);
+  const displayType = getForecastCellDisplayType(cell, rowLabel, section);
   const displayValue = displayType === 'percent' ? value * 100 : value;
   return displayValue.toFixed(decimals);
 }
@@ -6271,7 +6280,7 @@ function parseForecastEditorValue(value, cell) {
   if (!cleaned) return null;
   const parsed = parseFloat(cleaned);
   if (Number.isNaN(parsed)) throw new Error('請輸入有效數字');
-  return getForecastCellDisplayType(cell) === 'percent' ? parsed / 100 : parsed;
+  return getForecastCellDisplayType(cell, cell?.rowLabel, cell?.section) === 'percent' ? parsed / 100 : parsed;
 }
 
 async function loadStrategyForecast() {
@@ -6402,16 +6411,16 @@ async function loadStrategyForecast() {
             if (cell) {
               const hasValue = hasForecastCellValue(cell);
               const val = hasValue ? cell.value : null;
-              const display = hasForecastCellContent(cell) ? formatForecastCellText(cell) : '-';
-              const editorValue = formatForecastEditorValue(cell);
-              const displayType = getForecastCellDisplayType(cell);
+              const display = hasForecastCellContent(cell) ? formatForecastCellText(cell, row.label, row.section) : '-';
+              const editorValue = formatForecastEditorValue(cell, row.label, row.section);
+              const displayType = getForecastCellDisplayType(cell, row.label, row.section);
               const decimals = getForecastCellDecimals(cell);
               const color = hasValue && val < 0 ? 'color:#c62828;' : '';
               const isFormulaCell = Boolean(cell.formula || cell.readOnly);
               if (canEditForecast && !isFormulaCell) {
                 tableRows += `<td style="text-align:right;padding:0;">
                   <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;padding-right:4px;">
-                    <input type="text" inputmode="decimal" value="${escHtml(editorValue)}" placeholder="-" data-id="${cell.id}" data-display-type="${displayType}" data-decimals="${decimals}" data-raw-value="${hasValue ? val : ''}" data-formatted-text="${escHtml(cell.formattedText || '')}" style="width:${displayType === 'percent' ? '72px' : '96px'};text-align:right;border:1px solid transparent;padding:5px 4px;font-size:12px;background:transparent;font-variant-numeric:tabular-nums;${color}"
+                    <input type="text" inputmode="decimal" value="${escHtml(editorValue)}" placeholder="-" data-id="${cell.id}" data-display-type="${displayType}" data-decimals="${decimals}" data-raw-value="${hasValue ? val : ''}" data-formatted-text="${escHtml(cell.formattedText || '')}" data-row-label="${escHtml(row.label || '')}" data-row-section="${escHtml(row.section || '')}" style="width:${displayType === 'percent' ? '72px' : '96px'};text-align:right;border:1px solid transparent;padding:5px 4px;font-size:12px;background:transparent;font-variant-numeric:tabular-nums;${color}"
                       onfocus="this.style.borderColor='#2196f3';this.style.background='#e3f2fd'"
                       onblur="this.style.borderColor='transparent';this.style.background='transparent';saveForecastCellValue(this)"
                       onkeydown="if(event.key==='Enter'){this.blur()}"
@@ -6748,6 +6757,8 @@ async function saveForecastCellValue(inputEl) {
     displayType: inputEl.dataset.displayType || 'number',
     decimals: parseInt(inputEl.dataset.decimals, 10),
     formattedText: inputEl.dataset.formattedText || null,
+    rowLabel: inputEl.dataset.rowLabel || '',
+    section: inputEl.dataset.rowSection || '',
   };
 
   let numVal;
@@ -6755,11 +6766,11 @@ async function saveForecastCellValue(inputEl) {
     numVal = parseForecastEditorValue(inputEl.value, previousCell);
   } catch (e) {
     alert(e.message);
-    inputEl.value = formatForecastEditorValue(previousCell);
+    inputEl.value = formatForecastEditorValue(previousCell, previousCell.rowLabel, previousCell.section);
     return;
   }
   if (numVal == null) {
-    inputEl.value = formatForecastEditorValue(previousCell);
+    inputEl.value = formatForecastEditorValue(previousCell, previousCell.rowLabel, previousCell.section);
     return;
   }
 
@@ -6775,10 +6786,10 @@ async function saveForecastCellValue(inputEl) {
     const nextCell = { ...previousCell, value: numVal, formattedText: null };
     inputEl.dataset.rawValue = String(numVal);
     inputEl.dataset.formattedText = '';
-    inputEl.value = formatForecastEditorValue(nextCell);
+    inputEl.value = formatForecastEditorValue(nextCell, nextCell.rowLabel, nextCell.section);
   } catch(e) {
     console.error('Save cell error:', e);
-    inputEl.value = formatForecastEditorValue(previousCell);
+    inputEl.value = formatForecastEditorValue(previousCell, previousCell.rowLabel, previousCell.section);
     alert('儲存失敗: ' + e.message);
   }
 }

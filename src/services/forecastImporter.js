@@ -21,6 +21,8 @@ function inferCellDisplayType(cell, label, unit) {
   const hint = `${label || ''} ${unit || ''}`;
 
   if (format.includes('%') || text.includes('%') || hint.includes('%')) return 'percent';
+  if (/(CAGR|毛利率|費用率|營業利益率|淨利率|稅率|占比|佔比|比重|ratio|margin|share|rate|收益率|報酬率)/i.test(hint)) return 'percent';
+  if (/^(台灣|北美|新加坡|卡車運輸|跨境物流|終端配送|軟體服務|倉儲)$/u.test(String(label || '').trim())) return 'percent';
   if (/\b(NT\$|US\$|TWD|USD)\b/i.test(format) || /\b(NT\$|US\$|TWD|USD)\b/i.test(hint)) return 'currency';
   return 'number';
 }
