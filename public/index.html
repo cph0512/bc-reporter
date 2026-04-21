@@ -826,6 +826,7 @@
         <div style="display:flex;gap:6px;">
           <button class="btn btn-sm btn-primary" onclick="showAddTwsModal()" id="twsAddBtn" style="display:none;">+ 新增</button>
           <button class="btn btn-sm" onclick="showBatchImportModal()" id="twsBatchBtn" style="display:none;">批次匯入 AI 廠商</button>
+          <button class="btn btn-sm" onclick="showSemiBatchModal()" id="twsSemiBatchBtn" style="display:none;">批次匯入 半導體供應鏈</button>
           <button class="btn btn-sm" onclick="syncAllTwsRevenue()" id="twsSyncRevenueAllBtn2" style="display:none;">同步全部營收</button>
         </div>
       </div>
@@ -937,6 +938,35 @@
       <div style="display:flex;gap:8px;">
         <button class="btn" onclick="closeBatchModal()">取消</button>
         <button class="btn btn-primary" onclick="submitBatchImport()">匯入選取的股票</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Semi Supply Chain Batch Import Modal -->
+<div id="twsSemiBatchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px;max-width:820px;width:95%;max-height:88vh;overflow-y:auto;position:relative;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h3 style="margin:0;font-size:16px;">批次匯入 — 台灣半導體供應鏈 132 家</h3>
+      <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeSemiBatchModal()">✕</span>
+    </div>
+    <div style="font-size:12px;color:#888;margin-bottom:12px;">
+      來源：QIC Research — Semi Supply Chain 重點精華 p.6–8。設備與零組件 75、廠區服務 16、材料服務 41。
+    </div>
+    <div style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="btn btn-sm" onclick="twsSemiBatchSelectAll(true)">全選</button>
+      <button class="btn btn-sm" onclick="twsSemiBatchSelectAll(false)">全不選</button>
+      <button class="btn btn-sm" onclick="twsSemiBatchSelectCategory('equipment')">設備與零組件</button>
+      <button class="btn btn-sm" onclick="twsSemiBatchSelectCategory('facility')">廠區服務</button>
+      <button class="btn btn-sm" onclick="twsSemiBatchSelectCategory('materials')">材料服務</button>
+      <button class="btn btn-sm" onclick="twsSemiBatchSelectCore()">2024 核心 49 家</button>
+    </div>
+    <div id="twsSemiBatchList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px;max-height:55vh;overflow-y:auto;padding:4px;"></div>
+    <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:16px;">
+      <span id="twsSemiBatchCount" style="font-size:13px;color:#666;">已選 0 檔</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="closeSemiBatchModal()">取消</button>
+        <button class="btn btn-primary" onclick="submitSemiBatchImport()">匯入選取的股票</button>
       </div>
     </div>
   </div>
@@ -5751,10 +5781,12 @@ async function loadTwStock() {
   const addBtn = document.getElementById('twsAddBtn');
   const syncAllBtn = document.getElementById('twsSyncAllBtn');
   const batchBtn = document.getElementById('twsBatchBtn');
+  const semiBatchBtn = document.getElementById('twsSemiBatchBtn');
   const compareBtn2 = document.getElementById('twsCompareBtn2');
   const syncRevBtn2 = document.getElementById('twsSyncRevenueAllBtn2');
   if (addBtn) addBtn.style.display = isAdminOrMgr ? '' : 'none';
   if (batchBtn) batchBtn.style.display = isAdminOrMgr ? '' : 'none';
+  if (semiBatchBtn) semiBatchBtn.style.display = isAdminOrMgr ? '' : 'none';
   if (syncAllBtn) syncAllBtn.style.display = userRole === 'admin' ? '' : 'none';
   if (compareBtn2) compareBtn2.style.display = isAdminOrMgr ? '' : 'none';
   if (syncRevBtn2) syncRevBtn2.style.display = isAdminOrMgr ? '' : 'none';
@@ -7245,6 +7277,214 @@ async function submitBatchImport() {
     const result = await res.json();
     alert(result.message);
     closeBatchModal();
+    await loadTwStock();
+  } catch(e) { alert('匯入失敗'); }
+}
+
+// ===== Batch Import: Taiwan Semiconductor Supply Chain (QIC 132) =====
+// 來源：QIC Research — Semi Supply Chain_(CN)_重點精華.pdf p.6–8
+// category: 'equipment'（設備與零組件）| 'facility'（廠區服務）| 'materials'（材料服務）
+// core: true 代表在 QIC 2024 年初版 49 家核心名單內
+// market: 'sii' 上市 | 'otc' 上櫃 | 'rotc' 興櫃（可能無法同步）
+const TW_SEMI_SUPPLY_CHAIN = [
+  // 設備與零組件 (75)
+  {code:"3711",name:"日月光投控",market:"sii",cat:"equipment",core:false},
+  {code:"2360",name:"致茂",market:"sii",cat:"equipment",core:true},
+  {code:"7769",name:"鴻勁精密",market:"rotc",cat:"equipment",core:false},
+  {code:"2449",name:"京元電子",market:"sii",cat:"equipment",core:false},
+  {code:"3481",name:"群創",market:"sii",cat:"equipment",core:false},
+  {code:"2409",name:"友達",market:"sii",cat:"equipment",core:false},
+  {code:"2049",name:"上銀",market:"sii",cat:"equipment",core:false},
+  {code:"6789",name:"采鈺",market:"sii",cat:"equipment",core:true},
+  {code:"3374",name:"精材",market:"otc",cat:"equipment",core:true},
+  {code:"3680",name:"家登",market:"otc",cat:"equipment",core:true},
+  {code:"3450",name:"聯鈞",market:"otc",cat:"equipment",core:false},
+  {code:"6257",name:"矽格",market:"sii",cat:"equipment",core:false},
+  {code:"3131",name:"弘塑",market:"otc",cat:"equipment",core:true},
+  {code:"6442",name:"光聖",market:"sii",cat:"equipment",core:false},
+  {code:"3583",name:"辛耘",market:"otc",cat:"equipment",core:true},
+  {code:"3413",name:"京鼎",market:"otc",cat:"equipment",core:true},
+  {code:"3714",name:"富采",market:"sii",cat:"equipment",core:false},
+  {code:"7734",name:"印能",market:"rotc",cat:"equipment",core:false},
+  {code:"3363",name:"上銓",market:"otc",cat:"equipment",core:false},
+  {code:"4979",name:"華星光",market:"otc",cat:"equipment",core:false},
+  {code:"4977",name:"眾達",market:"otc",cat:"equipment",core:false},
+  {code:"6451",name:"訊芯",market:"sii",cat:"equipment",core:false},
+  {code:"4576",name:"大銀微",market:"otc",cat:"equipment",core:false},
+  {code:"4770",name:"上品",market:"otc",cat:"equipment",core:true},
+  {code:"2467",name:"志聖",market:"sii",cat:"equipment",core:true},
+  {code:"6187",name:"萬潤",market:"otc",cat:"equipment",core:true},
+  {code:"6640",name:"均華",market:"sii",cat:"equipment",core:true},
+  {code:"6937",name:"天虹",market:"otc",cat:"equipment",core:false},
+  {code:"2338",name:"光罩",market:"sii",cat:"equipment",core:true},
+  {code:"1563",name:"巧新",market:"sii",cat:"equipment",core:false},
+  {code:"3587",name:"閎康",market:"otc",cat:"equipment",core:true},
+  {code:"5443",name:"均豪",market:"otc",cat:"equipment",core:true},
+  {code:"2464",name:"盟立",market:"sii",cat:"equipment",core:true},
+  {code:"3563",name:"牧德",market:"otc",cat:"equipment",core:false},
+  {code:"6664",name:"群翊",market:"otc",cat:"equipment",core:false},
+  {code:"3163",name:"波若威",market:"otc",cat:"equipment",core:false},
+  {code:"6849",name:"奇鼎",market:"otc",cat:"equipment",core:false},
+  {code:"8374",name:"羅昇",market:"otc",cat:"equipment",core:false},
+  {code:"8027",name:"鈦昇",market:"otc",cat:"equipment",core:true},
+  {code:"6706",name:"惠特",market:"otc",cat:"equipment",core:false},
+  {code:"3289",name:"宜特",market:"otc",cat:"equipment",core:true},
+  {code:"8064",name:"東捷",market:"otc",cat:"equipment",core:false},
+  {code:"6438",name:"迅得",market:"sii",cat:"equipment",core:true},
+  {code:"3055",name:"蔚華科",market:"sii",cat:"equipment",core:false},
+  {code:"6953",name:"家碩",market:"sii",cat:"equipment",core:true},
+  {code:"4526",name:"東台",market:"otc",cat:"equipment",core:false},
+  {code:"6788",name:"華景電",market:"rotc",cat:"equipment",core:true},
+  {code:"4549",name:"桓達",market:"otc",cat:"equipment",core:true},
+  {code:"6739",name:"竹陞科技",market:"rotc",cat:"equipment",core:false},
+  {code:"8111",name:"立碁",market:"otc",cat:"equipment",core:false},
+  {code:"3455",name:"由田",market:"otc",cat:"equipment",core:false},
+  {code:"6830",name:"汎銓",market:"sii",cat:"equipment",core:true},
+  {code:"3535",name:"晶彩科",market:"otc",cat:"equipment",core:true},
+  {code:"6208",name:"日揚",market:"otc",cat:"equipment",core:true},
+  {code:"3551",name:"世禾",market:"otc",cat:"equipment",core:true},
+  {code:"4908",name:"前鼎光電",market:"otc",cat:"equipment",core:false},
+  {code:"6215",name:"和椿",market:"sii",cat:"equipment",core:false},
+  {code:"4580",name:"捷流閥業",market:"otc",cat:"equipment",core:true},
+  {code:"3178",name:"公準",market:"otc",cat:"equipment",core:false},
+  {code:"3580",name:"友威科",market:"otc",cat:"equipment",core:true},
+  {code:"7704",name:"明遠",market:"rotc",cat:"equipment",core:false},
+  {code:"6207",name:"雷科",market:"otc",cat:"equipment",core:false},
+  {code:"7556",name:"意德士",market:"rotc",cat:"equipment",core:true},
+  {code:"6532",name:"瑞耘",market:"sii",cat:"equipment",core:true},
+  {code:"4542",name:"科嶠",market:"otc",cat:"equipment",core:true},
+  {code:"3581",name:"博磊",market:"otc",cat:"equipment",core:true},
+  {code:"6667",name:"信紘科",market:"otc",cat:"equipment",core:true},
+  {code:"6829",name:"千附精密",market:"sii",cat:"equipment",core:false},
+  {code:"3030",name:"德律",market:"sii",cat:"equipment",core:false},
+  {code:"7822",name:"倍利",market:"rotc",cat:"equipment",core:false},
+  {code:"7751",name:"竑騰",market:"rotc",cat:"equipment",core:false},
+  {code:"7730",name:"暉盛",market:"rotc",cat:"equipment",core:false},
+  {code:"7728",name:"光焱科技",market:"rotc",cat:"equipment",core:false},
+  {code:"6909",name:"創控",market:"otc",cat:"equipment",core:false},
+  {code:"3498",name:"陽程",market:"otc",cat:"equipment",core:false},
+  // 廠區服務 (16)
+  {code:"2404",name:"漢唐",market:"sii",cat:"facility",core:true},
+  {code:"6139",name:"亞翔",market:"sii",cat:"facility",core:false},
+  {code:"6691",name:"洋基工程",market:"sii",cat:"facility",core:false},
+  {code:"6196",name:"帆宣",market:"sii",cat:"facility",core:true},
+  {code:"5536",name:"聖暉",market:"sii",cat:"facility",core:true},
+  {code:"6613",name:"朋億",market:"otc",cat:"facility",core:false},
+  {code:"6826",name:"和淞",market:"otc",cat:"facility",core:false},
+  {code:"6903",name:"巨漢",market:"otc",cat:"facility",core:false},
+  {code:"3402",name:"漢科",market:"otc",cat:"facility",core:false},
+  {code:"8383",name:"千附實業",market:"otc",cat:"facility",core:false},
+  {code:"7721",name:"微程式",market:"otc",cat:"facility",core:false},
+  {code:"6944",name:"兆聯",market:"otc",cat:"facility",core:false},
+  {code:"6192",name:"巨路",market:"otc",cat:"facility",core:false},
+  {code:"7820",name:"立盈環保",market:"rotc",cat:"facility",core:false},
+  {code:"7631",name:"聚賢研發",market:"rotc",cat:"facility",core:false},
+  {code:"7813",name:"宇辰",market:"rotc",cat:"facility",core:false},
+  // 材料服務 (41)
+  {code:"5347",name:"世界先進",market:"sii",cat:"materials",core:false},
+  {code:"6488",name:"環球晶",market:"otc",cat:"materials",core:false},
+  {code:"3037",name:"欣興",market:"sii",cat:"materials",core:false},
+  {code:"4958",name:"臻鼎-KY",market:"sii",cat:"materials",core:false},
+  {code:"1229",name:"聯華食品",market:"sii",cat:"materials",core:true},
+  {code:"3532",name:"台勝科",market:"otc",cat:"materials",core:false},
+  {code:"6223",name:"旺矽",market:"sii",cat:"materials",core:false},
+  {code:"6515",name:"穎崴",market:"sii",cat:"materials",core:false},
+  {code:"3105",name:"穩懋",market:"otc",cat:"materials",core:false},
+  {code:"5434",name:"崇越",market:"sii",cat:"materials",core:true},
+  {code:"4749",name:"新應材",market:"otc",cat:"materials",core:false},
+  {code:"1560",name:"中砂",market:"sii",cat:"materials",core:true},
+  {code:"1773",name:"勝一",market:"sii",cat:"materials",core:true},
+  {code:"1785",name:"光洋科",market:"sii",cat:"materials",core:true},
+  {code:"3081",name:"聯亞",market:"otc",cat:"materials",core:false},
+  {code:"1717",name:"長興",market:"sii",cat:"materials",core:true},
+  {code:"3010",name:"華立",market:"sii",cat:"materials",core:true},
+  {code:"8070",name:"長華",market:"sii",cat:"materials",core:false},
+  {code:"4772",name:"台特化",market:"otc",cat:"materials",core:false},
+  {code:"6182",name:"合晶",market:"sii",cat:"materials",core:false},
+  {code:"8028",name:"昇陽半",market:"otc",cat:"materials",core:true},
+  {code:"3663",name:"鑫科材料",market:"otc",cat:"materials",core:false},
+  {code:"4768",name:"晶呈科",market:"otc",cat:"materials",core:false},
+  {code:"6510",name:"精測",market:"otc",cat:"materials",core:false},
+  {code:"5234",name:"達興材料",market:"otc",cat:"materials",core:true},
+  {code:"4755",name:"三福化工",market:"otc",cat:"materials",core:true},
+  {code:"1711",name:"永光",market:"sii",cat:"materials",core:true},
+  {code:"6683",name:"雍智",market:"otc",cat:"materials",core:false},
+  {code:"8091",name:"翔名",market:"otc",cat:"materials",core:true},
+  {code:"3444",name:"利機",market:"sii",cat:"materials",core:false},
+  {code:"6217",name:"中探針",market:"otc",cat:"materials",core:false},
+  {code:"6959",name:"兆捷科技",market:"rotc",cat:"materials",core:false},
+  {code:"1727",name:"中華化",market:"sii",cat:"materials",core:true},
+  {code:"5493",name:"三聯",market:"otc",cat:"materials",core:false},
+  {code:"6823",name:"濾能",market:"otc",cat:"materials",core:true},
+  {code:"4556",name:"旭然",market:"otc",cat:"materials",core:false},
+  {code:"7768",name:"頌勝科技",market:"rotc",cat:"materials",core:false},
+  {code:"4960",name:"誠美材",market:"otc",cat:"materials",core:false},
+  {code:"7703",name:"銳澤",market:"rotc",cat:"materials",core:false},
+  {code:"3467",name:"台灣精材",market:"sii",cat:"materials",core:false},
+  {code:"3430",name:"奇鈦科",market:"otc",cat:"materials",core:false},
+];
+const SEMI_CAT_LABELS = {equipment:'設備與零組件', facility:'廠區服務', materials:'材料服務'};
+
+function showSemiBatchModal() {
+  const modal = document.getElementById('twsSemiBatchModal');
+  modal.style.display = 'flex';
+  const list = document.getElementById('twsSemiBatchList');
+  const existingCodes = new Set(twsWatchlist.map(w => w.code));
+  list.innerHTML = TW_SEMI_SUPPLY_CHAIN.map(s => {
+    const exists = existingCodes.has(s.code);
+    const coreBadge = s.core ? '<span style="background:#fce8b2;color:#7c5f0a;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:auto;">核心</span>' : '';
+    const catBadge = `<span style="color:#999;font-size:10px;">${SEMI_CAT_LABELS[s.cat]||s.cat}</span>`;
+    return `<label style="display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid ${exists?'#e0e0e0':'#d0d0d0'};border-radius:6px;font-size:12px;${exists?'opacity:0.4;':'cursor:pointer;'}background:#fff;">
+      <input type="checkbox" data-code="${s.code}" data-name="${s.name}" data-market="${s.market}" data-cat="${s.cat}" data-core="${s.core?'1':'0'}" ${exists?'disabled checked':''}/>
+      <span style="font-weight:600;">${s.code}</span> ${s.name}
+      ${coreBadge}
+      ${catBadge}
+    </label>`;
+  }).join('');
+  updateSemiBatchCount();
+}
+function closeSemiBatchModal() { document.getElementById('twsSemiBatchModal').style.display = 'none'; }
+function twsSemiBatchSelectAll(val) {
+  document.querySelectorAll('#twsSemiBatchList input[type=checkbox]:not(:disabled)').forEach(cb => cb.checked = val);
+  updateSemiBatchCount();
+}
+function twsSemiBatchSelectCategory(cat) {
+  document.querySelectorAll('#twsSemiBatchList input[type=checkbox]:not(:disabled)').forEach(cb => {
+    cb.checked = cb.dataset.cat === cat;
+  });
+  updateSemiBatchCount();
+}
+function twsSemiBatchSelectCore() {
+  document.querySelectorAll('#twsSemiBatchList input[type=checkbox]:not(:disabled)').forEach(cb => {
+    cb.checked = cb.dataset.core === '1';
+  });
+  updateSemiBatchCount();
+}
+function updateSemiBatchCount() {
+  const n = document.querySelectorAll('#twsSemiBatchList input[type=checkbox]:checked:not(:disabled)').length;
+  document.getElementById('twsSemiBatchCount').textContent = `已選 ${n} 檔`;
+}
+document.addEventListener('change', e => {
+  if (e.target.closest('#twsSemiBatchList')) updateSemiBatchCount();
+});
+
+async function submitSemiBatchImport() {
+  const checks = document.querySelectorAll('#twsSemiBatchList input[type=checkbox]:checked:not(:disabled)');
+  const stocks = Array.from(checks).map(cb => ({
+    code: cb.dataset.code,
+    name: cb.dataset.name,
+    market: cb.dataset.market,
+    category: cb.dataset.cat,
+    isCore: cb.dataset.core === '1',
+  }));
+  if (stocks.length === 0) { alert('請至少選擇一檔股票'); return; }
+  try {
+    const res = await fetch('/api/tw-stock/watchlist/batch', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({stocks})
+    });
+    const result = await res.json();
+    alert(result.message);
+    closeSemiBatchModal();
     await loadTwStock();
   } catch(e) { alert('匯入失敗'); }
 }

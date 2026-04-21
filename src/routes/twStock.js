@@ -56,7 +56,7 @@ router.delete('/watchlist/:code', requireManagerOrAdmin, (req, res) => {
 
 // 批次匯入
 router.post('/watchlist/batch', requireManagerOrAdmin, (req, res) => {
-  const { stocks } = req.body; // [{code, name, market}, ...]
+  const { stocks } = req.body; // [{code, name, market, category?, isCore?}, ...]
   if (!Array.isArray(stocks) || stocks.length === 0) {
     return res.status(400).json({ error: '請提供股票清單' });
   }
@@ -65,8 +65,11 @@ router.post('/watchlist/batch', requireManagerOrAdmin, (req, res) => {
   for (const s of stocks) {
     if (!s.code || !s.name) continue;
     if (!/^\d{4,6}$/.test(s.code)) continue;
+    const extras = {};
+    if (s.category) extras.category = String(s.category);
+    if (typeof s.isCore === 'boolean') extras.isCore = s.isCore;
     try {
-      twStockStore.addToWatchlist(s.code.trim(), s.name.trim(), s.market || 'sii', addedBy);
+      twStockStore.addToWatchlist(s.code.trim(), s.name.trim(), s.market || 'sii', addedBy, extras);
       results.push({ code: s.code, name: s.name, status: 'ok' });
     } catch (err) {
       results.push({ code: s.code, name: s.name, status: 'skip', error: err.message });
