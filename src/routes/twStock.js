@@ -143,11 +143,13 @@ router.post('/sync-revenue-all', async (req, res) => {
     }
 
     // Step 2: 遍歷 watchlist，從 bulk map 取值並寫入
+    // 兩個 map 都查（watchlist 的 market 欄位可能與實際掛牌不符）
     for (const stock of watchlist) {
       job.current = `${stock.code} ${stock.name}`;
       try {
-        const map = stock.market === 'otc' ? otcMap : siiMap;
-        const found = map.get(stock.code);
+        const preferred = stock.market === 'otc' ? otcMap : siiMap;
+        const fallback = stock.market === 'otc' ? siiMap : otcMap;
+        const found = preferred.get(stock.code) || fallback.get(stock.code);
         if (found) {
           twStockStore.mergeFinancials(stock.code, {
             revenue: { [found.monthKey]: [found.entry] },
@@ -158,7 +160,7 @@ router.post('/sync-revenue-all', async (req, res) => {
           job.failures.push({
             code: stock.code,
             name: stock.name,
-            error: '未在 OpenAPI 找到（可能本月尚未公告或市場設定錯誤）',
+            error: '上市/上櫃 OpenAPI 都找不到（本月可能尚未公告）',
           });
         }
       } catch (err) {

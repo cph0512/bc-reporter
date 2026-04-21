@@ -394,16 +394,20 @@ async function fetchRevenueOnly(stockCode, market = 'sii', yearsBack = 3) {
   }
 
   // FinMind 失敗或空資料 → fallback 到 TWSE/TPEX OpenAPI（僅當月，但免費無配額）
+  // 兩個市場都查（market 欄位可能設錯）
   if (Object.keys(result).length === 0) {
-    try {
-      const bulkMap = await fetchTwseBulkRevenue(market);
-      const found = bulkMap.get(stockCode);
-      if (found) {
-        result[found.monthKey] = [found.entry];
-        console.log(`[TWSE-OpenAPI] ${stockCode}: fallback 取得 ${found.monthKey}`);
+    for (const m of [market, market === 'otc' ? 'sii' : 'otc']) {
+      try {
+        const bulkMap = await fetchTwseBulkRevenue(m);
+        const found = bulkMap.get(stockCode);
+        if (found) {
+          result[found.monthKey] = [found.entry];
+          console.log(`[TWSE-OpenAPI] ${stockCode}: fallback 取得 ${found.monthKey} (${m})`);
+          break;
+        }
+      } catch (err) {
+        console.error(`[twStockScraper] TWSE ${m} fallback 失敗 ${stockCode}:`, err.message);
       }
-    } catch (err) {
-      console.error(`[twStockScraper] TWSE fallback 失敗 ${stockCode}:`, err.message);
     }
   }
   return result;
