@@ -33,20 +33,62 @@ const twStockStore = {
     return readData().watchlist;
   },
 
-  addToWatchlist(code, name, market = 'sii', addedBy = '') {
+  addToWatchlist(code, name, market = 'sii', addedBy = '', extras = {}) {
     const data = readData();
     if (data.watchlist.find(w => w.code === code)) {
       throw new Error(`股票 ${code} 已在追蹤清單中`);
     }
-    data.watchlist.push({
+    const entry = {
       code,
       name,
       market,
       addedBy,
       addedAt: new Date().toISOString(),
-    });
+    };
+    if (extras.category) entry.category = extras.category;
+    if (typeof extras.isCore === 'boolean') entry.isCore = extras.isCore;
+    data.watchlist.push(entry);
     writeData(data);
     return data.watchlist;
+  },
+
+  /**
+   * 批次匯入追蹤清單 — 已存在的代碼只補 category / isCore，不覆蓋 name / market / addedBy / addedAt
+   * @param {Array<{code,name,market?,category?,isCore?}>} entries
+   * @param {string} addedBy
+   * @returns {{added:number, merged:number, skipped:number, total:number}}
+   */
+  importWatchlist(entries, addedBy = '') {
+    const data = readData();
+    let added = 0;
+    let merged = 0;
+    let skipped = 0;
+    for (const e of entries) {
+      if (!e || !e.code || !e.name) { skipped++; continue; }
+      const code = String(e.code).trim();
+      if (!/^\d{4,6}$/.test(code)) { skipped++; continue; }
+      const existing = data.watchlist.find(w => w.code === code);
+      if (existing) {
+        let changed = false;
+        if (e.category && existing.category !== e.category) { existing.category = e.category; changed = true; }
+        if (typeof e.isCore === 'boolean' && existing.isCore !== e.isCore) { existing.isCore = e.isCore; changed = true; }
+        if (changed) merged++;
+      } else {
+        const entry = {
+          code,
+          name: String(e.name).trim(),
+          market: e.market || 'sii',
+          addedBy,
+          addedAt: new Date().toISOString(),
+        };
+        if (e.category) entry.category = e.category;
+        if (typeof e.isCore === 'boolean') entry.isCore = e.isCore;
+        data.watchlist.push(entry);
+        added++;
+      }
+    }
+    writeData(data);
+    return { added, merged, skipped, total: data.watchlist.length };
   },
 
   removeFromWatchlist(code) {

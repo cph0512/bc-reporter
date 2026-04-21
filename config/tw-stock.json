@@ -1,0 +1,1193 @@
+{
+  "watchlist": [
+    {
+      "code": "3711",
+      "name": "日月光投控",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "2360",
+      "name": "致茂",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "7769",
+      "name": "鴻勁精密",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "2449",
+      "name": "京元電子",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3481",
+      "name": "群創",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "2409",
+      "name": "友達",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "2049",
+      "name": "上銀",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6789",
+      "name": "采鈺",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3374",
+      "name": "精材",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3680",
+      "name": "家登",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3450",
+      "name": "聯鈞",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6257",
+      "name": "矽格",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3131",
+      "name": "弘塑",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "6442",
+      "name": "光聖",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3583",
+      "name": "辛耘",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3413",
+      "name": "京鼎",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3714",
+      "name": "富采",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "7734",
+      "name": "印能",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3363",
+      "name": "上銓",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "4979",
+      "name": "華星光",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "4977",
+      "name": "眾達",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6451",
+      "name": "訊芯",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "4576",
+      "name": "大銀微",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "4770",
+      "name": "上品",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "2467",
+      "name": "志聖",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "6187",
+      "name": "萬潤",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "6640",
+      "name": "均華",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "6937",
+      "name": "天虹",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "2338",
+      "name": "光罩",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "1563",
+      "name": "巧新",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3587",
+      "name": "閎康",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "5443",
+      "name": "均豪",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "2464",
+      "name": "盟立",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3563",
+      "name": "牧德",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6664",
+      "name": "群翊",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3163",
+      "name": "波若威",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6849",
+      "name": "奇鼎",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "8374",
+      "name": "羅昇",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "8027",
+      "name": "鈦昇",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "6706",
+      "name": "惠特",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3289",
+      "name": "宜特",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "8064",
+      "name": "東捷",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6438",
+      "name": "迅得",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3055",
+      "name": "蔚華科",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6953",
+      "name": "家碩",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "4526",
+      "name": "東台",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6788",
+      "name": "華景電",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "4549",
+      "name": "桓達",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "6739",
+      "name": "竹陞科技",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "8111",
+      "name": "立碁",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3455",
+      "name": "由田",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6830",
+      "name": "汎銓",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3535",
+      "name": "晶彩科",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "6208",
+      "name": "日揚",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3551",
+      "name": "世禾",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "4908",
+      "name": "前鼎光電",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6215",
+      "name": "和椿",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "4580",
+      "name": "捷流閥業",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3178",
+      "name": "公準",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3580",
+      "name": "友威科",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "7704",
+      "name": "明遠",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6207",
+      "name": "雷科",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "7556",
+      "name": "意德士",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "6532",
+      "name": "瑞耘",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "4542",
+      "name": "科嶠",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "3581",
+      "name": "博磊",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "6667",
+      "name": "信紘科",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": true
+    },
+    {
+      "code": "6829",
+      "name": "千附精密",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3030",
+      "name": "德律",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "7822",
+      "name": "倍利",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "7751",
+      "name": "竑騰",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "7730",
+      "name": "暉盛",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "7728",
+      "name": "光焱科技",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "6909",
+      "name": "創控",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "3498",
+      "name": "陽程",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "equipment",
+      "isCore": false
+    },
+    {
+      "code": "2404",
+      "name": "漢唐",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "facility",
+      "isCore": true
+    },
+    {
+      "code": "6139",
+      "name": "亞翔",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "6691",
+      "name": "洋基工程",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.658Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "6196",
+      "name": "帆宣",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": true
+    },
+    {
+      "code": "5536",
+      "name": "聖暉",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": true
+    },
+    {
+      "code": "6613",
+      "name": "朋億",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "6826",
+      "name": "和淞",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "6903",
+      "name": "巨漢",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "3402",
+      "name": "漢科",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "8383",
+      "name": "千附實業",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "7721",
+      "name": "微程式",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "6944",
+      "name": "兆聯",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "6192",
+      "name": "巨路",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "7820",
+      "name": "立盈環保",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "7631",
+      "name": "聚賢研發",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "7813",
+      "name": "宇辰",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "facility",
+      "isCore": false
+    },
+    {
+      "code": "5347",
+      "name": "世界先進",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "6488",
+      "name": "環球晶",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "3037",
+      "name": "欣興",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "4958",
+      "name": "臻鼎-KY",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "1229",
+      "name": "聯華食品",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "3532",
+      "name": "台勝科",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "6223",
+      "name": "旺矽",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "6515",
+      "name": "穎崴",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "3105",
+      "name": "穩懋",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "5434",
+      "name": "崇越",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "4749",
+      "name": "新應材",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "1560",
+      "name": "中砂",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "1773",
+      "name": "勝一",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "1785",
+      "name": "光洋科",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "3081",
+      "name": "聯亞",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "1717",
+      "name": "長興",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "3010",
+      "name": "華立",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "8070",
+      "name": "長華",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "4772",
+      "name": "台特化",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "6182",
+      "name": "合晶",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "8028",
+      "name": "昇陽半",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "3663",
+      "name": "鑫科材料",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "4768",
+      "name": "晶呈科",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "6510",
+      "name": "精測",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "5234",
+      "name": "達興材料",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "4755",
+      "name": "三福化工",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "1711",
+      "name": "永光",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "6683",
+      "name": "雍智",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "8091",
+      "name": "翔名",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "3444",
+      "name": "利機",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "6217",
+      "name": "中探針",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "6959",
+      "name": "兆捷科技",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "1727",
+      "name": "中華化",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "5493",
+      "name": "三聯",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "6823",
+      "name": "濾能",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": true
+    },
+    {
+      "code": "4556",
+      "name": "旭然",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "7768",
+      "name": "頌勝科技",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "4960",
+      "name": "誠美材",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "7703",
+      "name": "銳澤",
+      "market": "rotc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "3467",
+      "name": "台灣精材",
+      "market": "sii",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    },
+    {
+      "code": "3430",
+      "name": "奇鈦科",
+      "market": "otc",
+      "addedBy": "QIC Import (PDF)",
+      "addedAt": "2026-04-21T12:11:06.659Z",
+      "category": "materials",
+      "isCore": false
+    }
+  ],
+  "financials": {}
+}
