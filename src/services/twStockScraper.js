@@ -270,16 +270,12 @@ async function fetchAllFinancials(stockCode, market = 'sii', yearsBack = 3, onPr
   let total = 0;
   let current = 0;
 
-  // 計算任務總數
+  // 計算任務總數（三大報表 + 月營收一次批次）
   for (let y = startYear; y <= latestYear; y++) {
     const maxSeason = (y === latestYear) ? latestSeason : 4;
     for (let s = 1; s <= maxSeason; s++) total += 3; // 3 reports per season
   }
-  // 月營收
-  for (let y = startYear; y <= currentYear; y++) {
-    const maxMonth = (y === currentYear) ? Math.max(1, currentMonth - 1) : 12;
-    for (let m = 1; m <= maxMonth; m++) total += 1;
-  }
+  total += 1; // 月營收一次批次（FinMind 一股一 call，省配額）
 
   // 抓取三大報表
   for (let y = startYear; y <= latestYear; y++) {
@@ -301,16 +297,9 @@ async function fetchAllFinancials(stockCode, market = 'sii', yearsBack = 3, onPr
     }
   }
 
-  // 抓取月營收
-  for (let y = startYear; y <= currentYear; y++) {
-    const maxMonth = (y === currentYear) ? Math.max(1, currentMonth - 1) : 12;
-    for (let m = 1; m <= maxMonth; m++) {
-      const monthKey = `${y}_${String(m).padStart(2, '0')}`;
-      if (onProgress) onProgress(++current, total, `月營收 ${monthKey}`);
-      result.revenue[monthKey] = await fetchMonthlyRevenue(stockCode, y, m, market);
-      await delay(REQUEST_DELAY);
-    }
-  }
+  // 月營收：一次 FinMind call 拉回所有月份（等同 fetchRevenueOnly 的做法）
+  if (onProgress) onProgress(++current, total, '月營收批次');
+  result.revenue = await fetchRevenueOnly(stockCode, market, yearsBack);
 
   return result;
 }
