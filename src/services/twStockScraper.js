@@ -327,6 +327,8 @@ async function fetchTwseBulkRevenue(market = 'sii') {
     const n = Number(String(v).replace(/,/g, ''));
     return Number.isFinite(n) ? n : 0;
   };
+  // TWSE/TPEX 以「千元」計，FinMind 用「元」。統一轉成元以免單位不一致。
+  const toYuan = (v) => toNum(v) * 1000;
 
   const map = new Map();
   for (const r of records) {
@@ -344,9 +346,9 @@ async function fetchTwseBulkRevenue(market = 'sii') {
       monthKey,
       entry: {
         '公司代號': code,
-        '當月營收': toNum(r['營業收入-當月營收']),
-        '上月營收': toNum(r['營業收入-上月營收']),
-        '去年當月營收': toNum(r['營業收入-去年當月營收']),
+        '當月營收': toYuan(r['營業收入-當月營收']),
+        '上月營收': toYuan(r['營業收入-上月營收']),
+        '去年當月營收': toYuan(r['營業收入-去年當月營收']),
         '上月比較增減(%)': toNum(r['營業收入-上月比較增減(%)']),
         '去年同月增減(%)': toNum(r['營業收入-去年同月增減(%)']),
         '營收年份': year,
