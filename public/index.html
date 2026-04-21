@@ -6066,6 +6066,10 @@ async function syncAllTwStock() {
     }
     await pollSyncJob(result.jobId, msgEl, statusEl);
     await loadTwStock();
+    const reportType = document.getElementById('twsReportType')?.value;
+    if (reportType === 'compare') renderCompareInline();
+    else if (reportType === 'prospect') renderProspectReport();
+    else if (typeof loadTwsFinancials === 'function') loadTwsFinancials();
   } catch (err) {
     msgEl.textContent = lang === 'en' ? 'Sync failed' : '同步失敗';
     setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
@@ -7521,6 +7525,11 @@ async function syncAllTwsRevenue() {
     }
     await pollSyncJob(result.jobId, msgEl, statusEl);
     await loadTwStock();
+    // 同步後刷新當前檢視的資料（個股財報 / 比較 / Prospect）
+    const reportType = document.getElementById('twsReportType')?.value;
+    if (reportType === 'compare') renderCompareInline();
+    else if (reportType === 'prospect') renderProspectReport();
+    else if (typeof loadTwsFinancials === 'function') loadTwsFinancials();
   } catch(e) { msgEl.textContent = '同步失敗'; }
 }
 
