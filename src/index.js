@@ -15,6 +15,7 @@ const authRoutes = require('./routes/auth');
 const botAuthRoutes = require('./routes/botAuth');
 const adminRoutes = require('./routes/admin');
 const pipelineRoutes = require('./routes/pipeline');
+const strategyRoutes = require('./routes/strategy');
 const twStockRoutes = require('./routes/twStock');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 const companyAccess = require('./middleware/companyAccess');
@@ -44,6 +45,9 @@ if (isProduction) {
 const bcClient = new BCClient(process.env);
 const reportEngine = new ReportEngine(bcClient);
 
+// Share reportEngine with strategy routes for KPI calculations
+app.locals.reportEngine = reportEngine;
+
 // ===== Middleware =====
 app.set('trust proxy', 1); // Trust Railway/Vercel reverse proxy for secure cookies
 app.use(securityHeaders());   // Helmet: CSP, HSTS, X-Frame-Options (規範 §5.1)
@@ -64,9 +68,16 @@ app.use(session({
 
 // ===== Public Routes (no auth) =====
 
+function sendNoStoreFile(res, filePath) {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.sendFile(filePath);
+}
+
 // Login page
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/login.html'));
+  sendNoStoreFile(res, path.join(__dirname, '../public/login.html'));
 });
 
 // Auth API (login/logout/me) — with login rate limiting (規範 §5.1)
@@ -109,7 +120,7 @@ app.get('/api/sync/export', (req, res) => {
   }
   auditLog('sync_export', req);
   // Strip password hashes from user data (規範 §5.2)
-  const safeUsers = userStore.getAllRaw().map(({ password, ...user }) => user);
+  const safeUsers = userStore.getAllRaw().map(({ passwordHash, ...user }) => user);
   res.json({
     users: safeUsers,
     pipeline: pipelineStore.getRawData(),
@@ -125,11 +136,16 @@ app.post('/api/sync/import-pipeline', express.json({ limit: '10mb' }), (req, res
     if (!leads) return res.status(400).json({ error: 'Missing leads' });
     const current = pipelineStore.getRawData();
     // Merge: add new leads (by id), update existing
-    const existingIds = new Set(current.leads.map(l => l.id));
+    const existingIdxMap = new Map(current.leads.map((l, i) => [l.id, i]));
     let added = 0, updated = 0;
     for (const lead of leads) {
-      if (!existingIds.has(lead.id)) {
+      const idx = existingIdxMap.get(lead.id);
+      if (idx !== undefined) {
+        current.leads[idx] = lead;
+        updated++;
+      } else {
         current.leads.push(lead);
+        existingIdxMap.set(lead.id, current.leads.length - 1);
         added++;
       }
     }
@@ -143,7 +159,7 @@ app.post('/api/sync/import-pipeline', express.json({ limit: '10mb' }), (req, res
       }
     }
     pipelineStore.setRawData(current);
-    res.json({ success: true, added, total_leads: current.leads.length, total_activities: current.activities.length });
+    res.json({ success: true, added, updated, total_leads: current.leads.length, total_activities: current.activities.length });
   } catch (e) {
     console.error('[Sync Import] Error:', e.message);
     res.status(500).json({ error: 'Import failed' });
@@ -177,7 +193,7 @@ app.get('/api/external/income', async (req, res) => {
   try {
     const { year, month, companyId } = req.query;
     const opts = companyId ? { companyId } : {};
-    const data = await reportEngine.getEbitda(parseInt(year), parseInt(month), opts);
+    const data = await reportEngine.getIncomeStatement(parseInt(year), parseInt(month), opts);
     res.json(data);
   } catch (e) { console.error('[API Error]', e.message); res.status(500).json({ error: 'Internal server error' }); }
 });
@@ -262,7 +278,7 @@ app.get('/api/external/contacts/stats', (req, res) => {
 
 // ===== Protected: Dashboard & Admin =====
 app.get('/', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  sendNoStoreFile(res, path.join(__dirname, '../public/index.html'));
 });
 app.get('/admin', requireAuth, requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin.html'));
@@ -275,13 +291,22 @@ app.get('/api/companies', requireAuth, (req, res) => {
 });
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/api/pipeline', requireAuth, pipelineRoutes);
+app.use('/api/strategy', requireAuth, strategyRoutes);
 app.use('/api/tw-stock', requireAuth, twStockRoutes);
 app.use('/api/contacts', requireAuth, aiLimiter, contactRoutes);
 app.use('/api', requireAuth, companyAccess, createReportRoutes(reportEngine));
 app.use('/docs', requireAuth, docsRoutes);
 
 // ===== Static Files (CSS/JS assets — after route matching) =====
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../public'), {
+  etag: false,
+  setHeaders: (res, filePath) => {
+    // No-cache for HTML to prevent stale JS
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
 
 // ===== Start Server (local) / Export (Vercel) =====
 userStore.ensureDefaultAdmin().catch(() => {});

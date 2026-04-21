@@ -11,14 +11,20 @@ router.get('/users', (req, res) => {
   res.json(userStore.getAll());
 });
 
-// GET /api/admin/users-export — full export for deployment sync (includes hashes)
+// GET /api/admin/users-export — full export for deployment sync (strips passwordHash)
 router.get('/users-export', (req, res) => {
-  res.json(userStore.getAllRaw());
+  res.json(userStore.getAll());
 });
 
 // GET /api/admin/pipeline-export — full pipeline data for deployment sync
 router.get('/pipeline-export', (req, res) => {
   res.json(pipelineStore.getRawData());
+});
+
+// GET /api/admin/salespeople — list users marked as sales
+router.get('/salespeople', (req, res) => {
+  const all = userStore.getAll();
+  res.json(all.filter(u => u.isSales || u.role === 'manager'));
 });
 
 // POST /api/admin/users — create user
