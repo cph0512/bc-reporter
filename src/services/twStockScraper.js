@@ -305,7 +305,62 @@ async function fetchAllFinancials(stockCode, market = 'sii', yearsBack = 3, onPr
 }
 
 /**
+ * 批次抓取整個市場最新月營收（TWSE/TPEX 公開 OpenAPI，免費無配額）
+ * 一次呼叫拿回該市場全部公司最新一個月的營收資料。
+ * @param {string} market - 'sii' (上市 → TWSE) or 'otc' (上櫃 → TPEX)
+ * @returns {Promise<Map<string, {monthKey: string, entry: object}>>}
+ */
+async function fetchTwseBulkRevenue(market = 'sii') {
+  const url = market === 'otc'
+    ? 'https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap05_O'
+    : 'https://openapi.twse.com.tw/v1/opendata/t187ap05_L';
+
+  const response = await axios.get(url, {
+    timeout: 30000,
+    maxRedirects: 5,
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BCReporter/1.0)' },
+  });
+  const records = Array.isArray(response.data) ? response.data : [];
+
+  const toNum = (v) => {
+    if (v == null || v === '' || v === '-') return 0;
+    const n = Number(String(v).replace(/,/g, ''));
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const map = new Map();
+  for (const r of records) {
+    const yyyymm = String(r['資料年月'] || '');
+    if (yyyymm.length < 5) continue;
+    const rocYear = parseInt(yyyymm.slice(0, -2), 10);
+    const month = parseInt(yyyymm.slice(-2), 10);
+    if (!rocYear || !month) continue;
+    const year = rocYear + 1911;
+    const monthKey = `${year}_${String(month).padStart(2, '0')}`;
+    const code = String(r['公司代號'] || '').trim();
+    if (!code) continue;
+
+    map.set(code, {
+      monthKey,
+      entry: {
+        '公司代號': code,
+        '當月營收': toNum(r['營業收入-當月營收']),
+        '上月營收': toNum(r['營業收入-上月營收']),
+        '去年當月營收': toNum(r['營業收入-去年當月營收']),
+        '上月比較增減(%)': toNum(r['營業收入-上月比較增減(%)']),
+        '去年同月增減(%)': toNum(r['營業收入-去年同月增減(%)']),
+        '營收年份': year,
+        '營收月份': month,
+      },
+    });
+  }
+  console.log(`[TWSE-OpenAPI] ${market}: ${map.size} companies, monthKey=${map.values().next().value?.monthKey || 'n/a'}`);
+  return map;
+}
+
+/**
  * 只抓月營收（FinMind 一次抓全部，約 2 秒 / 股）
+ * FinMind 失敗時自動 fallback 到 TWSE/TPEX OpenAPI（僅最新月份，免費無配額）
  */
 async function fetchRevenueOnly(stockCode, market = 'sii', yearsBack = 3) {
   const now = new Date();
@@ -337,6 +392,20 @@ async function fetchRevenueOnly(stockCode, market = 'sii', yearsBack = 3) {
   } catch (err) {
     console.error(`[twStockScraper] FinMind 月營收抓取失敗 ${stockCode}:`, err.message);
   }
+
+  // FinMind 失敗或空資料 → fallback 到 TWSE/TPEX OpenAPI（僅當月，但免費無配額）
+  if (Object.keys(result).length === 0) {
+    try {
+      const bulkMap = await fetchTwseBulkRevenue(market);
+      const found = bulkMap.get(stockCode);
+      if (found) {
+        result[found.monthKey] = [found.entry];
+        console.log(`[TWSE-OpenAPI] ${stockCode}: fallback 取得 ${found.monthKey}`);
+      }
+    } catch (err) {
+      console.error(`[twStockScraper] TWSE fallback 失敗 ${stockCode}:`, err.message);
+    }
+  }
   return result;
 }
 
@@ -347,5 +416,6 @@ module.exports = {
   fetchMonthlyRevenue,
   fetchAllFinancials,
   fetchRevenueOnly,
+  fetchTwseBulkRevenue,
   toROCYear,
 };

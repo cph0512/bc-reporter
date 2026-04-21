@@ -117,6 +117,7 @@ router.post('/sync/:code/revenue', async (req, res) => {
 });
 
 // 批次同步月營收（所有追蹤股票）— 立即回 jobId，背景跑
+// 使用 TWSE/TPEX OpenAPI 批次抓取：2 次 API call 蓋全市場，免費無配額
 router.post('/sync-revenue-all', async (req, res) => {
   const watchlist = twStockStore.getWatchlist();
   if (watchlist.length === 0) return res.json({ message: '追蹤清單為空' });
@@ -124,14 +125,42 @@ router.post('/sync-revenue-all', async (req, res) => {
   const jobId = createSyncJob('revenue', watchlist.length);
   const job = syncJobs.get(jobId);
 
-  // 背景執行
   (async () => {
+    // Step 1: 一次抓回兩個市場的最新月營收
+    let siiMap = new Map();
+    let otcMap = new Map();
+    try {
+      job.current = '載入 TWSE 上市月營收...';
+      siiMap = await scraper.fetchTwseBulkRevenue('sii');
+    } catch (err) {
+      job.failures.push({ error: `TWSE 上市抓取失敗: ${err.message}` });
+    }
+    try {
+      job.current = '載入 TPEX 上櫃月營收...';
+      otcMap = await scraper.fetchTwseBulkRevenue('otc');
+    } catch (err) {
+      job.failures.push({ error: `TPEX 上櫃抓取失敗: ${err.message}` });
+    }
+
+    // Step 2: 遍歷 watchlist，從 bulk map 取值並寫入
     for (const stock of watchlist) {
       job.current = `${stock.code} ${stock.name}`;
       try {
-        const revenue = await scraper.fetchRevenueOnly(stock.code, stock.market);
-        twStockStore.mergeFinancials(stock.code, { revenue });
-        job.ok++;
+        const map = stock.market === 'otc' ? otcMap : siiMap;
+        const found = map.get(stock.code);
+        if (found) {
+          twStockStore.mergeFinancials(stock.code, {
+            revenue: { [found.monthKey]: [found.entry] },
+          });
+          job.ok++;
+        } else {
+          job.fail++;
+          job.failures.push({
+            code: stock.code,
+            name: stock.name,
+            error: '未在 OpenAPI 找到（可能本月尚未公告或市場設定錯誤）',
+          });
+        }
       } catch (err) {
         job.fail++;
         job.failures.push({ code: stock.code, name: stock.name, error: err.message });
