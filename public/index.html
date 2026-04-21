@@ -6054,27 +6054,22 @@ async function syncAllTwStock() {
   const statusEl = document.getElementById('twsSyncStatus');
   const msgEl = document.getElementById('twsSyncMsg');
   statusEl.style.display = '';
-  msgEl.textContent = lang === 'en' ? 'Syncing all stocks...' : '正在同步所有股票...';
+  msgEl.textContent = lang === 'en' ? 'Starting sync for all stocks...' : '啟動同步所有股票...';
 
   try {
     const res = await fetch('/api/tw-stock/sync-all', { method: 'POST' });
     const result = await res.json();
-    if (res.ok) {
-      const ok = result.results?.filter(r => r.status === 'ok').length || 0;
-      const fail = result.results?.filter(r => r.status === 'error').length || 0;
-      msgEl.textContent = lang === 'en' ? `Done: ${ok} success, ${fail} failed` : `完成: ${ok} 成功, ${fail} 失敗`;
-      msgEl.parentElement.style.background = '#d4edda';
-      msgEl.parentElement.style.borderColor = '#c3e6cb';
-      msgEl.parentElement.style.color = '#155724';
-      await loadTwStock();
-    } else {
-      msgEl.textContent = result.error || '同步失敗';
+    if (!res.ok || !result.jobId) {
+      msgEl.textContent = result.error || result.message || (lang === 'en' ? 'Sync failed' : '同步失敗');
+      setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+      return;
     }
+    await pollSyncJob(result.jobId, msgEl, statusEl);
+    await loadTwStock();
   } catch (err) {
     msgEl.textContent = lang === 'en' ? 'Sync failed' : '同步失敗';
+    setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
   }
-
-  setTimeout(() => { statusEl.style.display = 'none'; }, 10000);
 }
 
 function showAddTwsModal() {
@@ -7511,20 +7506,56 @@ async function syncTwsRevenueOnly() {
 }
 
 async function syncAllTwsRevenue() {
-  if (!confirm(`批次同步所有追蹤股票的月營收？（${twsWatchlist.length} 檔，每檔約 30 秒）`)) return;
+  if (!confirm(`批次同步所有追蹤股票的月營收？（${twsWatchlist.length} 檔，每檔約 2 秒）`)) return;
   const statusEl = document.getElementById('twsSyncStatus');
   const msgEl = document.getElementById('twsSyncMsg');
   statusEl.style.display = '';
-  msgEl.textContent = `正在批次同步 ${twsWatchlist.length} 檔月營收... 請耐心等候`;
+  msgEl.textContent = `啟動批次同步 ${twsWatchlist.length} 檔月營收...`;
   try {
     const res = await fetch('/api/tw-stock/sync-revenue-all', {method:'POST'});
     const result = await res.json();
-    const ok = result.results?.filter(r=>r.status==='ok').length || 0;
-    const fail = result.results?.filter(r=>r.status==='error').length || 0;
-    msgEl.textContent = `完成：${ok} 成功${fail?' / '+fail+' 失敗':''}`;
+    if (!result.jobId) {
+      msgEl.textContent = result.message || result.error || '啟動失敗';
+      setTimeout(() => statusEl.style.display = 'none', 5000);
+      return;
+    }
+    await pollSyncJob(result.jobId, msgEl, statusEl);
     await loadTwStock();
   } catch(e) { msgEl.textContent = '同步失敗'; }
-  setTimeout(() => statusEl.style.display = 'none', 8000);
+}
+
+// 輪詢批次同步進度（每 2 秒一次）
+async function pollSyncJob(jobId, msgEl, statusEl) {
+  while (true) {
+    await new Promise(r => setTimeout(r, 2000));
+    let s;
+    try {
+      const r = await fetch(`/api/tw-stock/sync-job/${jobId}`);
+      s = await r.json();
+    } catch (e) {
+      msgEl.textContent = '查詢進度失敗';
+      setTimeout(() => statusEl.style.display = 'none', 5000);
+      return;
+    }
+    if (s.error) {
+      msgEl.textContent = s.error;
+      setTimeout(() => statusEl.style.display = 'none', 5000);
+      return;
+    }
+    if (s.status === 'running') {
+      const cur = s.current ? ` — ${s.current}` : '';
+      const failPart = s.fail ? ` / 失敗 ${s.fail}` : '';
+      msgEl.textContent = `同步中 ${s.done}/${s.total}（成功 ${s.ok}${failPart}）${cur}`;
+    } else {
+      const failPart = s.fail ? ` / ${s.fail} 失敗` : '';
+      msgEl.textContent = `完成：${s.ok} 成功${failPart}`;
+      if (s.failures && s.failures.length) {
+        console.warn('同步失敗清單:', s.failures);
+      }
+      setTimeout(() => statusEl.style.display = 'none', 8000);
+      return;
+    }
+  }
 }
 
 // ===== Report Type Change Handler =====

@@ -10,6 +10,30 @@ const { requireDashboard, requireAdmin, requireManagerOrAdmin } = require('../mi
 // 所有台股路由需 'twstock' dashboard 權限
 router.use(requireDashboard('twstock'));
 
+// ===== 批次同步工作追蹤（in-memory, 完成後 10 分鐘 TTL） =====
+const syncJobs = new Map();
+
+function createSyncJob(type, total) {
+  const id = `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  syncJobs.set(id, {
+    id, type, total,
+    done: 0, ok: 0, fail: 0,
+    current: null,
+    status: 'running',
+    startedAt: Date.now(),
+    finishedAt: null,
+    failures: [],
+  });
+  // 順手清舊的（完成超過 10 分鐘）
+  const now = Date.now();
+  for (const [k, j] of syncJobs) {
+    if (j.status !== 'running' && j.finishedAt && (now - j.finishedAt) > 10 * 60 * 1000) {
+      syncJobs.delete(k);
+    }
+  }
+  return id;
+}
+
 // ===== 追蹤清單 =====
 
 router.get('/watchlist', (req, res) => {
@@ -92,22 +116,58 @@ router.post('/sync/:code/revenue', async (req, res) => {
   }
 });
 
-// 批次同步月營收（所有追蹤股票）
+// 批次同步月營收（所有追蹤股票）— 立即回 jobId，背景跑
 router.post('/sync-revenue-all', async (req, res) => {
   const watchlist = twStockStore.getWatchlist();
   if (watchlist.length === 0) return res.json({ message: '追蹤清單為空' });
 
-  const results = [];
-  for (const stock of watchlist) {
-    try {
-      const revenue = await scraper.fetchRevenueOnly(stock.code, stock.market);
-      twStockStore.mergeFinancials(stock.code, { revenue });
-      results.push({ code: stock.code, name: stock.name, status: 'ok' });
-    } catch (err) {
-      results.push({ code: stock.code, name: stock.name, status: 'error', error: err.message });
+  const jobId = createSyncJob('revenue', watchlist.length);
+  const job = syncJobs.get(jobId);
+
+  // 背景執行
+  (async () => {
+    for (const stock of watchlist) {
+      job.current = `${stock.code} ${stock.name}`;
+      try {
+        const revenue = await scraper.fetchRevenueOnly(stock.code, stock.market);
+        twStockStore.mergeFinancials(stock.code, { revenue });
+        job.ok++;
+      } catch (err) {
+        job.fail++;
+        job.failures.push({ code: stock.code, name: stock.name, error: err.message });
+      }
+      job.done++;
     }
-  }
-  res.json({ message: `批次月營收同步完成`, results });
+    job.status = 'done';
+    job.current = null;
+    job.finishedAt = Date.now();
+  })().catch(err => {
+    job.status = 'error';
+    job.current = null;
+    job.finishedAt = Date.now();
+    job.failures.push({ error: err.message });
+  });
+
+  res.json({ jobId, total: watchlist.length });
+});
+
+// 查詢批次同步進度
+router.get('/sync-job/:jobId', (req, res) => {
+  const job = syncJobs.get(req.params.jobId);
+  if (!job) return res.status(404).json({ error: '找不到任務（可能已過期）' });
+  res.json({
+    jobId: job.id,
+    type: job.type,
+    status: job.status,
+    total: job.total,
+    done: job.done,
+    ok: job.ok,
+    fail: job.fail,
+    current: job.current,
+    failures: job.failures,
+    startedAt: job.startedAt,
+    finishedAt: job.finishedAt,
+  });
 });
 
 // 營收比較（多股同時比較，支援月/年）
@@ -233,18 +293,33 @@ router.post('/sync-all', requireAdmin, async (req, res) => {
     return res.json({ message: '追蹤清單為空' });
   }
 
-  const results = [];
-  for (const stock of watchlist) {
-    try {
-      const financials = await scraper.fetchAllFinancials(stock.code, stock.market);
-      twStockStore.saveFinancials(stock.code, financials);
-      results.push({ code: stock.code, name: stock.name, status: 'ok' });
-    } catch (err) {
-      results.push({ code: stock.code, name: stock.name, status: 'error', error: err.message });
-    }
-  }
+  const jobId = createSyncJob('all', watchlist.length);
+  const job = syncJobs.get(jobId);
 
-  res.json({ message: '批次同步完成', results });
+  (async () => {
+    for (const stock of watchlist) {
+      job.current = `${stock.code} ${stock.name}`;
+      try {
+        const financials = await scraper.fetchAllFinancials(stock.code, stock.market);
+        twStockStore.saveFinancials(stock.code, financials);
+        job.ok++;
+      } catch (err) {
+        job.fail++;
+        job.failures.push({ code: stock.code, name: stock.name, error: err.message });
+      }
+      job.done++;
+    }
+    job.status = 'done';
+    job.current = null;
+    job.finishedAt = Date.now();
+  })().catch(err => {
+    job.status = 'error';
+    job.current = null;
+    job.finishedAt = Date.now();
+    job.failures.push({ error: err.message });
+  });
+
+  res.json({ jobId, total: watchlist.length });
 });
 
 // ===== Excel 匯出 =====
