@@ -461,6 +461,58 @@ class BCClient {
     }
   }
 
+  /**
+   * 客戶分類帳明細 (Customer Ledger Entries) — 唯讀
+   * 用於科目餘額表客戶模式
+   */
+  async getCustomerLedgerEntries(options = {}) {
+    try {
+      const filters = [];
+      if (options.startDate) filters.push(`postingDate ge ${options.startDate}`);
+      if (options.endDate) filters.push(`postingDate le ${options.endDate}`);
+      if (options.customerNumber) filters.push(`customerNumber eq '${options.customerNumber}'`);
+      if (options.open !== undefined) filters.push(`open eq ${options.open}`);
+
+      return await this.requestAll(this.companyUrl('customerLedgerEntries', options.companyId), {
+        $select: 'id,customerNumber,customerName,documentType,documentNumber,postingDate,dueDate,description,amount,remainingAmount,open,currencyCode',
+        $filter: filters.length > 0 ? filters.join(' and ') : undefined,
+        $orderby: 'postingDate asc,entryNumber asc',
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] customerLedgerEntries API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 供應商分類帳明細 (Vendor Ledger Entries) — 唯讀
+   * 用於科目餘額表廠商模式
+   */
+  async getVendorLedgerEntries(options = {}) {
+    try {
+      const filters = [];
+      if (options.startDate) filters.push(`postingDate ge ${options.startDate}`);
+      if (options.endDate) filters.push(`postingDate le ${options.endDate}`);
+      if (options.vendorNumber) filters.push(`vendorNumber eq '${options.vendorNumber}'`);
+      if (options.open !== undefined) filters.push(`open eq ${options.open}`);
+
+      return await this.requestAll(this.companyUrl('vendorLedgerEntries', options.companyId), {
+        $select: 'id,vendorNumber,vendorName,documentType,documentNumber,postingDate,dueDate,description,amount,remainingAmount,open,currencyCode',
+        $filter: filters.length > 0 ? filters.join(' and ') : undefined,
+        $orderby: 'postingDate asc,entryNumber asc',
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('[BCClient] vendorLedgerEntries API not available');
+        return null;
+      }
+      throw error;
+    }
+  }
+
   // ===== Helper Methods =====
 
   static getMonthRange(year, month) {

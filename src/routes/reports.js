@@ -624,6 +624,136 @@ module.exports = function(reportEngine) {
     }
   });
 
+  // ===== 科目餘額表 (Account Balance Detail) =====
+
+  // Helper: subtract one day from a YYYY-MM-DD string
+  function subtractOneDay(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  /**
+   * 科目餘額表 — 科目模式
+   * Returns GL entries for period + opening balances from trial balance
+   * GET /api/ledger/balance-detail?startDate=&endDate=&accountNumbers=
+   */
+  router.get('/ledger/balance-detail', requireDashboard('ledger'), async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      if (!startDate || !endDate) return res.status(400).json({ error: 'startDate and endDate required' });
+
+      const co = companyOpts(req);
+      const accountNumbers = req.query.accountNumbers
+        ? req.query.accountNumbers.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+      const prevDate = subtractOneDay(startDate);
+
+      // Parallel: opening balance snapshot + period entries (sorted asc for running balance)
+      const [tbOpen, entries] = await Promise.all([
+        reportEngine.bc.getTrialBalance(`..${prevDate}`, co).catch(() => []),
+        reportEngine.bc.getGeneralLedgerEntries(startDate, endDate, {
+          ...co,
+          accountNumbers,
+          fetchAll: true,
+        }),
+      ]);
+
+      // Build opening balance map: accountNumber → signed balance (debit-credit)
+      const openingBalances = {};
+      (tbOpen || []).forEach(row => {
+        const d = parseFloat(row.balanceAtDateDebit) || 0;
+        const c = parseFloat(row.balanceAtDateCredit) || 0;
+        openingBalances[row.number] = d - c;
+      });
+
+      // Sort entries by accountNumber asc, then postingDate asc, entryNumber asc
+      (entries || []).sort((a, b) => {
+        if (a.accountNumber !== b.accountNumber) return (a.accountNumber || '').localeCompare(b.accountNumber || '');
+        if (a.postingDate !== b.postingDate) return a.postingDate.localeCompare(b.postingDate);
+        return (a.entryNumber || 0) - (b.entryNumber || 0);
+      });
+
+      res.json({ data: entries || [], openingBalances });
+    } catch (error) {
+      console.error('[API] Balance Detail error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * 科目餘額表 — 客戶模式
+   * GET /api/ledger/customer-ledger?startDate=&endDate=&customerNumber=&open=
+   */
+  router.get('/ledger/customer-ledger', requireDashboard('ledger'), async (req, res) => {
+    try {
+      const { startDate, endDate, customerNumber, open } = req.query;
+      const co = companyOpts(req);
+      const opts = {
+        ...co,
+        startDate, endDate, customerNumber,
+        ...(open !== undefined ? { open: open === 'true' } : {}),
+      };
+      const data = await reportEngine.bc.getCustomerLedgerEntries(opts);
+      if (data === null) return res.status(404).json({ error: 'customerLedgerEntries not available on this BC environment' });
+      res.json({ data });
+    } catch (error) {
+      console.error('[API] Customer Ledger error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * 科目餘額表 — 廠商模式
+   * GET /api/ledger/vendor-ledger?startDate=&endDate=&vendorNumber=&open=
+   */
+  router.get('/ledger/vendor-ledger', requireDashboard('ledger'), async (req, res) => {
+    try {
+      const { startDate, endDate, vendorNumber, open } = req.query;
+      const co = companyOpts(req);
+      const opts = {
+        ...co,
+        startDate, endDate, vendorNumber,
+        ...(open !== undefined ? { open: open === 'true' } : {}),
+      };
+      const data = await reportEngine.bc.getVendorLedgerEntries(opts);
+      if (data === null) return res.status(404).json({ error: 'vendorLedgerEntries not available on this BC environment' });
+      res.json({ data });
+    } catch (error) {
+      console.error('[API] Vendor Ledger error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * 客戶清單 (for selector)
+   * GET /api/customers-list
+   */
+  router.get('/customers-list', requireDashboard('ledger'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      const data = await reportEngine.bc.getCustomers(co);
+      res.json({ data: data || [] });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * 廠商清單 (for selector)
+   * GET /api/vendors-list
+   */
+  router.get('/vendors-list', requireDashboard('ledger'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      const data = await reportEngine.bc.getVendors(co);
+      res.json({ data: data || [] });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ===== Accounts =====
 
   router.get('/accounts', async (req, res) => {
