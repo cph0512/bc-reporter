@@ -650,7 +650,12 @@
 
   <!-- Results -->
   <div style="padding:0 24px 24px;max-width:1400px;margin:0 auto;">
-    <div id="ledgerSummary" style="margin-bottom:12px;font-size:13px;color:#666;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+      <div id="ledgerSummary" style="font-size:13px;color:#666;"></div>
+      <div id="ledgerExportBar" style="display:none;gap:8px;">
+        <button class="btn btn-export btn-sm" onclick="exportLedgerExcel()">Excel (.xlsx)</button>
+      </div>
+    </div>
     <div id="ledgerResults" class="content">
       <div class="loading" style="color:#999;">選擇查詢條件後點擊「查詢」</div>
     </div>
@@ -4244,8 +4249,10 @@ async function fetchLedger() {
 
   const resultsEl = document.getElementById('ledgerResults');
   const summaryEl = document.getElementById('ledgerSummary');
+  const exportBar = document.getElementById('ledgerExportBar');
   resultsEl.innerHTML = `<div class="loading">${l.ledgerLoading}</div>`;
   summaryEl.textContent = '';
+  exportBar.style.display = 'none';
 
   try {
     if (type === 'gl-entries') {
@@ -4331,9 +4338,47 @@ async function fetchLedger() {
       if (!res.ok) throw new Error(json.error);
       renderJournals(json.data || [], l, companyId);
     }
+    // Show export button for exportable types
+    if (['gl-entries', 'balance-detail'].includes(type)) {
+      exportBar.style.display = 'flex';
+    }
   } catch (e) {
     resultsEl.innerHTML = `<div class="loading" style="color:#c62828;">Error: ${e.message}</div>`;
   }
+}
+
+function exportLedgerExcel() {
+  const type = document.getElementById('ledgerQueryType').value;
+  const startDate = document.getElementById('ledgerStartDate').value;
+  const endDate = document.getElementById('ledgerEndDate').value;
+  const companyId = getCompanyId();
+
+  if (type === 'gl-entries') {
+    // Reuse existing export with GL type — build a minimal ledger export
+    const acctKeys = Array.from(ledgerSelectedAccounts.keys());
+    let url = `/api/export/ledger-excel?mode=account&companyId=${companyId}&startDate=${startDate}&endDate=${endDate}`;
+    if (acctKeys.length > 0 && acctKeys.length <= 30) url += `&accountNumbers=${acctKeys.join(',')}`;
+    window.location.href = url;
+    return;
+  }
+
+  if (type !== 'balance-detail') return;
+  const mode = getBDMode();
+  let url = `/api/export/ledger-excel?mode=${mode}&companyId=${companyId}&startDate=${startDate}&endDate=${endDate}`;
+
+  if (mode === 'account') {
+    const acctKeys = Array.from(ledgerSelectedAccounts.keys());
+    if (acctKeys.length > 0 && acctKeys.length <= 30) url += `&accountNumbers=${acctKeys.join(',')}`;
+  } else if (mode === 'customer') {
+    if (ledgerSelectedCustomer) url += `&customerNumber=${encodeURIComponent(ledgerSelectedCustomer.number)}`;
+    const openVal = document.getElementById('ledgerOpenFilter').value;
+    if (openVal) url += `&open=${openVal}`;
+  } else if (mode === 'vendor') {
+    if (ledgerSelectedVendor) url += `&vendorNumber=${encodeURIComponent(ledgerSelectedVendor.number)}`;
+    const openVal = document.getElementById('ledgerVendorOpenFilter').value;
+    if (openVal) url += `&open=${openVal}`;
+  }
+  window.location.href = url;
 }
 
 // =========================================

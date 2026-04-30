@@ -530,6 +530,196 @@ module.exports = function(reportEngine) {
     }
   });
 
+  // ===== Ledger Excel Export =====
+
+  router.get('/export/ledger-excel', requireDashboard('ledger'), async (req, res) => {
+    try {
+      const ExcelJS = require('exceljs');
+      const { mode = 'account', startDate, endDate, accountNumbers: acctParam,
+              customerNumber, vendorNumber, open } = req.query;
+      const co = companyOpts(req);
+
+      const hFill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A2E' } };
+      const acctFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF37474F' } };
+      const totFill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EAF6' } };
+      const hFont  = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+      const totFont = { bold: true, size: 10 };
+      const numFmt = '#,##0';
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'BC Financial Reporter';
+      wb.created = new Date();
+
+      const addHeaderRow = (ws, cols) => {
+        const r = ws.addRow(cols);
+        r.eachCell(c => { c.fill = hFill; c.font = hFont; c.alignment = { vertical: 'middle', wrapText: false }; c.border = { bottom: { style: 'thin', color: { argb: 'FF777777' } } }; });
+        r.height = 22;
+        return r;
+      };
+
+      if (mode === 'account') {
+        const accountNumbers = acctParam ? acctParam.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const prevDate = subtractOneDay(startDate);
+        const [tbOpen, entries] = await Promise.all([
+          reportEngine.bc.getTrialBalance(`..${prevDate}`, co).catch(() => []),
+          reportEngine.bc.getGeneralLedgerEntries(startDate, endDate, { ...co, accountNumbers, fetchAll: true }),
+        ]);
+        const openingMap = {};
+        (tbOpen || []).forEach(row => {
+          openingMap[row.number] = (parseFloat(row.balanceAtDateDebit) || 0) - (parseFloat(row.balanceAtDateCredit) || 0);
+        });
+        (entries || []).sort((a, b) => {
+          if (a.accountNumber !== b.accountNumber) return (a.accountNumber||'').localeCompare(b.accountNumber||'');
+          if (a.postingDate !== b.postingDate) return a.postingDate.localeCompare(b.postingDate);
+          return (a.entryNumber||0) - (b.entryNumber||0);
+        });
+
+        // Group by account
+        const groups = new Map();
+        (entries || []).forEach(e => {
+          const k = e.accountNumber || '';
+          if (!groups.has(k)) groups.set(k, []);
+          groups.get(k).push(e);
+        });
+
+        const ws = wb.addWorksheet('科目餘額表');
+        ws.columns = [
+          { key: 'date',   width: 14 },
+          { key: 'docno',  width: 18 },
+          { key: 'desc',   width: 40 },
+          { key: 'debit',  width: 14 },
+          { key: 'credit', width: 14 },
+          { key: 'bal',    width: 16 },
+        ];
+
+        // Title
+        ws.addRow([`科目餘額表　${startDate} ~ ${endDate}`]);
+        ws.getRow(1).font = { bold: true, size: 13 };
+        ws.mergeCells(1, 1, 1, 6);
+        ws.addRow([]);
+
+        groups.forEach((rows, acctNo) => {
+          const opening = openingMap[acctNo] || 0;
+          let running = opening;
+          let totDr = 0, totCr = 0;
+
+          // Account header
+          const acctRow = ws.addRow([`科目：${acctNo}`, '', '', '', '', `期初餘額：${opening.toLocaleString()}`]);
+          acctRow.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A2E' } }; c.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 }; });
+          ws.mergeCells(acctRow.number, 1, acctRow.number, 5);
+          acctRow.height = 22;
+
+          // Column headers
+          addHeaderRow(ws, ['過帳日期', '傳票號碼', '說明', '借方', '貸方', '餘額']);
+
+          // Data rows
+          rows.forEach((e, i) => {
+            const dr = e.debitAmount || 0;
+            const cr = e.creditAmount || 0;
+            running += dr - cr;
+            totDr += dr; totCr += cr;
+            const r = ws.addRow([e.postingDate, e.documentNumber, e.description, dr || null, cr || null, running]);
+            r.getCell(4).numFmt = numFmt;
+            r.getCell(5).numFmt = numFmt;
+            r.getCell(6).numFmt = numFmt;
+            r.getCell(4).font = { color: { argb: 'FF1565C0' } };
+            r.getCell(5).font = { color: { argb: 'FFC62828' } };
+            r.getCell(6).font = { bold: true };
+            if (i % 2 === 1) r.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F9FB' } }; });
+          });
+
+          // Subtotal
+          const closing = opening + totDr - totCr;
+          const tot = ws.addRow(['本期合計', `共 ${rows.length} 筆`, '', totDr, totCr, `期末：${closing.toLocaleString()}`]);
+          tot.eachCell(c => { c.fill = totFill; c.font = totFont; c.border = { top: { style: 'double', color: { argb: 'FF1A1A2E' } } }; });
+          tot.getCell(4).numFmt = numFmt;
+          tot.getCell(5).numFmt = numFmt;
+          ws.addRow([]);
+        });
+
+      } else {
+        // customer or vendor mode
+        const isCustomer = mode === 'customer';
+        const openFilter = open !== undefined ? (open === 'true') : undefined;
+        const opts = { ...co, startDate, endDate, ...(openFilter !== undefined ? { open: openFilter } : {}), ...(isCustomer ? { customerNumber } : { vendorNumber }) };
+        const entries = isCustomer
+          ? await reportEngine.bc.getCustomerLedgerEntries(opts)
+          : await reportEngine.bc.getVendorLedgerEntries(opts);
+
+        if (!entries) return res.status(404).json({ error: 'Ledger entries API not available' });
+
+        const numKey  = isCustomer ? 'customerNumber' : 'vendorNumber';
+        const nameKey = isCustomer ? 'customerName'   : 'vendorName';
+        const title   = isCustomer ? '應收帳款明細表' : '應付帳款明細表';
+
+        // Group
+        const groups = new Map();
+        entries.forEach(e => {
+          const k = e[numKey] || '(未知)';
+          if (!groups.has(k)) groups.set(k, { name: e[nameKey]||'', rows: [] });
+          groups.get(k).rows.push(e);
+        });
+
+        // Sheet 1: Summary
+        const wsSummary = wb.addWorksheet('彙總');
+        wsSummary.columns = [{ width: 14 }, { width: 30 }, { width: 10 }, { width: 16 }];
+        wsSummary.addRow([`${title}　${startDate} ~ ${endDate}`]);
+        wsSummary.getRow(1).font = { bold: true, size: 13 };
+        wsSummary.mergeCells(1, 1, 1, 4);
+        wsSummary.addRow([]);
+        addHeaderRow(wsSummary, ['編號', '名稱', '筆數', '餘額']);
+        let grandTotal = 0;
+        groups.forEach((g, num) => {
+          const bal = g.rows.reduce((s, r) => s + (r.remainingAmount || r.amount || 0), 0);
+          grandTotal += bal;
+          const r = wsSummary.addRow([num, g.name, g.rows.length, bal]);
+          r.getCell(4).numFmt = numFmt;
+          r.getCell(4).font = { color: { argb: bal < 0 ? 'FFC62828' : 'FF1565C0' } };
+        });
+        const totRow = wsSummary.addRow(['', '合計', '', grandTotal]);
+        totRow.eachCell(c => { c.fill = totFill; c.font = totFont; });
+        totRow.getCell(4).numFmt = numFmt;
+
+        // Sheet 2: Detail
+        const wsDetail = wb.addWorksheet('明細');
+        wsDetail.columns = [
+          { key: 'num',    width: 14 }, { key: 'name',   width: 24 },
+          { key: 'dtype',  width: 14 }, { key: 'docno',  width: 18 },
+          { key: 'pdate',  width: 12 }, { key: 'ddate',  width: 12 },
+          { key: 'desc',   width: 36 }, { key: 'amt',    width: 14 },
+          { key: 'rem',    width: 14 }, { key: 'status', width: 10 },
+        ];
+        wsDetail.addRow([`${title}　明細　${startDate} ~ ${endDate}`]);
+        wsDetail.getRow(1).font = { bold: true, size: 13 };
+        wsDetail.mergeCells(1, 1, 1, 10);
+        wsDetail.addRow([]);
+        addHeaderRow(wsDetail, [isCustomer?'客戶編號':'廠商編號', '名稱', '類型', '單號', '過帳日', '到期日', '說明', '金額', '未結餘額', '狀態']);
+        const today = new Date().toISOString().slice(0, 10);
+        let rowIdx = 0;
+        groups.forEach((g, num) => {
+          g.rows.forEach(e => {
+            const overdue = e.open && e.dueDate && e.dueDate < today;
+            const r = wsDetail.addRow([num, g.name, e.documentType, e.documentNumber, e.postingDate, e.dueDate, e.description, e.amount || null, e.remainingAmount || null, e.open ? '未結清' : '已結清']);
+            r.getCell(8).numFmt = numFmt;
+            r.getCell(9).numFmt = numFmt;
+            if (overdue) { r.getCell(6).font = { color: { argb: 'FFC62828' }, bold: true }; }
+            if (rowIdx % 2 === 1) r.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F9FB' } }; });
+            rowIdx++;
+          });
+        });
+      }
+
+      const modeLabel = mode === 'account' ? 'balance_detail' : (mode === 'customer' ? 'ar_detail' : 'ap_detail');
+      const filename = `${modeLabel}_${startDate}_${endDate}.xlsx`;
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      await wb.xlsx.write(res);
+      res.end();
+    } catch (error) {
+      console.error('[API] Ledger Excel export error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ===== Ledger / 查帳 API (Read-Only) =====
 
   router.get('/ledger/gl-entries', requireDashboard('ledger'), async (req, res) => {
