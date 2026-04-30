@@ -4117,11 +4117,14 @@ async function fetchLedger() {
       } else if (acctKeys.length > 30) {
         summaryEl.textContent = `已選 ${acctKeys.length} 個科目（超過 30 個，顯示全部分錄）`;
       }
+      // Ensure accounts cache is loaded before rendering (for accountName lookup)
+      if (ledgerAccountsCache.length === 0) await loadLedgerAccounts();
       const res = await fetch(url);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       renderGLEntries(json.data || [], l);
-      summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} ${l.ledgerCount}`;
+      const acctNote = acctKeys.length > 30 ? `（已選 ${acctKeys.length} 科目，顯示全部）` : '';
+      summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} ${l.ledgerCount}${acctNote}`;
 
     } else if (type === 'trial-balance') {
       const dateFilter = startDate && endDate ? `${startDate}..${endDate}` : undefined;
@@ -4150,6 +4153,10 @@ function renderGLEntries(entries, l) {
     container.innerHTML = `<div class="loading" style="color:#999;">${l.ledgerNoData}</div>`;
     return;
   }
+
+  // Build accountNumber → displayName lookup from cached accounts
+  const acctNameMap = {};
+  ledgerAccountsCache.forEach(a => { if (a.number) acctNameMap[a.number] = a.displayName || ''; });
 
   // Calculate totals
   let totalDebit = 0, totalCredit = 0;
@@ -4188,7 +4195,7 @@ function renderGLEntries(entries, l) {
       <td style="${td}">${e.postingDate || ''}</td>
       <td style="${td}font-family:monospace;font-size:12px;">${e.documentNumber || ''}</td>
       <td style="${td}font-weight:600;color:#1a1a2e;">${e.accountNumber || ''}</td>
-      <td style="${td}">${e.accountName || ''}</td>
+      <td style="${td}">${acctNameMap[e.accountNumber] || e.accountName || ''}</td>
       <td style="${td}color:#555;max-width:350px;overflow:hidden;text-overflow:ellipsis;" title="${(e.description || '').replace(/"/g, '&quot;')}">${e.description || ''}</td>
       <td style="${tdR}color:${debit ? '#1565c0' : '#ccc'};">${debit || '-'}</td>
       <td style="${tdR}color:${credit ? '#c62828' : '#ccc'};">${credit || '-'}</td>
