@@ -466,7 +466,7 @@ class BCClient {
    * 每筆含 _type: 'invoice'|'creditMemo'，供前端計算借貸與 running balance
    */
   async getCustomerLedgerFromInvoices(options = {}) {
-    const invoiceFilters = [];
+    const invoiceFilters = ["status ne 'Draft'"]; // include Open + Paid
     const memoFilters = ["status ne 'Draft'"];
     if (options.startDate) {
       invoiceFilters.push(`postingDate ge ${options.startDate}`);
@@ -509,7 +509,7 @@ class BCClient {
    * 廠商流水帳 — 合併 purchaseInvoices + purchaseCreditMemos
    */
   async getVendorLedgerFromInvoices(options = {}) {
-    const invFilters = [];
+    const invFilters = ["status ne 'Draft'"]; // include Open + Paid
     const memoFilters = ["status ne 'Draft'"];
     if (options.startDate) { invFilters.push(`postingDate ge ${options.startDate}`); memoFilters.push(`postingDate ge ${options.startDate}`); }
     if (options.endDate)   { invFilters.push(`postingDate le ${options.endDate}`);   memoFilters.push(`postingDate le ${options.endDate}`); }
@@ -517,7 +517,7 @@ class BCClient {
 
     const [invoices, memos] = await Promise.all([
       this.requestAll(this.companyUrl('purchaseInvoices', options.companyId), {
-        $select: 'id,number,postingDate,dueDate,vendorNumber,vendorName,currencyCode,totalAmountIncludingTax,status',
+        $select: 'id,number,postingDate,dueDate,vendorNumber,vendorName,currencyCode,totalAmountIncludingTax,remainingAmount,status',
         $filter: invFilters.length > 0 ? invFilters.join(' and ') : undefined,
       }).catch(() => []),
       this.requestAll(this.companyUrl('purchaseCreditMemos', options.companyId), {

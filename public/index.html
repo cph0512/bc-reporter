@@ -4682,32 +4682,76 @@ function renderInvoiceLedger(entries, type, source, l) {
     let running = 0;
     let totDr = 0, totCr = 0;
 
-    const rowsHtml = g.rows.map((e, i) => {
-      const amt = e.totalAmountIncludingTax || 0;
-      const isCM = e._type === 'creditMemo';
-      const dr = isCM ? 0 : amt;   // 應收增加 = 借方
-      const cr = isCM ? amt : 0;   // 折讓/折扣 = 貸方
-      running += dr - cr;
-      totDr += dr; totCr += cr;
-      const bg = i % 2 === 0 ? '#fff' : '#f8f9fb';
-      const isOpen = e.status === 'Open';
-      const overdue = isOpen && e.dueDate && e.dueDate < new Date().toISOString().slice(0,10);
-      const balColor = running < 0 ? '#c62828' : '#1a1a2e';
-      const typeLabel = isCM ? '折讓單' : '發票';
-      const typeColor = isCM ? '#c62828' : '#1565c0';
-      return `<tr style="background:${bg};">
-        <td style="padding:5px 8px;font-size:12px;">${e.postingDate || ''}</td>
-        <td style="padding:5px 8px;font-size:11px;"><span style="color:${typeColor};font-weight:600;">${typeLabel}</span></td>
-        <td style="padding:5px 8px;font-size:11px;font-family:monospace;">${e.number || ''}</td>
-        <td style="padding:5px 8px;font-size:12px;${overdue?'color:#c62828;font-weight:600;':''}">${e.dueDate || ''}</td>
-        <td style="padding:5px 8px;font-size:12px;color:#555;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(e.invoiceNumber||e.number||'').replace(/"/g,'&quot;')}">${isCM && e.invoiceNumber ? '對應發票：'+e.invoiceNumber : e.status||''}</td>
-        <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#1565c0;">${dr ? fmt(dr) : ''}</td>
-        <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#c62828;">${cr ? fmt(cr) : ''}</td>
-        <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:12px;color:${balColor};">${fmt(Math.abs(running)) || '-'}</td>
-        <td style="padding:5px 8px;text-align:center;font-size:11px;">
-          <span style="padding:2px 6px;border-radius:10px;background:${isOpen?'#fff3e0':'#e8f5e9'};color:${isOpen?'#e65100':'#2e7d32'};">${isOpen?'未結':'已結'}</span>
-        </td>
-      </tr>`;
+    // Expand each entry into debit row + optional payment (沖帳) row + optional creditMemo row
+    const today = new Date().toISOString().slice(0, 10);
+    let rowIdx = 0;
+    const rowsHtml = g.rows.flatMap(e => {
+      const amt     = e.totalAmountIncludingTax || 0;
+      const isCM    = e._type === 'creditMemo';
+      const isOpen  = e.status === 'Open';
+      const overdue = isOpen && e.dueDate && e.dueDate < today;
+      const rows = [];
+
+      // AR: Invoice=借方增, CreditMemo/Payment=貸方減
+      // AP: Invoice=貸方增(欠廠商), CreditMemo/Payment=借方減(減少AP)
+      if (isCM) {
+        // Credit memo: AR→貸方(減少應收), AP→借方(減少應付)
+        const drAmt = isCustomer ? 0   : amt;
+        const crAmt = isCustomer ? amt : 0;
+        running += drAmt - crAmt; totDr += drAmt; totCr += crAmt;
+        const bg = rowIdx++ % 2 === 0 ? '#fff' : '#f8f9fb';
+        rows.push(`<tr style="background:${bg};">
+          <td style="padding:5px 8px;font-size:12px;">${e.postingDate||''}</td>
+          <td style="padding:5px 8px;font-size:11px;"><span style="color:#c62828;font-weight:600;">折讓單</span></td>
+          <td style="padding:5px 8px;font-size:11px;font-family:monospace;">${e.number||''}</td>
+          <td style="padding:5px 8px;font-size:12px;">${e.dueDate||''}</td>
+          <td style="padding:5px 8px;font-size:12px;color:#555;">${e.invoiceNumber ? '對應：'+e.invoiceNumber : ''}</td>
+          <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#1565c0;">${drAmt ? fmt(drAmt) : '-'}</td>
+          <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#c62828;">${crAmt ? fmt(crAmt) : '-'}</td>
+          <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:12px;color:${running<0?'#c62828':'#1a1a2e'};">${fmt(Math.abs(running))||'0'}</td>
+          <td style="padding:5px 8px;text-align:center;font-size:11px;"><span style="padding:2px 6px;border-radius:10px;background:#fce4ec;color:#c62828;">折讓</span></td>
+        </tr>`);
+      } else {
+        // Invoice: AR→借方增應收, AP→貸方增應付
+        const drAmt = isCustomer ? amt : 0;
+        const crAmt = isCustomer ? 0   : amt;
+        running += drAmt - crAmt; totDr += drAmt; totCr += crAmt;
+        const bg1 = rowIdx++ % 2 === 0 ? '#fff' : '#f8f9fb';
+        const invoiceLabel = isCustomer ? '銷售發票' : '採購發票';
+        rows.push(`<tr style="background:${bg1};">
+          <td style="padding:5px 8px;font-size:12px;">${e.postingDate||''}</td>
+          <td style="padding:5px 8px;font-size:11px;"><span style="color:#1565c0;font-weight:600;">${invoiceLabel}</span></td>
+          <td style="padding:5px 8px;font-size:11px;font-family:monospace;">${e.number||''}</td>
+          <td style="padding:5px 8px;font-size:12px;${overdue?'color:#c62828;font-weight:600;':''}">${e.dueDate||''}</td>
+          <td style="padding:5px 8px;font-size:12px;color:#555;">${e.status||''}</td>
+          <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#1565c0;">${drAmt ? fmt(drAmt) : '-'}</td>
+          <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#c62828;">${crAmt ? fmt(crAmt) : '-'}</td>
+          <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:12px;color:${running<0?'#c62828':'#1a1a2e'};">${fmt(Math.abs(running))||'0'}</td>
+          <td style="padding:5px 8px;text-align:center;font-size:11px;"><span style="padding:2px 6px;border-radius:10px;background:${isOpen?'#fff3e0':'#e8f5e9'};color:${isOpen?'#e65100':'#2e7d32'};">${isOpen?'未結':'已結'}</span></td>
+        </tr>`);
+
+        // 沖帳行：收款(AR)或付款(AP)
+        const paid = amt - (e.remainingAmount != null ? e.remainingAmount : (e.status === 'Paid' ? 0 : amt));
+        if (paid > 0) {
+          const pDr = isCustomer ? 0    : paid;
+          const pCr = isCustomer ? paid : 0;
+          running += pDr - pCr; totDr += pDr; totCr += pCr;
+          const bg2 = rowIdx++ % 2 === 0 ? '#fff' : '#f8f9fb';
+          const payLabel = isCustomer ? '收款沖帳' : '付款沖帳';
+          rows.push(`<tr style="background:${bg2};">
+            <td style="padding:5px 8px;font-size:12px;">${e.postingDate||''}</td>
+            <td style="padding:5px 8px;font-size:11px;"><span style="color:#2e7d32;font-weight:600;">${payLabel}</span></td>
+            <td style="padding:5px 8px;font-size:11px;font-family:monospace;color:#666;">${e.number||''}</td>
+            <td style="padding:5px 8px;"></td>
+            <td style="padding:5px 8px;font-size:12px;color:#555;">沖銷 ${e.number||''}</td>
+            <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#1565c0;">${pDr ? fmt(pDr) : '-'}</td>
+            <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#2e7d32;">${pCr ? fmt(pCr) : '-'}</td>
+            <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:12px;color:${running<0?'#c62828':'#1a1a2e'};">${fmt(Math.abs(running))||'0'}</td>
+            <td style="padding:5px 8px;text-align:center;font-size:11px;"><span style="padding:2px 6px;border-radius:10px;background:#e8f5e9;color:#2e7d32;">沖帳</span></td>
+          </tr>`);
+        }
+      }
+      return rows;
     }).join('');
 
     const closing = totDr - totCr;
