@@ -462,6 +462,41 @@ class BCClient {
   }
 
   /**
+   * 應收帳款帳齡 (Aged Accounts Receivable) — 唯讀
+   * agedAsOfDate: YYYY-MM-DD, periodLength: e.g. '30D'
+   */
+  async getAgedAccountsReceivable(options = {}) {
+    try {
+      const params = {};
+      const filters = [];
+      if (options.agedAsOfDate) filters.push(`agedAsOfDate eq ${options.agedAsOfDate}`);
+      if (options.periodLengthFilter) filters.push(`periodLengthFilter eq '${options.periodLengthFilter}'`);
+      if (filters.length) params.$filter = filters.join(' and ');
+      return await this.requestAll(this.companyUrl('agedAccountsReceivable', options.companyId), params);
+    } catch (error) {
+      if (error.response?.status === 404) { console.log('[BCClient] agedAccountsReceivable not available'); return null; }
+      throw error;
+    }
+  }
+
+  /**
+   * 應付帳款帳齡 (Aged Accounts Payable) — 唯讀
+   */
+  async getAgedAccountsPayable(options = {}) {
+    try {
+      const params = {};
+      const filters = [];
+      if (options.agedAsOfDate) filters.push(`agedAsOfDate eq ${options.agedAsOfDate}`);
+      if (options.periodLengthFilter) filters.push(`periodLengthFilter eq '${options.periodLengthFilter}'`);
+      if (filters.length) params.$filter = filters.join(' and ');
+      return await this.requestAll(this.companyUrl('agedAccountsPayable', options.companyId), params);
+    } catch (error) {
+      if (error.response?.status === 404) { console.log('[BCClient] agedAccountsPayable not available'); return null; }
+      throw error;
+    }
+  }
+
+  /**
    * 客戶分類帳明細 (Customer Ledger Entries) — 唯讀
    * 用於科目餘額表客戶模式
    */

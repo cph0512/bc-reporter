@@ -4305,8 +4305,9 @@ async function fetchLedger() {
         const res = await fetch(url);
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
-        renderSubledger(json.data || [], 'customer', l);
-        summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆`;
+        renderSubledger(json.data || [], 'customer', json.source || 'ledgerEntries', l);
+        const srcNote = json.source === 'agedReceivable' ? '（帳齡資料）' : '';
+        summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNote}`;
 
       } else if (mode === 'vendor') {
         let url = `/api/ledger/vendor-ledger?companyId=${companyId}`;
@@ -4318,8 +4319,9 @@ async function fetchLedger() {
         const res = await fetch(url);
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
-        renderSubledger(json.data || [], 'vendor', l);
-        summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆`;
+        renderSubledger(json.data || [], 'vendor', json.source || 'ledgerEntries', l);
+        const srcNoteV = json.source === 'agedPayable' ? '（帳齡資料）' : '';
+        summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNoteV}`;
       }
 
     } else if (type === 'trial-balance') {
@@ -4482,10 +4484,15 @@ function renderBalanceDetail(entries, openingBalances, l) {
 // =========================================
 // 科目餘額表 — 客戶/廠商模式 (subledger)
 // =========================================
-function renderSubledger(entries, type, l) {
+function renderSubledger(entries, type, source, l) {
   const container = document.getElementById('ledgerResults');
   if (!entries || entries.length === 0) {
     container.innerHTML = `<div class="loading" style="color:#999;">查無資料</div>`;
+    return;
+  }
+  // If source is aged (fallback), use aged renderer
+  if (source === 'agedReceivable' || source === 'agedPayable') {
+    renderAgedSubledger(entries, type, source, l);
     return;
   }
 
@@ -4588,6 +4595,86 @@ function renderSubledger(entries, type, l) {
   });
 
   html += '</div>';
+  container.innerHTML = html;
+}
+
+// =========================================
+// Aged AR/AP fallback renderer
+// =========================================
+function renderAgedSubledger(entries, type, source, l) {
+  const container = document.getElementById('ledgerResults');
+  const isCustomer = type === 'customer';
+  const title = isCustomer ? '應收帳款帳齡明細' : '應付帳款帳齡明細';
+  const numKey  = isCustomer ? 'customerNumber' : 'vendorNumber';
+  const nameKey = 'name';
+
+  const fmt = v => (v != null && v !== 0 && v !== '')
+    ? Number(v).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    : '-';
+
+  const thS = 'padding:7px 10px;white-space:nowrap;position:sticky;top:0;z-index:2;background:#1a1a2e;color:#fff;font-size:12px;';
+  const thR = thS + 'text-align:right;';
+
+  // Totals
+  let totCur = 0, tot1 = 0, tot2 = 0, tot3 = 0, totBal = 0;
+  entries.forEach(r => {
+    totCur += parseFloat(r.currentAmount) || 0;
+    tot1   += parseFloat(r.period1Amount) || 0;
+    tot2   += parseFloat(r.period2Amount) || 0;
+    tot3   += parseFloat(r.period3Amount) || 0;
+    totBal += parseFloat(r.balanceDue)    || 0;
+  });
+
+  // Sample period info from first row
+  const asOfDate      = entries[0]?.agedAsOfDate      || '';
+  const periodLen     = entries[0]?.periodLengthFilter || '30D';
+  const days = parseInt(periodLen) || 30;
+
+  let html = `
+  <div style="background:#fff3e0;border:1px solid #ffe0b2;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:12px;color:#e65100;">
+    ⚠️ 此 BC 環境不支援 ${isCustomer?'客戶':'廠商'}分類帳明細（customerLedgerEntries/${isCustomer?'vendor':'customer'}LedgerEntries 不可用），
+    改顯示<strong>帳齡彙總</strong>（${isCustomer?'agedAccountsReceivable':'agedAccountsPayable'}）。
+    截止日：${asOfDate}，期間長度：${days} 天。
+  </div>
+  <div style="overflow-x:auto;border:1px solid #e0e0e0;border-radius:8px;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:750px;">
+    <thead><tr>
+      <th style="${thS}min-width:80px;">${isCustomer?'客戶編號':'廠商編號'}</th>
+      <th style="${thS}min-width:160px;">名稱</th>
+      <th style="${thS}">幣別</th>
+      <th style="${thR}min-width:100px;">未到期</th>
+      <th style="${thR}min-width:100px;">1~${days}天</th>
+      <th style="${thR}min-width:100px;">${days+1}~${days*2}天</th>
+      <th style="${thR}min-width:100px;">${days*2+1}天以上</th>
+      <th style="${thR}min-width:110px;background:#37474f;">合計應收</th>
+    </tr></thead>
+    <tbody>
+    ${entries.map((r, i) => {
+      const bal = parseFloat(r.balanceDue) || 0;
+      const bg = i % 2 === 0 ? '#fff' : '#f8f9fb';
+      return `<tr style="background:${bg};">
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;font-family:monospace;font-size:12px;">${r[numKey] || ''}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;font-size:12px;">${r[nameKey] || ''}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;font-size:11px;color:#666;">${r.currencyCode || ''}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums;">${fmt(r.currentAmount)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums;color:${parseFloat(r.period1Amount)?'#e65100':'inherit'};">${fmt(r.period1Amount)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums;color:${parseFloat(r.period2Amount)?'#c62828':'inherit'};">${fmt(r.period2Amount)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums;color:${parseFloat(r.period3Amount)?'#b71c1c':'inherit'};">${fmt(r.period3Amount)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:${bal<0?'#c62828':'#1565c0'};">${fmt(bal)}</td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+    <tfoot><tr style="background:#e8eaf6;font-weight:700;border-top:2px solid #1a1a2e;">
+      <td colspan="3" style="padding:10px;font-size:12px;">合計 ${entries.length} 筆</td>
+      <td style="padding:10px;text-align:right;font-variant-numeric:tabular-nums;">${fmt(totCur)}</td>
+      <td style="padding:10px;text-align:right;font-variant-numeric:tabular-nums;color:#e65100;">${fmt(tot1)}</td>
+      <td style="padding:10px;text-align:right;font-variant-numeric:tabular-nums;color:#c62828;">${fmt(tot2)}</td>
+      <td style="padding:10px;text-align:right;font-variant-numeric:tabular-nums;color:#b71c1c;">${fmt(tot3)}</td>
+      <td style="padding:10px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;color:#1565c0;">${fmt(totBal)}</td>
+    </tr></tfoot>
+  </table>
+  </div>`;
+
   container.innerHTML = html;
 }
 

@@ -878,16 +878,20 @@ module.exports = function(reportEngine) {
    */
   router.get('/ledger/customer-ledger', requireDashboard('ledger'), async (req, res) => {
     try {
-      const { startDate, endDate, customerNumber, open } = req.query;
+      const { startDate, endDate, customerNumber, open, agedAsOfDate, periodLength } = req.query;
       const co = companyOpts(req);
-      const opts = {
-        ...co,
-        startDate, endDate, customerNumber,
-        ...(open !== undefined ? { open: open === 'true' } : {}),
-      };
-      const data = await reportEngine.bc.getCustomerLedgerEntries(opts);
-      if (data === null) return res.status(404).json({ error: 'customerLedgerEntries not available on this BC environment' });
-      res.json({ data });
+      // Try customerLedgerEntries first; fall back to agedAccountsReceivable
+      const ledgerOpts = { ...co, startDate, endDate, customerNumber, ...(open !== undefined ? { open: open === 'true' } : {}) };
+      let data = await reportEngine.bc.getCustomerLedgerEntries(ledgerOpts);
+      if (data !== null) return res.json({ data, source: 'ledgerEntries' });
+
+      // Fallback: agedAccountsReceivable
+      const agedOpts = { ...co, agedAsOfDate: agedAsOfDate || endDate, periodLengthFilter: periodLength || '30D' };
+      const agedData = await reportEngine.bc.getAgedAccountsReceivable(agedOpts);
+      if (agedData === null) return res.status(404).json({ error: 'No AR data source available on this BC environment' });
+      // Filter by customerNumber if specified
+      const filtered = customerNumber ? agedData.filter(r => r.customerNumber === customerNumber) : agedData;
+      res.json({ data: filtered, source: 'agedReceivable' });
     } catch (error) {
       console.error('[API] Customer Ledger error:', error.message);
       res.status(500).json({ error: error.message });
@@ -900,16 +904,19 @@ module.exports = function(reportEngine) {
    */
   router.get('/ledger/vendor-ledger', requireDashboard('ledger'), async (req, res) => {
     try {
-      const { startDate, endDate, vendorNumber, open } = req.query;
+      const { startDate, endDate, vendorNumber, open, agedAsOfDate, periodLength } = req.query;
       const co = companyOpts(req);
-      const opts = {
-        ...co,
-        startDate, endDate, vendorNumber,
-        ...(open !== undefined ? { open: open === 'true' } : {}),
-      };
-      const data = await reportEngine.bc.getVendorLedgerEntries(opts);
-      if (data === null) return res.status(404).json({ error: 'vendorLedgerEntries not available on this BC environment' });
-      res.json({ data });
+      // Try vendorLedgerEntries first; fall back to agedAccountsPayable
+      const ledgerOpts = { ...co, startDate, endDate, vendorNumber, ...(open !== undefined ? { open: open === 'true' } : {}) };
+      let data = await reportEngine.bc.getVendorLedgerEntries(ledgerOpts);
+      if (data !== null) return res.json({ data, source: 'ledgerEntries' });
+
+      // Fallback: agedAccountsPayable
+      const agedOpts = { ...co, agedAsOfDate: agedAsOfDate || endDate, periodLengthFilter: periodLength || '30D' };
+      const agedData = await reportEngine.bc.getAgedAccountsPayable(agedOpts);
+      if (agedData === null) return res.status(404).json({ error: 'No AP data source available on this BC environment' });
+      const filtered = vendorNumber ? agedData.filter(r => r.vendorNumber === vendorNumber) : agedData;
+      res.json({ data: filtered, source: 'agedPayable' });
     } catch (error) {
       console.error('[API] Vendor Ledger error:', error.message);
       res.status(500).json({ error: error.message });
