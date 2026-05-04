@@ -885,13 +885,18 @@ module.exports = function(reportEngine) {
       let data = await reportEngine.bc.getCustomerLedgerEntries(ledgerOpts);
       if (data !== null) return res.json({ data, source: 'ledgerEntries' });
 
-      // Fallback: agedAccountsReceivable
+      // Fallback 2: agedAccountsReceivable
       const agedOpts = { ...co, agedAsOfDate: agedAsOfDate || endDate, periodLengthFilter: periodLength || '30D' };
       const agedData = await reportEngine.bc.getAgedAccountsReceivable(agedOpts);
-      if (agedData === null) return res.status(404).json({ error: 'No AR data source available on this BC environment' });
-      // Filter by customerNumber if specified
-      const filtered = customerNumber ? agedData.filter(r => r.customerNumber === customerNumber) : agedData;
-      res.json({ data: filtered, source: 'agedReceivable' });
+      if (agedData !== null) {
+        const filtered = customerNumber ? agedData.filter(r => r.customerNumber === customerNumber) : agedData;
+        return res.json({ data: filtered, source: 'agedReceivable' });
+      }
+
+      // Fallback 3: salesInvoices (Open) with remainingAmount
+      const siData = await reportEngine.bc.getARFromSalesInvoices({ ...co, startDate, endDate, customerNumber });
+      if (siData === null) return res.status(404).json({ error: 'No AR data source available on this BC environment' });
+      res.json({ data: siData, source: 'salesInvoices' });
     } catch (error) {
       console.error('[API] Customer Ledger error:', error.message);
       res.status(500).json({ error: error.message });
@@ -911,12 +916,18 @@ module.exports = function(reportEngine) {
       let data = await reportEngine.bc.getVendorLedgerEntries(ledgerOpts);
       if (data !== null) return res.json({ data, source: 'ledgerEntries' });
 
-      // Fallback: agedAccountsPayable
+      // Fallback 2: agedAccountsPayable
       const agedOpts = { ...co, agedAsOfDate: agedAsOfDate || endDate, periodLengthFilter: periodLength || '30D' };
       const agedData = await reportEngine.bc.getAgedAccountsPayable(agedOpts);
-      if (agedData === null) return res.status(404).json({ error: 'No AP data source available on this BC environment' });
-      const filtered = vendorNumber ? agedData.filter(r => r.vendorNumber === vendorNumber) : agedData;
-      res.json({ data: filtered, source: 'agedPayable' });
+      if (agedData !== null) {
+        const filtered = vendorNumber ? agedData.filter(r => r.vendorNumber === vendorNumber) : agedData;
+        return res.json({ data: filtered, source: 'agedPayable' });
+      }
+
+      // Fallback 3: purchaseInvoices (Open)
+      const piData = await reportEngine.bc.getAPFromPurchaseInvoices({ ...co, startDate, endDate, vendorNumber });
+      if (piData === null) return res.status(404).json({ error: 'No AP data source available on this BC environment' });
+      res.json({ data: piData, source: 'purchaseInvoices' });
     } catch (error) {
       console.error('[API] Vendor Ledger error:', error.message);
       res.status(500).json({ error: error.message });

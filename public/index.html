@@ -4306,7 +4306,8 @@ async function fetchLedger() {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
         renderSubledger(json.data || [], 'customer', json.source || 'ledgerEntries', l);
-        const srcNote = json.source === 'agedReceivable' ? '（帳齡資料）' : '';
+        const srcMap = { agedReceivable: '（帳齡彙總）', salesInvoices: '（未結銷售發票）', ledgerEntries: '' };
+        const srcNote = srcMap[json.source] || '';
         summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNote}`;
 
       } else if (mode === 'vendor') {
@@ -4320,7 +4321,8 @@ async function fetchLedger() {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
         renderSubledger(json.data || [], 'vendor', json.source || 'ledgerEntries', l);
-        const srcNoteV = json.source === 'agedPayable' ? '（帳齡資料）' : '';
+        const srcMapV = { agedPayable: '（帳齡彙總）', purchaseInvoices: '（未結採購發票）', ledgerEntries: '' };
+        const srcNoteV = srcMapV[json.source] || '';
         summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNoteV}`;
       }
 
@@ -4490,10 +4492,24 @@ function renderSubledger(entries, type, source, l) {
     container.innerHTML = `<div class="loading" style="color:#999;">查無資料</div>`;
     return;
   }
-  // If source is aged (fallback), use aged renderer
+  // Aged fallback → different renderer
   if (source === 'agedReceivable' || source === 'agedPayable') {
     renderAgedSubledger(entries, type, source, l);
     return;
+  }
+  // salesInvoices / purchaseInvoices: normalise field names to match ledgerEntries shape
+  if (source === 'salesInvoices' || source === 'purchaseInvoices') {
+    const isCustomerSrc = source === 'salesInvoices';
+    entries = entries.map(e => ({
+      ...e,
+      documentNumber: e.number,
+      documentType: isCustomerSrc ? 'Invoice' : 'Invoice',
+      amount: e.totalAmountIncludingTax,
+      remainingAmount: e.remainingAmount ?? e.totalAmountIncludingTax,
+      open: (e.status === 'Open'),
+      customerName: e.customerName || e.vendorName,
+      vendorName: e.vendorName || e.customerName,
+    }));
   }
 
   const fmt = v => v != null && v !== 0

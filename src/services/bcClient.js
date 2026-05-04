@@ -462,6 +462,46 @@ class BCClient {
   }
 
   /**
+   * AR 明細 via salesInvoices (Open) — 當 customerLedgerEntries / agedAR 不可用時的備援
+   */
+  async getARFromSalesInvoices(options = {}) {
+    try {
+      const filters = ["status eq 'Open'"];
+      if (options.startDate) filters.push(`postingDate ge ${options.startDate}`);
+      if (options.endDate) filters.push(`postingDate le ${options.endDate}`);
+      if (options.customerNumber) filters.push(`customerNumber eq '${options.customerNumber}'`);
+      return await this.requestAll(this.companyUrl('salesInvoices', options.companyId), {
+        $select: 'id,number,invoiceDate,postingDate,dueDate,customerNumber,customerName,currencyCode,totalAmountIncludingTax,remainingAmount,status',
+        $filter: filters.join(' and '),
+        $orderby: 'customerNumber asc,postingDate asc',
+      });
+    } catch (error) {
+      if (error.response?.status === 404) return null;
+      throw error;
+    }
+  }
+
+  /**
+   * AP 明細 via purchaseInvoices (Open) — 備援
+   */
+  async getAPFromPurchaseInvoices(options = {}) {
+    try {
+      const filters = ["status eq 'Open'"];
+      if (options.startDate) filters.push(`postingDate ge ${options.startDate}`);
+      if (options.endDate) filters.push(`postingDate le ${options.endDate}`);
+      if (options.vendorNumber) filters.push(`vendorNumber eq '${options.vendorNumber}'`);
+      return await this.requestAll(this.companyUrl('purchaseInvoices', options.companyId), {
+        $select: 'id,number,invoiceDate,postingDate,dueDate,vendorNumber,vendorName,currencyCode,totalAmountIncludingTax,status',
+        $filter: filters.join(' and '),
+        $orderby: 'vendorNumber asc,postingDate asc',
+      });
+    } catch (error) {
+      if (error.response?.status === 404) return null;
+      throw error;
+    }
+  }
+
+  /**
    * 應收帳款帳齡 (Aged Accounts Receivable) — 唯讀
    * agedAsOfDate: YYYY-MM-DD, periodLength: e.g. '30D'
    */
