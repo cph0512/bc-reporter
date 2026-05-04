@@ -878,14 +878,23 @@ module.exports = function(reportEngine) {
    */
   router.get('/ledger/customer-ledger', requireDashboard('ledger'), async (req, res) => {
     try {
-      const { startDate, endDate, customerNumber, open, agedAsOfDate, periodLength } = req.query;
+      const { startDate, endDate, customerNumber, open, agedAsOfDate, periodLength, view } = req.query;
       const co = companyOpts(req);
-      // Try customerLedgerEntries first; fall back to agedAccountsReceivable
+
+      // view=invoices → force salesInvoices+creditMemos ledger view (running balance, 沖帳)
+      // view=aged (default) → try ledgerEntries → agedAR → invoices
+      if (view === 'invoices') {
+        const openBool = open === 'true' ? true : open === 'false' ? false : undefined;
+        const siData = await reportEngine.bc.getCustomerLedgerFromInvoices({ ...co, startDate, endDate, customerNumber, open: openBool });
+        return res.json({ data: siData || [], source: 'salesInvoices' });
+      }
+
+      // Try customerLedgerEntries first (requires Web Service publish)
       const ledgerOpts = { ...co, startDate, endDate, customerNumber, ...(open !== undefined ? { open: open === 'true' } : {}) };
       let data = await reportEngine.bc.getCustomerLedgerEntries(ledgerOpts);
       if (data !== null) return res.json({ data, source: 'ledgerEntries' });
 
-      // Fallback 2: agedAccountsReceivable
+      // Fallback: agedAccountsReceivables (plural — works on standard BC v2.0)
       const agedOpts = { ...co, agedAsOfDate: agedAsOfDate || endDate, periodLengthFilter: periodLength || '30D' };
       const agedData = await reportEngine.bc.getAgedAccountsReceivable(agedOpts);
       if (agedData !== null) {
@@ -893,7 +902,7 @@ module.exports = function(reportEngine) {
         return res.json({ data: filtered, source: 'agedReceivable' });
       }
 
-      // Fallback 3: salesInvoices + salesCreditMemos (debit/credit ledger view)
+      // Final fallback: salesInvoices + salesCreditMemos
       const openBool = open === 'true' ? true : open === 'false' ? false : undefined;
       const siData = await reportEngine.bc.getCustomerLedgerFromInvoices({ ...co, startDate, endDate, customerNumber, open: openBool });
       res.json({ data: siData || [], source: 'salesInvoices' });
@@ -909,14 +918,20 @@ module.exports = function(reportEngine) {
    */
   router.get('/ledger/vendor-ledger', requireDashboard('ledger'), async (req, res) => {
     try {
-      const { startDate, endDate, vendorNumber, open, agedAsOfDate, periodLength } = req.query;
+      const { startDate, endDate, vendorNumber, open, agedAsOfDate, periodLength, view } = req.query;
       const co = companyOpts(req);
-      // Try vendorLedgerEntries first; fall back to agedAccountsPayable
+
+      if (view === 'invoices') {
+        const openBool = open === 'true' ? true : open === 'false' ? false : undefined;
+        const piData = await reportEngine.bc.getVendorLedgerFromInvoices({ ...co, startDate, endDate, vendorNumber, open: openBool });
+        return res.json({ data: piData || [], source: 'purchaseInvoices' });
+      }
+
       const ledgerOpts = { ...co, startDate, endDate, vendorNumber, ...(open !== undefined ? { open: open === 'true' } : {}) };
       let data = await reportEngine.bc.getVendorLedgerEntries(ledgerOpts);
       if (data !== null) return res.json({ data, source: 'ledgerEntries' });
 
-      // Fallback 2: agedAccountsPayable
+      // Fallback: agedAccountsPayables (plural)
       const agedOpts = { ...co, agedAsOfDate: agedAsOfDate || endDate, periodLengthFilter: periodLength || '30D' };
       const agedData = await reportEngine.bc.getAgedAccountsPayable(agedOpts);
       if (agedData !== null) {
@@ -924,7 +939,6 @@ module.exports = function(reportEngine) {
         return res.json({ data: filtered, source: 'agedPayable' });
       }
 
-      // Fallback 3: purchaseInvoices + purchaseCreditMemos (debit/credit ledger view)
       const openBool = open === 'true' ? true : open === 'false' ? false : undefined;
       const piData = await reportEngine.bc.getVendorLedgerFromInvoices({ ...co, startDate, endDate, vendorNumber, open: openBool });
       res.json({ data: piData || [], source: 'purchaseInvoices' });

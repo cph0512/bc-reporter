@@ -612,9 +612,13 @@
   <div id="ledgerCustomerFilter" style="display:none;padding:0 24px;max-width:1400px;margin:0 auto;">
     <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:16px;">
       <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;display:block;" id="ledgerLabelCustomer">客戶篩選</label>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-        <input type="text" id="ledgerCustomerSearch" oninput="filterLedgerCustomers()" placeholder="搜尋客戶編號或名稱..." style="flex:1;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
-        <select id="ledgerOpenFilter" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+        <input type="text" id="ledgerCustomerSearch" oninput="filterLedgerCustomers()" placeholder="搜尋客戶編號或名稱..." style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <select id="ledgerCustomerView" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" title="查詢模式">
+          <option value="aged" selected>帳齡彙總（按客戶分組+分桶）</option>
+          <option value="invoices">發票流水帳（含沖帳明細）</option>
+        </select>
+        <select id="ledgerOpenFilter" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" title="僅發票流水帳模式有效">
           <option value="">全部（含已結清）</option>
           <option value="true" selected>未結清</option>
           <option value="false">已結清</option>
@@ -622,15 +626,25 @@
       </div>
       <div id="ledgerCustomerList" style="max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:6px;padding:4px;"></div>
       <div id="ledgerSelectedCustomerChip" style="margin-top:6px;font-size:12px;color:#1565c0;font-weight:600;"></div>
+      <!-- AR GL fallback: search by AR account number for true point-in-time balance -->
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:#888;">時光回溯查歷史總額？改用GL科目：</span>
+        <input type="text" id="ledgerCustomerArAccount" placeholder="應收帳款科目 (e.g. 117201)" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;width:210px;">
+        <span style="font-size:11px;color:#aaa;">填入後查詢將改用 GL 借貸明細（不分客戶）</span>
+      </div>
     </div>
   </div>
   <!-- Balance Detail: Vendor filter panel -->
   <div id="ledgerVendorFilter" style="display:none;padding:0 24px;max-width:1400px;margin:0 auto;">
     <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:16px;">
       <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;display:block;" id="ledgerLabelVendor">廠商篩選</label>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-        <input type="text" id="ledgerVendorSearch" oninput="filterLedgerVendors()" placeholder="搜尋廠商編號或名稱..." style="flex:1;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
-        <select id="ledgerVendorOpenFilter" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+        <input type="text" id="ledgerVendorSearch" oninput="filterLedgerVendors()" placeholder="搜尋廠商編號或名稱..." style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+        <select id="ledgerVendorView" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" title="查詢模式">
+          <option value="aged" selected>帳齡彙總（按廠商分組+分桶）</option>
+          <option value="invoices">發票流水帳（含沖帳明細）</option>
+        </select>
+        <select id="ledgerVendorOpenFilter" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" title="僅發票流水帳模式有效">
           <option value="">全部（含已結清）</option>
           <option value="true" selected>未結清</option>
           <option value="false">已結清</option>
@@ -4364,19 +4378,31 @@ async function fetchLedger() {
         summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆`;
 
       } else if (mode === 'customer') {
-        let url = `/api/ledger/customer-ledger?companyId=${companyId}`;
-        if (startDate) url += `&startDate=${startDate}`;
-        if (endDate) url += `&endDate=${endDate}`;
-        const openVal = document.getElementById('ledgerOpenFilter').value;
-        if (openVal) url += `&open=${openVal}`;
-        if (ledgerSelectedCustomer) url += `&customerNumber=${encodeURIComponent(ledgerSelectedCustomer.number)}`;
-        const res = await fetch(url);
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error);
-        renderSubledger(json.data || [], 'customer', json.source || 'ledgerEntries', l);
-        const srcMap = { agedReceivable: '（帳齡彙總）', salesInvoices: '（未結銷售發票）', ledgerEntries: '' };
-        const srcNote = srcMap[json.source] || '';
-        summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNote}`;
+        const arAccount = (document.getElementById('ledgerCustomerArAccount').value || '').trim();
+        if (arAccount) {
+          // AR account GL mode: reuse balance-detail endpoint for true point-in-time balance
+          let url = `/api/ledger/balance-detail?companyId=${companyId}&startDate=${startDate}&endDate=${endDate}&accountNumbers=${encodeURIComponent(arAccount)}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.error);
+          renderBalanceDetail(json.data || [], json.openingBalances || {}, l);
+          summaryEl.textContent = `${startDate} ~ ${endDate} | 科目 ${arAccount} | ${(json.data || []).length} 筆（GL 應收帳款 — 時光回溯）`;
+        } else {
+          const view = document.getElementById('ledgerCustomerView').value || 'aged';
+          let url = `/api/ledger/customer-ledger?companyId=${companyId}&view=${view}`;
+          if (startDate) url += `&startDate=${startDate}`;
+          if (endDate) url += `&endDate=${endDate}`;
+          const openVal = document.getElementById('ledgerOpenFilter').value;
+          if (openVal) url += `&open=${openVal}`;
+          if (ledgerSelectedCustomer) url += `&customerNumber=${encodeURIComponent(ledgerSelectedCustomer.number)}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.error);
+          renderSubledger(json.data || [], 'customer', json.source || 'ledgerEntries', l);
+          const srcMap = { agedReceivable: '（帳齡彙總 — 客戶分組）', salesInvoices: '（發票流水帳）', ledgerEntries: '' };
+          const srcNote = srcMap[json.source] || '';
+          summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNote}`;
+        }
 
       } else if (mode === 'vendor') {
         const apAccount = (document.getElementById('ledgerVendorApAccount').value || '').trim();
@@ -4389,7 +4415,8 @@ async function fetchLedger() {
           renderBalanceDetail(json.data || [], json.openingBalances || {}, l);
           summaryEl.textContent = `${startDate} ~ ${endDate} | 科目 ${apAccount} | ${(json.data || []).length} 筆（GL 應付帳款）`;
         } else {
-          let url = `/api/ledger/vendor-ledger?companyId=${companyId}`;
+          const view = document.getElementById('ledgerVendorView').value || 'aged';
+          let url = `/api/ledger/vendor-ledger?companyId=${companyId}&view=${view}`;
           if (startDate) url += `&startDate=${startDate}`;
           if (endDate) url += `&endDate=${endDate}`;
           const openVal = document.getElementById('ledgerVendorOpenFilter').value;
@@ -4399,7 +4426,7 @@ async function fetchLedger() {
           const json = await res.json();
           if (!res.ok) throw new Error(json.error);
           renderSubledger(json.data || [], 'vendor', json.source || 'ledgerEntries', l);
-          const srcMapV = { agedPayable: '（帳齡彙總）', purchaseInvoices: '（採購發票）', ledgerEntries: '' };
+          const srcMapV = { agedPayable: '（帳齡彙總 — 廠商分組）', purchaseInvoices: '（發票流水帳）', ledgerEntries: '' };
           const srcNoteV = srcMapV[json.source] || '';
           summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNoteV}`;
         }
@@ -5037,6 +5064,15 @@ function renderAgedSubledger(entries, type, source, l) {
   const title = isCustomer ? '應收帳款帳齡明細' : '應付帳款帳齡明細';
   const numKey  = isCustomer ? 'customerNumber' : 'vendorNumber';
   const nameKey = 'name';
+  // Filter out the "Total" summary row that BC returns (empty customer/vendor id)
+  entries = (entries || []).filter(r => {
+    const id = isCustomer ? r.customerId : r.vendorId;
+    return id && id !== '00000000-0000-0000-0000-000000000000';
+  });
+  if (entries.length === 0) {
+    container.innerHTML = `<div class="loading" style="color:#999;">查無資料</div>`;
+    return;
+  }
 
   const fmt = v => (v != null && v !== 0 && v !== '')
     ? Number(v).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
@@ -5061,10 +5097,8 @@ function renderAgedSubledger(entries, type, source, l) {
   const days = parseInt(periodLen) || 30;
 
   let html = `
-  <div style="background:#fff3e0;border:1px solid #ffe0b2;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:12px;color:#e65100;">
-    ⚠️ 此 BC 環境不支援 ${isCustomer?'客戶':'廠商'}分類帳明細（customerLedgerEntries/${isCustomer?'vendor':'customer'}LedgerEntries 不可用），
-    改顯示<strong>帳齡彙總</strong>（${isCustomer?'agedAccountsReceivable':'agedAccountsPayable'}）。
-    截止日：${asOfDate}，期間長度：${days} 天。
+  <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:12px;color:#2e7d32;">
+    ${title} — 截止日：<strong>${asOfDate}</strong>，期間長度：${days} 天｜資料來源：${isCustomer?'agedAccountsReceivables':'agedAccountsPayables'}
   </div>
   <div style="overflow-x:auto;border:1px solid #e0e0e0;border-radius:8px;">
   <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:750px;">

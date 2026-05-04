@@ -601,9 +601,10 @@ class BCClient {
       if (options.agedAsOfDate) filters.push(`agedAsOfDate eq ${options.agedAsOfDate}`);
       if (options.periodLengthFilter) filters.push(`periodLengthFilter eq '${options.periodLengthFilter}'`);
       if (filters.length) params.$filter = filters.join(' and ');
-      return await this.requestAll(this.companyUrl('agedAccountsReceivable', options.companyId), params);
+      // BC v2.0 endpoint name is plural: agedAccountsReceivables
+      return await this.requestAll(this.companyUrl('agedAccountsReceivables', options.companyId), params);
     } catch (error) {
-      if (error.response?.status === 404) { console.log('[BCClient] agedAccountsReceivable not available'); return null; }
+      if (error.response?.status === 404) { console.log('[BCClient] agedAccountsReceivables not available'); return null; }
       throw error;
     }
   }
@@ -618,9 +619,10 @@ class BCClient {
       if (options.agedAsOfDate) filters.push(`agedAsOfDate eq ${options.agedAsOfDate}`);
       if (options.periodLengthFilter) filters.push(`periodLengthFilter eq '${options.periodLengthFilter}'`);
       if (filters.length) params.$filter = filters.join(' and ');
-      return await this.requestAll(this.companyUrl('agedAccountsPayable', options.companyId), params);
+      // BC v2.0 endpoint name is plural: agedAccountsPayables
+      return await this.requestAll(this.companyUrl('agedAccountsPayables', options.companyId), params);
     } catch (error) {
-      if (error.response?.status === 404) { console.log('[BCClient] agedAccountsPayable not available'); return null; }
+      if (error.response?.status === 404) { console.log('[BCClient] agedAccountsPayables not available'); return null; }
       throw error;
     }
   }
