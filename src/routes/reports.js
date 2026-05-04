@@ -891,23 +891,18 @@ module.exports = function(reportEngine) {
           reportEngine.bc.getCustomerLedgerFromInvoices({ ...co, startDate, endDate, customerNumber, open: openBool }),
           prevDate ? reportEngine.bc.getCustomerLedgerFromInvoices({ ...co, endDate: prevDate, customerNumber }) : Promise.resolve([]),
         ]);
-        // Compute opening balance per customer: sum invoices - sum creditMemos
+        // Compute opening balance + customer name per entity
         const openingByEntity = {};
+        const nameByEntity = {};
         (prePeriod || []).forEach(e => {
           const k = e.customerNumber || '';
           if (!openingByEntity[k]) openingByEntity[k] = 0;
           const amt = e.totalAmountIncludingTax || 0;
           openingByEntity[k] += e._type === 'creditMemo' ? -amt : amt;
+          if (e.customerName) nameByEntity[k] = e.customerName;
         });
         if (!siData || siData.length === 0) {
-          // Tier 2: try aged
-          const agedOpts = { ...co, agedAsOfDate: agedAsOfDate || endDate, periodLengthFilter: periodLength || '30D' };
-          const agedData = await reportEngine.bc.getAgedAccountsReceivable(agedOpts);
-          if (agedData && agedData.length > 0) {
-            const filtered = customerNumber ? agedData.filter(r => r.customerNumber === customerNumber) : agedData;
-            return res.json({ data: filtered, source: 'agedReceivable', autoFallback: true });
-          }
-          // Tier 3: GL on AR accounts
+          // Skip aged — go straight to GL on AR accounts (per user preference)
           const arAccounts = await reportEngine.bc.getPostingAccountsBySubCategory('應收帳款', co);
           if (arAccounts && arAccounts.length > 0) {
             const acctNums = arAccounts.map(a => a.number);
@@ -927,7 +922,7 @@ module.exports = function(reportEngine) {
             return res.json({ data: glEntries || [], source: 'glReceivable', openingBalances, autoFallback: true, arAccounts: arAccounts.map(a => ({ number: a.number, displayName: a.displayName })) });
           }
         }
-        return res.json({ data: siData || [], source: 'salesInvoices', openingByEntity });
+        return res.json({ data: siData || [], source: 'salesInvoices', openingByEntity, nameByEntity });
       }
 
       // Try customerLedgerEntries first (requires Web Service publish)
@@ -970,21 +965,16 @@ module.exports = function(reportEngine) {
           prevDate ? reportEngine.bc.getVendorLedgerFromInvoices({ ...co, endDate: prevDate, vendorNumber }) : Promise.resolve([]),
         ]);
         const openingByEntity = {};
+        const nameByEntity = {};
         (prePeriod || []).forEach(e => {
           const k = e.vendorNumber || '';
           if (!openingByEntity[k]) openingByEntity[k] = 0;
           const amt = e.totalAmountIncludingTax || 0;
           openingByEntity[k] += e._type === 'creditMemo' ? -amt : amt;
+          if (e.vendorName) nameByEntity[k] = e.vendorName;
         });
-        // Auto-fallback chain: aged → GL
+        // No invoices → go straight to GL AP accounts (skip aged per user preference)
         if (!piData || piData.length === 0) {
-          const agedOpts = { ...co, agedAsOfDate: agedAsOfDate || endDate, periodLengthFilter: periodLength || '30D' };
-          const agedData = await reportEngine.bc.getAgedAccountsPayable(agedOpts);
-          if (agedData && agedData.length > 0) {
-            const filtered = vendorNumber ? agedData.filter(r => r.vendorNumber === vendorNumber) : agedData;
-            return res.json({ data: filtered, source: 'agedPayable', autoFallback: true });
-          }
-          // Tier 3: GL on AP accounts (217101 應付帳款-廠商, 217102 應付帳款-員工, 218101 應付帳款-關係人 etc.)
           const apAccounts = await reportEngine.bc.getPostingAccountsBySubCategory('應付帳款', co);
           if (apAccounts && apAccounts.length > 0) {
             const acctNums = apAccounts.map(a => a.number);
@@ -1003,7 +993,7 @@ module.exports = function(reportEngine) {
             return res.json({ data: glEntries || [], source: 'glPayable', openingBalances, autoFallback: true, apAccounts: apAccounts.map(a => ({ number: a.number, displayName: a.displayName })) });
           }
         }
-        return res.json({ data: piData || [], source: 'purchaseInvoices', openingByEntity });
+        return res.json({ data: piData || [], source: 'purchaseInvoices', openingByEntity, nameByEntity });
       }
 
       const ledgerOpts = { ...co, startDate, endDate, vendorNumber, ...(open !== undefined ? { open: open === 'true' } : {}) };

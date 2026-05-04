@@ -2418,11 +2418,11 @@ function populateMyPlWeekSelect() {
   const sel = document.getElementById('myPlWeekSelect');
   const current = sel.value;
   const thisWeek = getCurrentWeekLabel();
-  const weeks = [...new Set(myPlActivitiesCache.map(a => a.weekLabel))].sort().reverse();
+  const weeks = [...new Set(myPlActivitiesCache.map(a => getWeekStartLabel(a.createdAt)).filter(Boolean))].sort().reverse();
   if (!weeks.includes(thisWeek)) weeks.unshift(thisWeek);
   else { weeks.splice(weeks.indexOf(thisWeek), 1); weeks.unshift(thisWeek); }
   sel.innerHTML = weeks.map((w, i) =>
-    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(w)}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
+    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(getWeekRangeLabel(w))}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
   ).join('');
 }
 
@@ -2506,8 +2506,8 @@ function renderMyPipelineTable() {
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = leads.map(lead => {
-    // Filter activities by selected week (週次)
-    const weekActs = myPlActivitiesCache.filter(a => a.leadId === lead.id && a.content && a.weekLabel === weekLabel);
+    // Filter activities by Monday-of-week (derived from createdAt)
+    const weekActs = myPlActivitiesCache.filter(a => a.leadId === lead.id && a.content && getWeekStartLabel(a.createdAt) === weekLabel);
     const latestAct = weekActs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
     const reviewText = latestAct ? escHtml(latestAct.content) : '';
     const reviewDate = latestAct && latestAct.createdAt ? fmtTWDate(latestAct.createdAt) : '';
@@ -2659,12 +2659,34 @@ function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-function getCurrentWeekLabel() {
-  const now = new Date();
-  const y = now.getFullYear() - 1911;
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}/${m}/${d}`;
+// Week-start (Monday) label in 民國 format: "115/04/28"
+// Robust: takes any input (Date, ISO string, undefined) and returns the Monday of that week
+function getWeekStartLabel(input) {
+  const d = input ? new Date(input) : new Date();
+  if (isNaN(d.getTime())) return getWeekStartLabel(); // fallback to current
+  // Monday-anchored week (ISO 8601): Mon=1 ... Sun=7
+  const dow = d.getDay() === 0 ? 7 : d.getDay(); // JS: Sun=0 → 7
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - (dow - 1));
+  monday.setHours(0, 0, 0, 0);
+  const y = monday.getFullYear() - 1911;
+  const m = String(monday.getMonth() + 1).padStart(2, '0');
+  const day = String(monday.getDate()).padStart(2, '0');
+  return `${y}/${m}/${day}`;
+}
+
+// Backward-compat alias — was previously TODAY's date; now returns Monday
+function getCurrentWeekLabel() { return getWeekStartLabel(); }
+
+// Display label "115/04/28 ~ 05/04" for a Monday-week-start
+function getWeekRangeLabel(monLabel) {
+  const m = monLabel.match(/(\d+)\/(\d+)\/(\d+)/);
+  if (!m) return monLabel;
+  const yearAD = parseInt(m[1]) + 1911;
+  const mon = new Date(yearAD, parseInt(m[2]) - 1, parseInt(m[3]));
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const fmt = d => `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  return `${monLabel} ~ ${fmt(sun)}`;
 }
 
 function fmtTWDate(isoStr) {
@@ -2902,12 +2924,13 @@ function populatePlWeekSelect() {
   const sel = document.getElementById('plWeekSelect');
   const current = sel.value;
   const thisWeek = getCurrentWeekLabel();
-  // Get unique weeks from activities
-  const weeks = [...new Set(plActivitiesCache.map(a => a.weekLabel))].sort().reverse();
+  // Bucket activities by Monday-of-week derived from createdAt (NOT messy weekLabel field)
+  const weeks = [...new Set(plActivitiesCache.map(a => getWeekStartLabel(a.createdAt)).filter(Boolean))]
+    .sort().reverse();
   if (!weeks.includes(thisWeek)) weeks.unshift(thisWeek);
   else { weeks.splice(weeks.indexOf(thisWeek), 1); weeks.unshift(thisWeek); }
   sel.innerHTML = weeks.map((w, i) =>
-    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(w)}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
+    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(getWeekRangeLabel(w))}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
   ).join('');
 }
 
@@ -2956,8 +2979,8 @@ function renderPipelineTable() {
   empty.style.display = 'none';
 
   tbody.innerHTML = leads.map(lead => {
-    // Filter activities by selected week (週次) — falls back to latest if no week match
-    const weekActs = plActivitiesCache.filter(a => a.leadId === lead.id && a.content && a.weekLabel === weekLabel);
+    // Filter activities by Monday-of-week (derived from createdAt to avoid messy weekLabel data)
+    const weekActs = plActivitiesCache.filter(a => a.leadId === lead.id && a.content && getWeekStartLabel(a.createdAt) === weekLabel);
     const latestAct = weekActs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
     const reviewText = latestAct ? escHtml(latestAct.content) : '';
     const reviewDate = latestAct && latestAct.createdAt ? fmtTWDate(latestAct.createdAt) : '';
@@ -4378,6 +4401,8 @@ async function fetchLedger() {
         summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆`;
 
       } else if (mode === 'customer') {
+        // Ensure customers cache loaded for name lookup
+        if (ledgerCustomersCache.length === 0) await loadLedgerCustomers();
         const arAccount = (document.getElementById('ledgerCustomerArAccount').value || '').trim();
         if (arAccount) {
           // AR account GL mode: reuse balance-detail endpoint for true point-in-time balance
@@ -4404,7 +4429,7 @@ async function fetchLedger() {
             const acctList = (json.arAccounts || []).map(a => `${a.number} ${a.displayName}`).join('、');
             summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆 | 採購發票/帳齡無資料 → 改用 GL 應收帳款科目（${acctList}）`;
           } else {
-            renderSubledger(json.data || [], 'customer', json.source || 'ledgerEntries', l, { openingByEntity: json.openingByEntity || {} });
+            renderSubledger(json.data || [], 'customer', json.source || 'ledgerEntries', l, { openingByEntity: json.openingByEntity || {}, nameByEntity: json.nameByEntity || {} });
             const srcMap = { agedReceivable: '（帳齡彙總 — 客戶分組）', salesInvoices: '（發票流水帳）', ledgerEntries: '' };
             const srcNote = srcMap[json.source] || '';
             const fbNote = json.autoFallback ? '（無發票，自動切到帳齡）' : '';
@@ -4413,6 +4438,7 @@ async function fetchLedger() {
         }
 
       } else if (mode === 'vendor') {
+        if (ledgerVendorsCache.length === 0) await loadLedgerVendors();
         const apAccount = (document.getElementById('ledgerVendorApAccount').value || '').trim();
         if (apAccount) {
           // AP account GL mode: reuse balance-detail endpoint
@@ -4438,7 +4464,7 @@ async function fetchLedger() {
             const acctList = (json.apAccounts || []).map(a => `${a.number} ${a.displayName}`).join('、');
             summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆 | 採購發票/帳齡無資料 → 改用 GL 應付帳款科目（${acctList}）`;
           } else {
-            renderSubledger(json.data || [], 'vendor', json.source || 'ledgerEntries', l, { openingByEntity: json.openingByEntity || {} });
+            renderSubledger(json.data || [], 'vendor', json.source || 'ledgerEntries', l, { openingByEntity: json.openingByEntity || {}, nameByEntity: json.nameByEntity || {} });
             const srcMapV = { agedPayable: '（帳齡彙總 — 廠商分組）', purchaseInvoices: '（發票流水帳）', ledgerEntries: '' };
             const srcNoteV = srcMapV[json.source] || '';
             const fbNoteV = json.autoFallback ? '（無發票，自動切到帳齡）' : '';
@@ -4754,6 +4780,12 @@ function renderInvoiceLedger(entries, type, source, l, extra) {
   const nameKey = isCustomer ? 'customerName'   : 'vendorName';
   const title   = isCustomer ? '應收帳款明細帳' : '應付帳款明細帳';
   const openingByEntity = (extra && extra.openingByEntity) || {};
+  const nameByEntity    = (extra && extra.nameByEntity)    || {};
+  // Build name lookup: prefer cached customers/vendors list, then fall back to nameByEntity from API
+  const cache = isCustomer ? ledgerCustomersCache : ledgerVendorsCache;
+  const cacheNameMap = {};
+  (cache || []).forEach(e => { if (e.number) cacheNameMap[e.number] = e.displayName || ''; });
+  const lookupName = num => nameByEntity[num] || cacheNameMap[num] || '';
 
   // Only show 沖帳 offset rows when filter is 未結清 (openVal === 'true')
   // When showing all or already-settled, omit offset rows to reduce noise
@@ -4785,7 +4817,7 @@ function renderInvoiceLedger(entries, type, source, l, extra) {
   // Also include customers/vendors that have no period entries but had opening balance
   Object.keys(openingByEntity).forEach(num => {
     if (!groups.has(num) && openingByEntity[num] !== 0) {
-      groups.set(num, { name: '', rows: [] });
+      groups.set(num, { name: lookupName(num), rows: [] });
     }
   });
 
@@ -4801,7 +4833,8 @@ function renderInvoiceLedger(entries, type, source, l, extra) {
     });
     const closing = opening + period;
     grandOpening += opening; grandPeriod += period; grandTotal += closing;
-    summaryRows.push({ num, name: g.name, count: g.rows.length, opening, period, closing });
+    const finalName = g.name || lookupName(num);
+    summaryRows.push({ num, name: finalName, count: g.rows.length, opening, period, closing });
   });
   summaryRows.sort((a, b) => Math.abs(b.closing) - Math.abs(a.closing));
 
@@ -4927,9 +4960,10 @@ function renderInvoiceLedger(entries, type, source, l, extra) {
       <td style="padding:6px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:${opening<0?'#c62828':'#1a1a2e'};">${fmt(Math.abs(opening)) || '0'}</td>
       <td></td>
     </tr>`;
+    const displayName = g.name || lookupName(num);
     html += `<div style="border:1px solid #d0d0d0;border-radius:8px;overflow:hidden;">
       <div style="background:#37474f;color:#fff;padding:8px 14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-        <span style="font-weight:700;font-size:13px;">${num} ${g.name}</span>
+        <span style="font-weight:700;font-size:13px;">${num} ${displayName}</span>
         <span style="font-size:12px;opacity:.9;">期初：<strong style="color:#80cbc4;">${fmt(Math.abs(opening)) || '0'}</strong> ｜ 期末：<strong style="color:${closing<0?'#ef9a9a':'#80cbc4'};">${fmt(Math.abs(closing)) || '0'}</strong></span>
       </div>
       <div style="overflow-x:auto;max-height:50vh;overflow-y:auto;">
