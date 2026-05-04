@@ -882,11 +882,52 @@ module.exports = function(reportEngine) {
       const co = companyOpts(req);
 
       // view=invoices → force salesInvoices+creditMemos ledger view (running balance, 沖帳)
-      // view=aged (default) → try ledgerEntries → agedAR → invoices
+      // view=aged → try ledgerEntries → agedAR → invoices
       if (view === 'invoices') {
         const openBool = open === 'true' ? true : open === 'false' ? false : undefined;
-        const siData = await reportEngine.bc.getCustomerLedgerFromInvoices({ ...co, startDate, endDate, customerNumber, open: openBool });
-        return res.json({ data: siData || [], source: 'salesInvoices' });
+        // Fetch period entries + opening (entries with postingDate < startDate, ALL statuses)
+        const prevDate = startDate ? subtractOneDay(startDate) : null;
+        const [siData, prePeriod] = await Promise.all([
+          reportEngine.bc.getCustomerLedgerFromInvoices({ ...co, startDate, endDate, customerNumber, open: openBool }),
+          prevDate ? reportEngine.bc.getCustomerLedgerFromInvoices({ ...co, endDate: prevDate, customerNumber }) : Promise.resolve([]),
+        ]);
+        // Compute opening balance per customer: sum invoices - sum creditMemos
+        const openingByEntity = {};
+        (prePeriod || []).forEach(e => {
+          const k = e.customerNumber || '';
+          if (!openingByEntity[k]) openingByEntity[k] = 0;
+          const amt = e.totalAmountIncludingTax || 0;
+          openingByEntity[k] += e._type === 'creditMemo' ? -amt : amt;
+        });
+        if (!siData || siData.length === 0) {
+          // Tier 2: try aged
+          const agedOpts = { ...co, agedAsOfDate: agedAsOfDate || endDate, periodLengthFilter: periodLength || '30D' };
+          const agedData = await reportEngine.bc.getAgedAccountsReceivable(agedOpts);
+          if (agedData && agedData.length > 0) {
+            const filtered = customerNumber ? agedData.filter(r => r.customerNumber === customerNumber) : agedData;
+            return res.json({ data: filtered, source: 'agedReceivable', autoFallback: true });
+          }
+          // Tier 3: GL on AR accounts
+          const arAccounts = await reportEngine.bc.getPostingAccountsBySubCategory('應收帳款', co);
+          if (arAccounts && arAccounts.length > 0) {
+            const acctNums = arAccounts.map(a => a.number);
+            const glEntries = await reportEngine.bc.getGeneralLedgerEntries(startDate, endDate, { ...co, accountNumbers: acctNums, fetchAll: true });
+            // Compute opening balances per AR account
+            const prevDate = startDate ? subtractOneDay(startDate) : null;
+            const openingBalances = {};
+            if (prevDate) {
+              const tbOpen = await reportEngine.bc.getTrialBalance(`..${prevDate}`, co).catch(() => []);
+              (tbOpen || []).forEach(row => {
+                if (acctNums.includes(row.number)) {
+                  openingBalances[row.number] = (parseFloat(row.balanceAtDateDebit)||0) - (parseFloat(row.balanceAtDateCredit)||0);
+                }
+              });
+            }
+            (glEntries || []).sort((a,b) => (a.accountNumber||'').localeCompare(b.accountNumber||'') || (a.postingDate||'').localeCompare(b.postingDate||'') || (a.entryNumber||0)-(b.entryNumber||0));
+            return res.json({ data: glEntries || [], source: 'glReceivable', openingBalances, autoFallback: true, arAccounts: arAccounts.map(a => ({ number: a.number, displayName: a.displayName })) });
+          }
+        }
+        return res.json({ data: siData || [], source: 'salesInvoices', openingByEntity });
       }
 
       // Try customerLedgerEntries first (requires Web Service publish)
@@ -923,8 +964,46 @@ module.exports = function(reportEngine) {
 
       if (view === 'invoices') {
         const openBool = open === 'true' ? true : open === 'false' ? false : undefined;
-        const piData = await reportEngine.bc.getVendorLedgerFromInvoices({ ...co, startDate, endDate, vendorNumber, open: openBool });
-        return res.json({ data: piData || [], source: 'purchaseInvoices' });
+        const prevDate = startDate ? subtractOneDay(startDate) : null;
+        const [piData, prePeriod] = await Promise.all([
+          reportEngine.bc.getVendorLedgerFromInvoices({ ...co, startDate, endDate, vendorNumber, open: openBool }),
+          prevDate ? reportEngine.bc.getVendorLedgerFromInvoices({ ...co, endDate: prevDate, vendorNumber }) : Promise.resolve([]),
+        ]);
+        const openingByEntity = {};
+        (prePeriod || []).forEach(e => {
+          const k = e.vendorNumber || '';
+          if (!openingByEntity[k]) openingByEntity[k] = 0;
+          const amt = e.totalAmountIncludingTax || 0;
+          openingByEntity[k] += e._type === 'creditMemo' ? -amt : amt;
+        });
+        // Auto-fallback chain: aged → GL
+        if (!piData || piData.length === 0) {
+          const agedOpts = { ...co, agedAsOfDate: agedAsOfDate || endDate, periodLengthFilter: periodLength || '30D' };
+          const agedData = await reportEngine.bc.getAgedAccountsPayable(agedOpts);
+          if (agedData && agedData.length > 0) {
+            const filtered = vendorNumber ? agedData.filter(r => r.vendorNumber === vendorNumber) : agedData;
+            return res.json({ data: filtered, source: 'agedPayable', autoFallback: true });
+          }
+          // Tier 3: GL on AP accounts (217101 應付帳款-廠商, 217102 應付帳款-員工, 218101 應付帳款-關係人 etc.)
+          const apAccounts = await reportEngine.bc.getPostingAccountsBySubCategory('應付帳款', co);
+          if (apAccounts && apAccounts.length > 0) {
+            const acctNums = apAccounts.map(a => a.number);
+            const glEntries = await reportEngine.bc.getGeneralLedgerEntries(startDate, endDate, { ...co, accountNumbers: acctNums, fetchAll: true });
+            const prevDate = startDate ? subtractOneDay(startDate) : null;
+            const openingBalances = {};
+            if (prevDate) {
+              const tbOpen = await reportEngine.bc.getTrialBalance(`..${prevDate}`, co).catch(() => []);
+              (tbOpen || []).forEach(row => {
+                if (acctNums.includes(row.number)) {
+                  openingBalances[row.number] = (parseFloat(row.balanceAtDateDebit)||0) - (parseFloat(row.balanceAtDateCredit)||0);
+                }
+              });
+            }
+            (glEntries || []).sort((a,b) => (a.accountNumber||'').localeCompare(b.accountNumber||'') || (a.postingDate||'').localeCompare(b.postingDate||'') || (a.entryNumber||0)-(b.entryNumber||0));
+            return res.json({ data: glEntries || [], source: 'glPayable', openingBalances, autoFallback: true, apAccounts: apAccounts.map(a => ({ number: a.number, displayName: a.displayName })) });
+          }
+        }
+        return res.json({ data: piData || [], source: 'purchaseInvoices', openingByEntity });
       }
 
       const ledgerOpts = { ...co, startDate, endDate, vendorNumber, ...(open !== undefined ? { open: open === 'true' } : {}) };

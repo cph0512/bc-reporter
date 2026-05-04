@@ -4398,10 +4398,18 @@ async function fetchLedger() {
           const res = await fetch(url);
           const json = await res.json();
           if (!res.ok) throw new Error(json.error);
-          renderSubledger(json.data || [], 'customer', json.source || 'ledgerEntries', l);
-          const srcMap = { agedReceivable: '（帳齡彙總 — 客戶分組）', salesInvoices: '（發票流水帳）', ledgerEntries: '' };
-          const srcNote = srcMap[json.source] || '';
-          summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNote}`;
+          if (json.source === 'glReceivable') {
+            // GL fallback — render as account-style balance detail
+            renderBalanceDetail(json.data || [], json.openingBalances || {}, l);
+            const acctList = (json.arAccounts || []).map(a => `${a.number} ${a.displayName}`).join('、');
+            summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆 | 採購發票/帳齡無資料 → 改用 GL 應收帳款科目（${acctList}）`;
+          } else {
+            renderSubledger(json.data || [], 'customer', json.source || 'ledgerEntries', l, { openingByEntity: json.openingByEntity || {} });
+            const srcMap = { agedReceivable: '（帳齡彙總 — 客戶分組）', salesInvoices: '（發票流水帳）', ledgerEntries: '' };
+            const srcNote = srcMap[json.source] || '';
+            const fbNote = json.autoFallback ? '（無發票，自動切到帳齡）' : '';
+            summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNote}${fbNote}`;
+          }
         }
 
       } else if (mode === 'vendor') {
@@ -4425,10 +4433,17 @@ async function fetchLedger() {
           const res = await fetch(url);
           const json = await res.json();
           if (!res.ok) throw new Error(json.error);
-          renderSubledger(json.data || [], 'vendor', json.source || 'ledgerEntries', l);
-          const srcMapV = { agedPayable: '（帳齡彙總 — 廠商分組）', purchaseInvoices: '（發票流水帳）', ledgerEntries: '' };
-          const srcNoteV = srcMapV[json.source] || '';
-          summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNoteV}`;
+          if (json.source === 'glPayable') {
+            renderBalanceDetail(json.data || [], json.openingBalances || {}, l);
+            const acctList = (json.apAccounts || []).map(a => `${a.number} ${a.displayName}`).join('、');
+            summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆 | 採購發票/帳齡無資料 → 改用 GL 應付帳款科目（${acctList}）`;
+          } else {
+            renderSubledger(json.data || [], 'vendor', json.source || 'ledgerEntries', l, { openingByEntity: json.openingByEntity || {} });
+            const srcMapV = { agedPayable: '（帳齡彙總 — 廠商分組）', purchaseInvoices: '（發票流水帳）', ledgerEntries: '' };
+            const srcNoteV = srcMapV[json.source] || '';
+            const fbNoteV = json.autoFallback ? '（無發票，自動切到帳齡）' : '';
+            summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNoteV}${fbNoteV}`;
+          }
         }
 
       } else if (mode === 'related') {
@@ -4609,7 +4624,7 @@ function renderBalanceDetail(entries, openingBalances, l) {
 // =========================================
 // 科目餘額表 — 客戶/廠商模式 (subledger)
 // =========================================
-function renderSubledger(entries, type, source, l) {
+function renderSubledger(entries, type, source, l, extra) {
   const container = document.getElementById('ledgerResults');
   if (!entries || entries.length === 0) {
     container.innerHTML = `<div class="loading" style="color:#999;">查無資料</div>`;
@@ -4622,7 +4637,7 @@ function renderSubledger(entries, type, source, l) {
   }
   // salesInvoices / purchaseInvoices: render as debit/credit ledger
   if (source === 'salesInvoices' || source === 'purchaseInvoices') {
-    renderInvoiceLedger(entries, type, source, l);
+    renderInvoiceLedger(entries, type, source, l, extra);
     return;
   }
 
@@ -4732,12 +4747,13 @@ function renderSubledger(entries, type, source, l) {
 // Invoice-based AR/AP Ledger renderer
 // Shows debit/credit/running balance per customer/vendor
 // =========================================
-function renderInvoiceLedger(entries, type, source, l) {
+function renderInvoiceLedger(entries, type, source, l, extra) {
   const container = document.getElementById('ledgerResults');
   const isCustomer = type === 'customer';
   const numKey  = isCustomer ? 'customerNumber' : 'vendorNumber';
   const nameKey = isCustomer ? 'customerName'   : 'vendorName';
   const title   = isCustomer ? '應收帳款明細帳' : '應付帳款明細帳';
+  const openingByEntity = (extra && extra.openingByEntity) || {};
 
   // Only show 沖帳 offset rows when filter is 未結清 (openVal === 'true')
   // When showing all or already-settled, omit offset rows to reduce noise
@@ -4766,19 +4782,28 @@ function renderInvoiceLedger(entries, type, source, l) {
     groups.get(key).rows.push(e);
   });
 
-  // Build summary
-  let grandTotal = 0;
+  // Also include customers/vendors that have no period entries but had opening balance
+  Object.keys(openingByEntity).forEach(num => {
+    if (!groups.has(num) && openingByEntity[num] !== 0) {
+      groups.set(num, { name: '', rows: [] });
+    }
+  });
+
+  // Build summary (期初 + 本期變動 = 期末)
+  let grandOpening = 0, grandPeriod = 0, grandTotal = 0;
   const summaryRows = [];
   groups.forEach((g, num) => {
-    let bal = 0;
+    const opening = openingByEntity[num] || 0;
+    let period = 0;
     g.rows.forEach(r => {
       const amt = r.totalAmountIncludingTax || 0;
-      bal += r._type === 'creditMemo' ? -amt : amt;
+      period += r._type === 'creditMemo' ? -amt : amt;
     });
-    grandTotal += bal;
-    summaryRows.push({ num, name: g.name, count: g.rows.length, bal });
+    const closing = opening + period;
+    grandOpening += opening; grandPeriod += period; grandTotal += closing;
+    summaryRows.push({ num, name: g.name, count: g.rows.length, opening, period, closing });
   });
-  summaryRows.sort((a, b) => Math.abs(b.bal) - Math.abs(a.bal));
+  summaryRows.sort((a, b) => Math.abs(b.closing) - Math.abs(a.closing));
 
   let html = `<div style="display:flex;flex-direction:column;gap:16px;">`;
 
@@ -4786,30 +4811,38 @@ function renderInvoiceLedger(entries, type, source, l) {
   html += `<div style="border:1px solid #d0d0d0;border-radius:8px;overflow:hidden;">
     <div style="background:#1a1a2e;color:#fff;padding:8px 14px;font-weight:700;font-size:13px;">${title} — 彙總</div>
     <div style="overflow-x:auto;">
-    <table style="width:100%;border-collapse:collapse;min-width:380px;">
+    <table style="width:100%;border-collapse:collapse;min-width:520px;">
       <thead><tr>
         <th style="${thS}">編號</th><th style="${thS}">名稱</th>
-        <th style="${thR}">筆數</th><th style="${thR}">餘額</th>
+        <th style="${thR}">筆數</th>
+        <th style="${thR}">期初</th>
+        <th style="${thR}">本期變動</th>
+        <th style="${thR}">期末餘額</th>
       </tr></thead>
       <tbody>
       ${summaryRows.map((r, i) => `<tr style="background:${i%2?'#f8f9fb':'#fff'};">
         <td style="padding:5px 8px;font-size:12px;font-family:monospace;">${r.num}</td>
         <td style="padding:5px 8px;font-size:12px;">${r.name}</td>
         <td style="padding:5px 8px;text-align:right;font-size:12px;">${r.count}</td>
-        <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px;color:${r.bal<0?'#c62828':'#1565c0'};">${fmt(r.bal) || '-'}</td>
+        <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#666;">${fmt(r.opening) || '-'}</td>
+        <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:${r.period<0?'#c62828':'#2e7d32'};">${fmt(r.period) || '-'}</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px;color:${r.closing<0?'#c62828':'#1565c0'};">${fmt(r.closing) || '-'}</td>
       </tr>`).join('')}
       </tbody>
       <tfoot><tr style="background:#e8eaf6;font-weight:700;border-top:2px solid #1a1a2e;">
         <td colspan="3" style="padding:8px;font-size:12px;">合計</td>
+        <td style="padding:8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#666;">${fmt(grandOpening) || '-'}</td>
+        <td style="padding:8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${grandPeriod<0?'#c62828':'#2e7d32'};">${fmt(grandPeriod) || '-'}</td>
         <td style="padding:8px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;color:${grandTotal<0?'#c62828':'#1565c0'};">${fmt(grandTotal) || '-'}</td>
       </tr></tfoot>
     </table>
     </div>
   </div>`;
 
-  // Detail per customer/vendor
+  // Detail per customer/vendor — start running balance at opening (期初餘額)
   groups.forEach((g, num) => {
-    let running = 0;
+    const opening = openingByEntity[num] || 0;
+    let running = opening;
     let totDr = 0, totCr = 0;
 
     // Expand each entry into debit row + optional payment (沖帳) row + optional creditMemo row
@@ -4886,11 +4919,18 @@ function renderInvoiceLedger(entries, type, source, l) {
       return rows;
     }).join('');
 
-    const closing = totDr - totCr;
+    const closing = opening + totDr - totCr;
+    // Opening balance row injected at the top of tbody
+    const openingRow = `<tr style="background:#fff8e1;font-weight:600;">
+      <td colspan="5" style="padding:6px 8px;font-size:12px;color:#5d4037;">期初餘額</td>
+      <td></td><td></td>
+      <td style="padding:6px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:${opening<0?'#c62828':'#1a1a2e'};">${fmt(Math.abs(opening)) || '0'}</td>
+      <td></td>
+    </tr>`;
     html += `<div style="border:1px solid #d0d0d0;border-radius:8px;overflow:hidden;">
       <div style="background:#37474f;color:#fff;padding:8px 14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
         <span style="font-weight:700;font-size:13px;">${num} ${g.name}</span>
-        <span style="font-size:12px;opacity:.9;">餘額：<strong style="color:${closing<0?'#ef9a9a':'#80cbc4'};">${fmt(Math.abs(closing)) || '0'}</strong></span>
+        <span style="font-size:12px;opacity:.9;">期初：<strong style="color:#80cbc4;">${fmt(Math.abs(opening)) || '0'}</strong> ｜ 期末：<strong style="color:${closing<0?'#ef9a9a':'#80cbc4'};">${fmt(Math.abs(closing)) || '0'}</strong></span>
       </div>
       <div style="overflow-x:auto;max-height:50vh;overflow-y:auto;">
       <table style="width:100%;border-collapse:collapse;min-width:750px;">
@@ -4905,9 +4945,9 @@ function renderInvoiceLedger(entries, type, source, l) {
           <th style="${thR}background:#455a64;min-width:100px;">餘額</th>
           <th style="${thS}background:#455a64;text-align:center;">狀態</th>
         </tr></thead>
-        <tbody>${rowsHtml}</tbody>
+        <tbody>${openingRow}${rowsHtml}</tbody>
         <tfoot><tr style="background:#e8eaf6;font-weight:700;border-top:2px solid #1a1a2e;">
-          <td colspan="5" style="padding:8px;font-size:12px;">本期合計（${g.rows.length} 筆）</td>
+          <td colspan="5" style="padding:8px;font-size:12px;">本期合計（${g.rows.length} 筆，期初 ${fmt(Math.abs(opening))||'0'} + 借 ${fmt(totDr)||'0'} - 貸 ${fmt(totCr)||'0'}）</td>
           <td style="padding:8px;text-align:right;font-variant-numeric:tabular-nums;color:#1565c0;">${fmt(totDr)}</td>
           <td style="padding:8px;text-align:right;font-variant-numeric:tabular-nums;color:#c62828;">${fmt(totCr)}</td>
           <td style="padding:8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${closing<0?'#c62828':'#1a1a2e'};">${fmt(Math.abs(closing)) || '0'}</td>

@@ -356,12 +356,13 @@ class BCClient {
    */
   async getTrialBalance(dateFilter, options = {}) {
     try {
-      return await this.request(this.companyUrl('trialBalance', options.companyId), {
+      // BC v2.0 endpoint name is plural: trialBalances
+      return await this.request(this.companyUrl('trialBalances', options.companyId), {
         $filter: dateFilter ? `dateFilter eq '${dateFilter}'` : undefined,
       });
     } catch (error) {
       if (error.response?.status === 404) {
-        console.log('[BCClient] trialBalance API not available');
+        console.log('[BCClient] trialBalances API not available');
         return null;
       }
       throw error;
@@ -677,6 +678,23 @@ class BCClient {
       }
       throw error;
     }
+  }
+
+  /**
+   * 取得 AP/AR 主要 Posting 科目編號
+   * subCategoryMatch: e.g. '應付帳款' → 回傳 ['217101','217102','218101']
+   */
+  async getPostingAccountsBySubCategory(subCategoryMatch, options = {}) {
+    try {
+      const all = await this.requestAll(this.companyUrl('accounts', options.companyId), {
+        $select: 'number,displayName,accountType,category,subCategory',
+        $top: 500,
+      });
+      return (all || []).filter(a =>
+        a.accountType === 'Posting' &&
+        (a.subCategory || '').includes(subCategoryMatch)
+      );
+    } catch (e) { return []; }
   }
 
   /**
