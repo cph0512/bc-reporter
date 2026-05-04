@@ -894,7 +894,8 @@ module.exports = function(reportEngine) {
       }
 
       // Fallback 3: salesInvoices + salesCreditMemos (debit/credit ledger view)
-      const siData = await reportEngine.bc.getCustomerLedgerFromInvoices({ ...co, startDate, endDate, customerNumber });
+      const openBool = open === 'true' ? true : open === 'false' ? false : undefined;
+      const siData = await reportEngine.bc.getCustomerLedgerFromInvoices({ ...co, startDate, endDate, customerNumber, open: openBool });
       res.json({ data: siData || [], source: 'salesInvoices' });
     } catch (error) {
       console.error('[API] Customer Ledger error:', error.message);
@@ -924,10 +925,44 @@ module.exports = function(reportEngine) {
       }
 
       // Fallback 3: purchaseInvoices + purchaseCreditMemos (debit/credit ledger view)
-      const piData = await reportEngine.bc.getVendorLedgerFromInvoices({ ...co, startDate, endDate, vendorNumber });
+      const openBool = open === 'true' ? true : open === 'false' ? false : undefined;
+      const piData = await reportEngine.bc.getVendorLedgerFromInvoices({ ...co, startDate, endDate, vendorNumber, open: openBool });
       res.json({ data: piData || [], source: 'purchaseInvoices' });
     } catch (error) {
       console.error('[API] Vendor Ledger error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * 維度值清單 (for 關係人 selector)
+   * GET /api/ledger/dimension-values?dimensionCode=關係人&companyId=
+   */
+  router.get('/ledger/dimension-values', requireDashboard('ledger'), async (req, res) => {
+    try {
+      const { dimensionCode } = req.query;
+      if (!dimensionCode) return res.status(400).json({ error: 'dimensionCode required' });
+      const co = companyOpts(req);
+      const data = await reportEngine.bc.getDimensionValues(dimensionCode, co);
+      res.json({ data: data || [] });
+    } catch (error) {
+      console.error('[API] DimensionValues error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * 關係人交易明細
+   * GET /api/ledger/related-party?dimValue=&startDate=&endDate=&companyId=
+   */
+  router.get('/ledger/related-party', requireDashboard('ledger'), async (req, res) => {
+    try {
+      const { dimValue, startDate, endDate } = req.query;
+      const co = companyOpts(req);
+      const data = await reportEngine.bc.getGLEntriesByDimension(dimValue || null, { ...co, startDate, endDate });
+      res.json({ data: data || [] });
+    } catch (error) {
+      console.error('[API] Related Party error:', error.message);
       res.status(500).json({ error: error.message });
     }
   });

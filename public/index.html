@@ -617,6 +617,7 @@
         <select id="ledgerOpenFilter" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
           <option value="">全部（含已結清）</option>
           <option value="true" selected>未結清</option>
+          <option value="false">已結清</option>
         </select>
       </div>
       <div id="ledgerCustomerList" style="max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:6px;padding:4px;"></div>
@@ -632,10 +633,28 @@
         <select id="ledgerVendorOpenFilter" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
           <option value="">全部（含已結清）</option>
           <option value="true" selected>未結清</option>
+          <option value="false">已結清</option>
         </select>
       </div>
       <div id="ledgerVendorList" style="max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:6px;padding:4px;"></div>
       <div id="ledgerSelectedVendorChip" style="margin-top:6px;font-size:12px;color:#1565c0;font-weight:600;"></div>
+      <!-- AP GL fallback: when no purchase invoices, search by AP account -->
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:#888;">無採購發票？改用GL科目：</span>
+        <input type="text" id="ledgerVendorApAccount" placeholder="應付帳款科目編號 (e.g. 21100)" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;width:210px;">
+        <span style="font-size:11px;color:#aaa;">填入後查詢將改用 GL 明細帳</span>
+      </div>
+    </div>
+  </div>
+  <!-- Balance Detail: 關係人 filter panel -->
+  <div id="ledgerRelatedFilter" style="display:none;padding:0 24px;max-width:1400px;margin:0 auto;">
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:16px;">
+      <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;display:block;">關係人篩選</label>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input type="text" id="ledgerRelatedSearch" oninput="filterLedgerRelated()" placeholder="搜尋關係人代碼或名稱..." style="flex:1;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
+      </div>
+      <div id="ledgerRelatedList" style="max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:6px;padding:4px;"><div style="padding:8px;color:#999;font-size:12px;">按「查詢」自動載入關係人清單</div></div>
+      <div id="ledgerSelectedRelatedChip" style="margin-top:6px;font-size:12px;color:#1565c0;font-weight:600;"></div>
     </div>
   </div>
   <!-- Balance Detail mode selector (inside balance-detail type) -->
@@ -645,6 +664,7 @@
       <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;"><input type="radio" name="bdMode" value="account" checked onchange="onBDModeChange()"> 科目</label>
       <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;"><input type="radio" name="bdMode" value="customer" onchange="onBDModeChange()"> 客戶</label>
       <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;"><input type="radio" name="bdMode" value="vendor" onchange="onBDModeChange()"> 廠商</label>
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;"><input type="radio" name="bdMode" value="related" onchange="onBDModeChange()"> 關係人交易</label>
     </div>
   </div>
 
@@ -4000,6 +4020,8 @@ let ledgerCustomersCache = [];
 let ledgerVendorsCache = [];
 let ledgerSelectedCustomer = null; // { number, name }
 let ledgerSelectedVendor = null;   // { number, name }
+let ledgerRelatedCache = [];        // 關係人維度值
+let ledgerSelectedRelated = null;   // { code, name } | 'all'
 
 function initLedgerView() {
   const l = L();
@@ -4051,12 +4073,12 @@ function onLedgerTypeChange() {
   const type = document.getElementById('ledgerQueryType').value;
   const isBD = type === 'balance-detail';
   const isGL = type === 'gl-entries';
-  // Account filter: GL entries always, balance-detail only in account mode
   const bdMode = getBDMode();
   document.getElementById('ledgerAccountFilter').style.display = (isGL || (isBD && bdMode === 'account')) ? '' : 'none';
   document.getElementById('ledgerBDModeBar').style.display = isBD ? '' : 'none';
   document.getElementById('ledgerCustomerFilter').style.display = (isBD && bdMode === 'customer') ? '' : 'none';
   document.getElementById('ledgerVendorFilter').style.display = (isBD && bdMode === 'vendor') ? '' : 'none';
+  document.getElementById('ledgerRelatedFilter').style.display = (isBD && bdMode === 'related') ? '' : 'none';
 }
 
 function getBDMode() {
@@ -4070,8 +4092,10 @@ function onBDModeChange() {
   document.getElementById('ledgerAccountFilter').style.display = (isBD && mode === 'account') ? '' : 'none';
   document.getElementById('ledgerCustomerFilter').style.display = (isBD && mode === 'customer') ? '' : 'none';
   document.getElementById('ledgerVendorFilter').style.display = (isBD && mode === 'vendor') ? '' : 'none';
+  document.getElementById('ledgerRelatedFilter').style.display = (isBD && mode === 'related') ? '' : 'none';
   if (mode === 'customer' && ledgerCustomersCache.length === 0) loadLedgerCustomers();
   if (mode === 'vendor' && ledgerVendorsCache.length === 0) loadLedgerVendors();
+  if (mode === 'related' && ledgerRelatedCache.length === 0) loadLedgerRelatedParties();
 }
 
 // ---- Customer / Vendor loader & selector ----
@@ -4102,6 +4126,51 @@ async function loadLedgerVendors() {
       renderLedgerVendorList();
     }
   } catch (e) { console.error('Failed to load vendors:', e); }
+}
+
+async function loadLedgerRelatedParties() {
+  const companyId = getCompanyId();
+  const listEl = document.getElementById('ledgerRelatedList');
+  listEl.innerHTML = '<div style="padding:8px;color:#999;font-size:12px;">載入中...</div>';
+  try {
+    const res = await fetch(`/api/ledger/dimension-values?dimensionCode=${encodeURIComponent('關係人')}&companyId=${companyId}`);
+    if (res.ok) {
+      const json = await res.json();
+      ledgerRelatedCache = (json.data || []).sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+      renderLedgerRelatedList();
+    }
+  } catch (e) { listEl.innerHTML = '<div style="padding:8px;color:#c62828;font-size:12px;">載入失敗</div>'; }
+}
+
+function filterLedgerRelated() { renderLedgerRelatedList(); }
+
+function renderLedgerRelatedList() {
+  const search = (document.getElementById('ledgerRelatedSearch').value || '').toLowerCase();
+  const container = document.getElementById('ledgerRelatedList');
+  const all = { code: '', displayName: '全部關係人' };
+  const filtered = [all, ...ledgerRelatedCache.filter(r =>
+    !search || (r.code||'').toLowerCase().includes(search) || (r.displayName||'').toLowerCase().includes(search)
+  )];
+  if (filtered.length <= 1 && ledgerRelatedCache.length === 0) {
+    container.innerHTML = '<div style="padding:8px;color:#999;font-size:12px;">尚無關係人資料，請先查詢</div>';
+    return;
+  }
+  container.innerHTML = filtered.map(r => {
+    const sel = !r.code
+      ? (ledgerSelectedRelated === 'all' || !ledgerSelectedRelated)
+      : (ledgerSelectedRelated && ledgerSelectedRelated.code === r.code);
+    return `<label style="display:flex;align-items:center;gap:6px;padding:4px 6px;cursor:pointer;font-size:12px;border-bottom:1px solid #f5f5f5;${sel?'background:#e3f2fd;':''}" onclick="selectRelatedParty('${r.code}','${(r.displayName||'').replace(/'/g,"\\'")}')">
+      <span style="color:#1a1a2e;font-weight:500;min-width:80px;">${r.code || '（全部）'}</span>
+      <span style="color:#555;">${r.displayName || ''}</span>
+      ${sel ? '<span style="margin-left:auto;color:#1565c0;">✓</span>' : ''}
+    </label>`;
+  }).join('');
+}
+
+function selectRelatedParty(code, name) {
+  ledgerSelectedRelated = code ? { code, name } : 'all';
+  document.getElementById('ledgerSelectedRelatedChip').textContent = code ? `已選：${code} ${name}` : '全部關係人';
+  renderLedgerRelatedList();
 }
 
 function filterLedgerCustomers() { renderLedgerCustomerList(); }
@@ -4311,19 +4380,46 @@ async function fetchLedger() {
         summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNote}`;
 
       } else if (mode === 'vendor') {
-        let url = `/api/ledger/vendor-ledger?companyId=${companyId}`;
+        const apAccount = (document.getElementById('ledgerVendorApAccount').value || '').trim();
+        if (apAccount) {
+          // AP account GL mode: reuse balance-detail endpoint
+          let url = `/api/ledger/balance-detail?companyId=${companyId}&startDate=${startDate}&endDate=${endDate}&accountNumbers=${encodeURIComponent(apAccount)}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.error);
+          renderBalanceDetail(json.data || [], json.openingBalances || {}, l);
+          summaryEl.textContent = `${startDate} ~ ${endDate} | 科目 ${apAccount} | ${(json.data || []).length} 筆（GL 應付帳款）`;
+        } else {
+          let url = `/api/ledger/vendor-ledger?companyId=${companyId}`;
+          if (startDate) url += `&startDate=${startDate}`;
+          if (endDate) url += `&endDate=${endDate}`;
+          const openVal = document.getElementById('ledgerVendorOpenFilter').value;
+          if (openVal) url += `&open=${openVal}`;
+          if (ledgerSelectedVendor) url += `&vendorNumber=${encodeURIComponent(ledgerSelectedVendor.number)}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.error);
+          renderSubledger(json.data || [], 'vendor', json.source || 'ledgerEntries', l);
+          const srcMapV = { agedPayable: '（帳齡彙總）', purchaseInvoices: '（採購發票）', ledgerEntries: '' };
+          const srcNoteV = srcMapV[json.source] || '';
+          summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNoteV}`;
+        }
+
+      } else if (mode === 'related') {
+        // 關係人交易
+        if (ledgerRelatedCache.length === 0) await loadLedgerRelatedParties();
+        const dimValue = ledgerSelectedRelated && ledgerSelectedRelated !== 'all' ? ledgerSelectedRelated.code : '';
+        let url = `/api/ledger/related-party?companyId=${companyId}`;
         if (startDate) url += `&startDate=${startDate}`;
         if (endDate) url += `&endDate=${endDate}`;
-        const openVal = document.getElementById('ledgerVendorOpenFilter').value;
-        if (openVal) url += `&open=${openVal}`;
-        if (ledgerSelectedVendor) url += `&vendorNumber=${encodeURIComponent(ledgerSelectedVendor.number)}`;
+        if (dimValue) url += `&dimValue=${encodeURIComponent(dimValue)}`;
+        if (ledgerAccountsCache.length === 0) await loadLedgerAccounts();
         const res = await fetch(url);
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
-        renderSubledger(json.data || [], 'vendor', json.source || 'ledgerEntries', l);
-        const srcMapV = { agedPayable: '（帳齡彙總）', purchaseInvoices: '（未結採購發票）', ledgerEntries: '' };
-        const srcNoteV = srcMapV[json.source] || '';
-        summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} 筆${srcNoteV}`;
+        renderRelatedPartyLedger(json.data || [], dimValue, l);
+        const relLabel = dimValue || '全部關係人';
+        summaryEl.textContent = `${startDate} ~ ${endDate} | ${relLabel} | ${(json.data || []).length} 筆`;
       }
 
     } else if (type === 'trial-balance') {
@@ -4343,7 +4439,8 @@ async function fetchLedger() {
       renderJournals(json.data || [], l, companyId);
     }
     // Show export button for exportable types
-    if (['gl-entries', 'balance-detail'].includes(type)) {
+    const exportableModes = ['gl-entries', 'balance-detail'];
+    if (exportableModes.includes(type)) {
       exportBar.style.display = 'flex';
     }
   } catch (e) {
@@ -4616,6 +4713,13 @@ function renderInvoiceLedger(entries, type, source, l) {
   const nameKey = isCustomer ? 'customerName'   : 'vendorName';
   const title   = isCustomer ? '應收帳款明細帳' : '應付帳款明細帳';
 
+  // Only show 沖帳 offset rows when filter is 未結清 (openVal === 'true')
+  // When showing all or already-settled, omit offset rows to reduce noise
+  const openFilterId = isCustomer ? 'ledgerOpenFilter' : 'ledgerVendorOpenFilter';
+  const openFilterEl = document.getElementById(openFilterId);
+  const openVal = openFilterEl ? openFilterEl.value : 'true';
+  const showOffset = (openVal === 'true'); // only expand payment offsets in 未結清 mode
+
   if (!entries || entries.length === 0) {
     container.innerHTML = `<div class="loading" style="color:#999;">查無資料</div>`;
     return;
@@ -4730,25 +4834,27 @@ function renderInvoiceLedger(entries, type, source, l) {
           <td style="padding:5px 8px;text-align:center;font-size:11px;"><span style="padding:2px 6px;border-radius:10px;background:${isOpen?'#fff3e0':'#e8f5e9'};color:${isOpen?'#e65100':'#2e7d32'};">${isOpen?'未結':'已結'}</span></td>
         </tr>`);
 
-        // 沖帳行：收款(AR)或付款(AP)
-        const paid = amt - (e.remainingAmount != null ? e.remainingAmount : (e.status === 'Paid' ? 0 : amt));
-        if (paid > 0) {
-          const pDr = isCustomer ? 0    : paid;
-          const pCr = isCustomer ? paid : 0;
-          running += pDr - pCr; totDr += pDr; totCr += pCr;
-          const bg2 = rowIdx++ % 2 === 0 ? '#fff' : '#f8f9fb';
-          const payLabel = isCustomer ? '收款沖帳' : '付款沖帳';
-          rows.push(`<tr style="background:${bg2};">
-            <td style="padding:5px 8px;font-size:12px;">${e.postingDate||''}</td>
-            <td style="padding:5px 8px;font-size:11px;"><span style="color:#2e7d32;font-weight:600;">${payLabel}</span></td>
-            <td style="padding:5px 8px;font-size:11px;font-family:monospace;color:#666;">${e.number||''}</td>
-            <td style="padding:5px 8px;"></td>
-            <td style="padding:5px 8px;font-size:12px;color:#555;">沖銷 ${e.number||''}</td>
-            <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#1565c0;">${pDr ? fmt(pDr) : '-'}</td>
-            <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#2e7d32;">${pCr ? fmt(pCr) : '-'}</td>
-            <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:12px;color:${running<0?'#c62828':'#1a1a2e'};">${fmt(Math.abs(running))||'0'}</td>
-            <td style="padding:5px 8px;text-align:center;font-size:11px;"><span style="padding:2px 6px;border-radius:10px;background:#e8f5e9;color:#2e7d32;">沖帳</span></td>
-          </tr>`);
+        // 沖帳行：收款(AR)或付款(AP) — 僅在「未結清」模式下顯示
+        if (showOffset) {
+          const paid = amt - (e.remainingAmount != null ? e.remainingAmount : (e.status === 'Paid' ? 0 : amt));
+          if (paid > 0) {
+            const pDr = isCustomer ? 0    : paid;
+            const pCr = isCustomer ? paid : 0;
+            running += pDr - pCr; totDr += pDr; totCr += pCr;
+            const bg2 = rowIdx++ % 2 === 0 ? '#fff' : '#f8f9fb';
+            const payLabel = isCustomer ? '收款沖帳' : '付款沖帳';
+            rows.push(`<tr style="background:${bg2};">
+              <td style="padding:5px 8px;font-size:12px;">${e.postingDate||''}</td>
+              <td style="padding:5px 8px;font-size:11px;"><span style="color:#2e7d32;font-weight:600;">${payLabel}</span></td>
+              <td style="padding:5px 8px;font-size:11px;font-family:monospace;color:#666;">${e.number||''}</td>
+              <td style="padding:5px 8px;"></td>
+              <td style="padding:5px 8px;font-size:12px;color:#555;">沖銷 ${e.number||''}</td>
+              <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#1565c0;">${pDr ? fmt(pDr) : '-'}</td>
+              <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#2e7d32;">${pCr ? fmt(pCr) : '-'}</td>
+              <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:12px;color:${running<0?'#c62828':'#1a1a2e'};">${fmt(Math.abs(running))||'0'}</td>
+              <td style="padding:5px 8px;text-align:center;font-size:11px;"><span style="padding:2px 6px;border-radius:10px;background:#e8f5e9;color:#2e7d32;">沖帳</span></td>
+            </tr>`);
+          }
         }
       }
       return rows;
@@ -4780,6 +4886,139 @@ function renderInvoiceLedger(entries, type, source, l) {
           <td style="padding:8px;text-align:right;font-variant-numeric:tabular-nums;color:#c62828;">${fmt(totCr)}</td>
           <td style="padding:8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${closing<0?'#c62828':'#1a1a2e'};">${fmt(Math.abs(closing)) || '0'}</td>
           <td></td>
+        </tr></tfoot>
+      </table>
+      </div>
+    </div>`;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// =========================================
+// 關係人交易 Ledger renderer
+// Shows GL entries grouped by accountNumber, filtered by 關係人 dimension
+// =========================================
+function renderRelatedPartyLedger(entries, dimValue, l) {
+  const container = document.getElementById('ledgerResults');
+  if (!entries || entries.length === 0) {
+    container.innerHTML = `<div class="loading" style="color:#999;">查無關係人交易資料</div>`;
+    return;
+  }
+
+  const acctNameMap = {};
+  ledgerAccountsCache.forEach(a => { if (a.number) acctNameMap[a.number] = a.displayName || ''; });
+
+  const fmt = v => v != null && v !== 0
+    ? v.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    : '';
+  const fmtBal = v => {
+    if (!v) return '-';
+    const abs = Math.abs(v).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return v < 0 ? `(${abs})` : abs;
+  };
+
+  const thS = 'padding:7px 8px;white-space:nowrap;position:sticky;top:0;z-index:2;background:#1a1a2e;color:#fff;font-size:12px;';
+  const thR = thS + 'text-align:right;';
+
+  // Group by accountNumber
+  const groups = new Map();
+  entries.forEach(e => {
+    const key = e.accountNumber || '(未知)';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(e);
+  });
+
+  // Summary — total debit / credit per account
+  let grandDr = 0, grandCr = 0;
+  const summaryRows = [];
+  groups.forEach((rows, acctNo) => {
+    let dr = 0, cr = 0;
+    rows.forEach(r => { dr += r.debitAmount || 0; cr += r.creditAmount || 0; });
+    grandDr += dr; grandCr += cr;
+    summaryRows.push({ acctNo, name: acctNameMap[acctNo] || '', dr, cr, net: dr - cr });
+  });
+  summaryRows.sort((a, b) => a.acctNo.localeCompare(b.acctNo));
+
+  const titleLabel = dimValue ? `關係人交易 — ${dimValue}` : '關係人交易 — 全部';
+
+  let html = `<div style="display:flex;flex-direction:column;gap:16px;">`;
+
+  // Summary card
+  html += `<div style="border:1px solid #d0d0d0;border-radius:8px;overflow:hidden;">
+    <div style="background:#1a1a2e;color:#fff;padding:8px 14px;font-weight:700;font-size:13px;">${titleLabel}</div>
+    <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;min-width:440px;">
+      <thead><tr>
+        <th style="${thS}">科目</th><th style="${thS}">科目名稱</th>
+        <th style="${thR}">借方合計</th><th style="${thR}">貸方合計</th><th style="${thR}">淨額</th>
+      </tr></thead>
+      <tbody>
+      ${summaryRows.map((r, i) => `<tr style="background:${i%2?'#f8f9fb':'#fff'};">
+        <td style="padding:5px 8px;font-size:12px;font-family:monospace;">${r.acctNo}</td>
+        <td style="padding:5px 8px;font-size:12px;">${r.name}</td>
+        <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#1565c0;">${fmt(r.dr)||'-'}</td>
+        <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#c62828;">${fmt(r.cr)||'-'}</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px;color:${r.net<0?'#c62828':'#1a1a2e'};">${fmtBal(r.net)}</td>
+      </tr>`).join('')}
+      </tbody>
+      <tfoot><tr style="background:#e8eaf6;font-weight:700;border-top:2px solid #1a1a2e;">
+        <td colspan="2" style="padding:8px;font-size:12px;">合計</td>
+        <td style="padding:8px;text-align:right;color:#1565c0;font-variant-numeric:tabular-nums;">${fmt(grandDr)||'-'}</td>
+        <td style="padding:8px;text-align:right;color:#c62828;font-variant-numeric:tabular-nums;">${fmt(grandCr)||'-'}</td>
+        <td style="padding:8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${(grandDr-grandCr)<0?'#c62828':'#1a1a2e'};">${fmtBal(grandDr-grandCr)}</td>
+      </tr></tfoot>
+    </table>
+    </div>
+  </div>`;
+
+  // Detail per account
+  groups.forEach((rows, acctNo) => {
+    const acctName = acctNameMap[acctNo] || '';
+    let running = 0;
+    let totDr = 0, totCr = 0;
+
+    const rowsHtml = rows.map((e, i) => {
+      const dr = e.debitAmount || 0;
+      const cr = e.creditAmount || 0;
+      running += dr - cr; totDr += dr; totCr += cr;
+      const bg = i % 2 === 0 ? '#fff' : '#f8f9fb';
+      const dimLabel = e.shortcutDimension1Code || e.shortcutDimension2Code || '';
+      return `<tr style="background:${bg};">
+        <td style="padding:5px 8px;border-bottom:1px solid #eee;white-space:nowrap;font-size:12px;">${e.postingDate||''}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #eee;white-space:nowrap;font-size:11px;font-family:monospace;">${e.documentNumber||''}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(e.description||'').replace(/"/g,'&quot;')}">${e.description||''}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;color:#7e57c2;">${dimLabel}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#1565c0;">${dr ? fmt(dr) : '-'}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#c62828;">${cr ? fmt(cr) : '-'}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-size:12px;color:${running<0?'#c62828':'#1a1a2e'};">${fmtBal(running)}</td>
+      </tr>`;
+    }).join('');
+
+    const closing = totDr - totCr;
+    html += `<div style="border:1px solid #d0d0d0;border-radius:8px;overflow:hidden;">
+      <div style="background:#37474f;color:#fff;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+        <span style="font-weight:700;font-size:13px;">${acctNo} ${acctName}</span>
+        <span style="font-size:12px;opacity:.9;">淨額：<strong style="color:${closing<0?'#ef9a9a':'#80cbc4'};">${fmtBal(closing)}</strong></span>
+      </div>
+      <div style="overflow-x:auto;max-height:50vh;overflow-y:auto;">
+      <table style="width:100%;border-collapse:collapse;min-width:700px;">
+        <thead><tr>
+          <th style="${thS}background:#455a64;min-width:90px;">過帳日</th>
+          <th style="${thS}background:#455a64;min-width:110px;">傳票號碼</th>
+          <th style="${thS}background:#455a64;">說明</th>
+          <th style="${thS}background:#455a64;min-width:80px;">關係人</th>
+          <th style="${thR}background:#455a64;min-width:90px;">借方</th>
+          <th style="${thR}background:#455a64;min-width:90px;">貸方</th>
+          <th style="${thR}background:#455a64;min-width:100px;">餘額</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+        <tfoot><tr style="background:#e8eaf6;font-weight:700;border-top:2px solid #1a1a2e;">
+          <td colspan="4" style="padding:8px;font-size:12px;">本期合計（${rows.length} 筆）</td>
+          <td style="padding:8px;text-align:right;font-variant-numeric:tabular-nums;color:#1565c0;">${fmt(totDr)}</td>
+          <td style="padding:8px;text-align:right;font-variant-numeric:tabular-nums;color:#c62828;">${fmt(totCr)}</td>
+          <td style="padding:8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${closing<0?'#c62828':'#1a1a2e'};">${fmtBal(closing)}</td>
         </tr></tfoot>
       </table>
       </div>

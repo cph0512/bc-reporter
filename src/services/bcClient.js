@@ -464,9 +464,13 @@ class BCClient {
   /**
    * 客戶流水帳 — 合併 salesInvoices + salesCreditMemos，排序後回傳
    * 每筆含 _type: 'invoice'|'creditMemo'，供前端計算借貸與 running balance
+   * options.open: true → status eq 'Open', false → status eq 'Paid', undefined → status ne 'Draft'
    */
   async getCustomerLedgerFromInvoices(options = {}) {
-    const invoiceFilters = ["status ne 'Draft'"]; // include Open + Paid
+    const statusFilter = options.open === true  ? "status eq 'Open'"
+                       : options.open === false ? "status eq 'Paid'"
+                       : "status ne 'Draft'";
+    const invoiceFilters = [statusFilter];
     const memoFilters = ["status ne 'Draft'"];
     if (options.startDate) {
       invoiceFilters.push(`postingDate ge ${options.startDate}`);
@@ -507,9 +511,14 @@ class BCClient {
 
   /**
    * 廠商流水帳 — 合併 purchaseInvoices + purchaseCreditMemos
+   * NOTE: purchaseInvoices 不支援 remainingAmount，以 status 判斷是否結清
+   * options.open: true → status eq 'Open', false → status eq 'Paid', undefined → status ne 'Draft'
    */
   async getVendorLedgerFromInvoices(options = {}) {
-    const invFilters = ["status ne 'Draft'"]; // include Open + Paid
+    const statusFilter = options.open === true  ? "status eq 'Open'"
+                       : options.open === false ? "status eq 'Paid'"
+                       : "status ne 'Draft'";
+    const invFilters  = [statusFilter];
     const memoFilters = ["status ne 'Draft'"];
     if (options.startDate) { invFilters.push(`postingDate ge ${options.startDate}`); memoFilters.push(`postingDate ge ${options.startDate}`); }
     if (options.endDate)   { invFilters.push(`postingDate le ${options.endDate}`);   memoFilters.push(`postingDate le ${options.endDate}`); }
@@ -517,13 +526,14 @@ class BCClient {
 
     const [invoices, memos] = await Promise.all([
       this.requestAll(this.companyUrl('purchaseInvoices', options.companyId), {
-        $select: 'id,number,postingDate,dueDate,vendorNumber,vendorName,currencyCode,totalAmountIncludingTax,remainingAmount,status',
-        $filter: invFilters.length > 0 ? invFilters.join(' and ') : undefined,
-      }).catch(() => []),
+        // NOTE: remainingAmount is NOT available for purchaseInvoices — omit it to avoid 400 error
+        $select: 'id,number,postingDate,dueDate,vendorNumber,vendorName,currencyCode,totalAmountIncludingTax,status',
+        $filter: invFilters.join(' and '),
+      }).catch(e => { console.warn('[BCClient] purchaseInvoices fetch error:', e.message); return []; }),
       this.requestAll(this.companyUrl('purchaseCreditMemos', options.companyId), {
         $select: 'id,number,postingDate,dueDate,vendorNumber,vendorName,currencyCode,totalAmountIncludingTax,status',
         $filter: memoFilters.join(' and '),
-      }).catch(() => []),
+      }).catch(e => { console.warn('[BCClient] purchaseCreditMemos fetch error:', e.message); return []; }),
     ]);
 
     const rows = [
@@ -663,6 +673,41 @@ class BCClient {
       }
       throw error;
     }
+  }
+
+  /**
+   * 維度值清單 — 依維度代碼取得所有值（例：關係人）
+   */
+  async getDimensionValues(dimensionCode, options = {}) {
+    try {
+      return await this.requestAll(this.companyUrl('dimensionValues', options.companyId), {
+        $select: 'id,code,dimensionCode,displayName',
+        $filter: `dimensionCode eq '${dimensionCode}'`,
+        $orderby: 'code asc',
+      });
+    } catch (error) {
+      if (error.response?.status === 404) return [];
+      throw error;
+    }
+  }
+
+  /**
+   * 依維度值篩選 GL 分錄（關係人交易用）
+   * dimValue: e.g. 'BBTRUCK', undefined = 所有關係人
+   */
+  async getGLEntriesByDimension(dimValue, options = {}) {
+    const filters = [];
+    if (options.startDate) filters.push(`postingDate ge ${options.startDate}`);
+    if (options.endDate)   filters.push(`postingDate le ${options.endDate}`);
+    if (dimValue) {
+      // Try shortcutDimension1Code first; BC OData supports 'or'
+      filters.push(`(shortcutDimension1Code eq '${dimValue}' or shortcutDimension2Code eq '${dimValue}')`);
+    }
+    return await this.requestAll(this.companyUrl('generalLedgerEntries', options.companyId), {
+      $select: 'id,accountNumber,postingDate,documentNumber,description,debitAmount,creditAmount,shortcutDimension1Code,shortcutDimension2Code',
+      $filter: filters.length > 0 ? filters.join(' and ') : undefined,
+      $orderby: 'accountNumber asc,postingDate asc,entryNumber asc',
+    });
   }
 
   // ===== Helper Methods =====
