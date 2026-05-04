@@ -2455,7 +2455,7 @@ function updateSortArrows(prefix, sortField, sortDir) {
 function renderMyPipelineTable() {
   const tbody = document.getElementById('myPlLeadsTable');
   const empty = document.getElementById('myPlLeadsEmpty');
-  const weekLabel = getCurrentWeekLabel();
+  const weekLabel = (document.getElementById('myPlWeekSelect')?.value) || getCurrentWeekLabel();
   // Client-side filtering
   const searchText = (document.getElementById('myPlSearch')?.value || '').trim().toLowerCase();
   const filterStatus = document.getElementById('myPlFilterStatus').value;
@@ -2492,10 +2492,9 @@ function renderMyPipelineTable() {
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = leads.map(lead => {
-    // Find latest activity for this lead (sorted by createdAt desc)
-    const latestAct = myPlActivitiesCache
-      .filter(a => a.leadId === lead.id && a.content)
-      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+    // Filter activities by selected week (週次)
+    const weekActs = myPlActivitiesCache.filter(a => a.leadId === lead.id && a.content && a.weekLabel === weekLabel);
+    const latestAct = weekActs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
     const reviewText = latestAct ? escHtml(latestAct.content) : '';
     const reviewDate = latestAct && latestAct.createdAt ? fmtTWDate(latestAct.createdAt) : '';
     const contactDisplay = lead.contactName
@@ -2943,9 +2942,9 @@ function renderPipelineTable() {
   empty.style.display = 'none';
 
   tbody.innerHTML = leads.map(lead => {
-    const latestAct = plActivitiesCache
-      .filter(a => a.leadId === lead.id && a.content)
-      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+    // Filter activities by selected week (週次) — falls back to latest if no week match
+    const weekActs = plActivitiesCache.filter(a => a.leadId === lead.id && a.content && a.weekLabel === weekLabel);
+    const latestAct = weekActs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
     const reviewText = latestAct ? escHtml(latestAct.content) : '';
     const reviewDate = latestAct && latestAct.createdAt ? fmtTWDate(latestAct.createdAt) : '';
     const contactDisplay = lead.contactName
