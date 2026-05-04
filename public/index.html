@@ -2416,14 +2416,18 @@ function renderMyPipelineKpis(data, container) {
 
 function populateMyPlWeekSelect() {
   const sel = document.getElementById('myPlWeekSelect');
+  if (!sel) return;
   const current = sel.value;
   const thisWeek = getCurrentWeekLabel();
   const weeks = [...new Set(myPlActivitiesCache.map(a => getWeekStartLabel(a.createdAt)).filter(Boolean))].sort().reverse();
   if (!weeks.includes(thisWeek)) weeks.unshift(thisWeek);
   else { weeks.splice(weeks.indexOf(thisWeek), 1); weeks.unshift(thisWeek); }
-  sel.innerHTML = weeks.map((w, i) =>
-    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(getWeekRangeLabel(w))}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
+  let html = `<option value="__all__"${current === '__all__' ? ' selected' : ''}>全部商機（不依週次過濾）</option>`;
+  html += weeks.map(w =>
+    `<option value="${escHtml(w)}"${current === w ? ' selected' : ''}>${escHtml(getWeekRangeLabel(w))}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
   ).join('');
+  sel.innerHTML = html;
+  if (!current) sel.value = thisWeek;
 }
 
 // Sort state for personal view
@@ -2490,6 +2494,13 @@ function renderMyPipelineTable() {
     if (filterStale === '45+') return d >= 45;
     return true;
   });
+  // Week filter on my-pipeline (if myPlWeekSelect exists)
+  if (weekLabel && weekLabel !== '__all__') {
+    const leadsWithReviewThisWeek = new Set(
+      myPlActivitiesCache.filter(a => a.content && getWeekStartLabel(a.createdAt) === weekLabel).map(a => a.leadId)
+    );
+    leads = leads.filter(l => leadsWithReviewThisWeek.has(l.id));
+  }
   // Update notification bell with ALL leads (not filtered)
   updateNotifBell(myPlLeadsCache);
   // Sort — default: newest first by createdAt
@@ -2506,9 +2517,11 @@ function renderMyPipelineTable() {
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = leads.map(lead => {
-    // Filter activities by Monday-of-week (derived from createdAt)
-    const weekActs = myPlActivitiesCache.filter(a => a.leadId === lead.id && a.content && getWeekStartLabel(a.createdAt) === weekLabel);
-    const latestAct = weekActs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+    const allLeadActs = myPlActivitiesCache.filter(a => a.leadId === lead.id && a.content);
+    const acts = (weekLabel === '__all__')
+      ? allLeadActs
+      : allLeadActs.filter(a => getWeekStartLabel(a.createdAt) === weekLabel);
+    const latestAct = acts.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
     const reviewText = latestAct ? escHtml(latestAct.content) : '';
     const reviewDate = latestAct && latestAct.createdAt ? fmtTWDate(latestAct.createdAt) : '';
     const contactDisplay = lead.contactName
@@ -2929,9 +2942,14 @@ function populatePlWeekSelect() {
     .sort().reverse();
   if (!weeks.includes(thisWeek)) weeks.unshift(thisWeek);
   else { weeks.splice(weeks.indexOf(thisWeek), 1); weeks.unshift(thisWeek); }
-  sel.innerHTML = weeks.map((w, i) =>
-    `<option value="${escHtml(w)}"${(current ? w === current : i === 0) ? ' selected' : ''}>${escHtml(getWeekRangeLabel(w))}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
+  // First option: "全部商機（不依週次過濾）" — show all leads, latest review (any week) in column
+  let html = `<option value="__all__"${current === '__all__' ? ' selected' : ''}>全部商機（不依週次過濾）</option>`;
+  html += weeks.map(w =>
+    `<option value="${escHtml(w)}"${current === w ? ' selected' : ''}>${escHtml(getWeekRangeLabel(w))}${w === thisWeek ? (getLang() === 'en' ? ' (This Week)' : ' (本週)') : ''}</option>`
   ).join('');
+  sel.innerHTML = html;
+  // Default = this week (filter mode)
+  if (!current) sel.value = thisWeek;
 }
 
 function renderPipelineTable() {
@@ -2960,6 +2978,13 @@ function renderPipelineTable() {
     return true;
   });
   const weekLabel = document.getElementById('plWeekSelect').value || getCurrentWeekLabel();
+  // Week filter (true filter, not just review-column control). __all__ = no filter.
+  if (weekLabel && weekLabel !== '__all__') {
+    const leadsWithReviewThisWeek = new Set(
+      plActivitiesCache.filter(a => a.content && getWeekStartLabel(a.createdAt) === weekLabel).map(a => a.leadId)
+    );
+    leads = leads.filter(l => leadsWithReviewThisWeek.has(l.id));
+  }
 
   // Update notification bell with ALL leads (not filtered)
   updateNotifBell(plLeadsCache);
@@ -2979,9 +3004,14 @@ function renderPipelineTable() {
   empty.style.display = 'none';
 
   tbody.innerHTML = leads.map(lead => {
-    // Filter activities by Monday-of-week (derived from createdAt to avoid messy weekLabel data)
-    const weekActs = plActivitiesCache.filter(a => a.leadId === lead.id && a.content && getWeekStartLabel(a.createdAt) === weekLabel);
-    const latestAct = weekActs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+    // Review column logic:
+    // - Specific week selected → show that week's review
+    // - __all__ → show latest review (any week)
+    const allLeadActs = plActivitiesCache.filter(a => a.leadId === lead.id && a.content);
+    const acts = (weekLabel === '__all__')
+      ? allLeadActs
+      : allLeadActs.filter(a => getWeekStartLabel(a.createdAt) === weekLabel);
+    const latestAct = acts.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
     const reviewText = latestAct ? escHtml(latestAct.content) : '';
     const reviewDate = latestAct && latestAct.createdAt ? fmtTWDate(latestAct.createdAt) : '';
     const contactDisplay = lead.contactName
