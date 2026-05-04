@@ -52,12 +52,13 @@ class BCClient {
     const token = await this.getToken();
 
     const queryParts = [];
-    if (params.$filter) queryParts.push(`$filter=${params.$filter}`);
-    if (params.$select) queryParts.push(`$select=${params.$select}`);
-    if (params.$orderby) queryParts.push(`$orderby=${params.$orderby}`);
-    if (params.$top) queryParts.push(`$top=${params.$top}`);
-    if (params.$skip) queryParts.push(`$skip=${params.$skip}`);
-    if (params.$expand) queryParts.push(`$expand=${params.$expand}`);
+    // URL-encode values so non-ASCII (e.g. Chinese dim codes) and special chars survive
+    if (params.$filter) queryParts.push(`$filter=${encodeURIComponent(params.$filter)}`);
+    if (params.$select) queryParts.push(`$select=${encodeURIComponent(params.$select)}`);
+    if (params.$orderby) queryParts.push(`$orderby=${encodeURIComponent(params.$orderby)}`);
+    if (params.$top) queryParts.push(`$top=${encodeURIComponent(params.$top)}`);
+    if (params.$skip) queryParts.push(`$skip=${encodeURIComponent(params.$skip)}`);
+    if (params.$expand) queryParts.push(`$expand=${encodeURIComponent(params.$expand)}`);
 
     const fullUrl = queryParts.length > 0 ? `${url}?${queryParts.join('&')}` : url;
 
@@ -87,10 +88,11 @@ class BCClient {
     const token = await this.getToken();
 
     const queryParts = [];
-    if (params.$filter) queryParts.push(`$filter=${params.$filter}`);
-    if (params.$select) queryParts.push(`$select=${params.$select}`);
-    if (params.$orderby) queryParts.push(`$orderby=${params.$orderby}`);
-    if (params.$expand) queryParts.push(`$expand=${params.$expand}`);
+    // URL-encode values so non-ASCII (e.g. Chinese dim codes) and special chars survive
+    if (params.$filter) queryParts.push(`$filter=${encodeURIComponent(params.$filter)}`);
+    if (params.$select) queryParts.push(`$select=${encodeURIComponent(params.$select)}`);
+    if (params.$orderby) queryParts.push(`$orderby=${encodeURIComponent(params.$orderby)}`);
+    if (params.$expand) queryParts.push(`$expand=${encodeURIComponent(params.$expand)}`);
 
     let fullUrl = queryParts.length > 0 ? `${url}?${queryParts.join('&')}` : url;
     let allResults = [];
