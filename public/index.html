@@ -615,8 +615,8 @@
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
         <input type="text" id="ledgerCustomerSearch" oninput="filterLedgerCustomers()" placeholder="搜尋客戶編號或名稱..." style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
         <select id="ledgerCustomerView" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" title="查詢模式">
-          <option value="aged" selected>帳齡彙總（按客戶分組+分桶）</option>
-          <option value="invoices">發票流水帳（含沖帳明細）</option>
+          <option value="invoices" selected>發票流水帳（含沖帳明細）</option>
+          <option value="aged">帳齡彙總（按客戶分組+分桶）</option>
         </select>
         <select id="ledgerOpenFilter" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" title="僅發票流水帳模式有效">
           <option value="">全部（含已結清）</option>
@@ -641,8 +641,8 @@
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
         <input type="text" id="ledgerVendorSearch" oninput="filterLedgerVendors()" placeholder="搜尋廠商編號或名稱..." style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;">
         <select id="ledgerVendorView" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" title="查詢模式">
-          <option value="aged" selected>帳齡彙總（按廠商分組+分桶）</option>
-          <option value="invoices">發票流水帳（含沖帳明細）</option>
+          <option value="invoices" selected>發票流水帳（含沖帳明細）</option>
+          <option value="aged">帳齡彙總（按廠商分組+分桶）</option>
         </select>
         <select id="ledgerVendorOpenFilter" style="padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;" title="僅發票流水帳模式有效">
           <option value="">全部（含已結清）</option>
@@ -4388,7 +4388,7 @@ async function fetchLedger() {
           renderBalanceDetail(json.data || [], json.openingBalances || {}, l);
           summaryEl.textContent = `${startDate} ~ ${endDate} | 科目 ${arAccount} | ${(json.data || []).length} 筆（GL 應收帳款 — 時光回溯）`;
         } else {
-          const view = document.getElementById('ledgerCustomerView').value || 'aged';
+          const view = document.getElementById('ledgerCustomerView').value || 'invoices';
           let url = `/api/ledger/customer-ledger?companyId=${companyId}&view=${view}`;
           if (startDate) url += `&startDate=${startDate}`;
           if (endDate) url += `&endDate=${endDate}`;
@@ -4415,7 +4415,7 @@ async function fetchLedger() {
           renderBalanceDetail(json.data || [], json.openingBalances || {}, l);
           summaryEl.textContent = `${startDate} ~ ${endDate} | 科目 ${apAccount} | ${(json.data || []).length} 筆（GL 應付帳款）`;
         } else {
-          const view = document.getElementById('ledgerVendorView').value || 'aged';
+          const view = document.getElementById('ledgerVendorView').value || 'invoices';
           let url = `/api/ledger/vendor-ledger?companyId=${companyId}&view=${view}`;
           if (startDate) url += `&startDate=${startDate}`;
           if (endDate) url += `&endDate=${endDate}`;
