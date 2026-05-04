@@ -4497,19 +4497,10 @@ function renderSubledger(entries, type, source, l) {
     renderAgedSubledger(entries, type, source, l);
     return;
   }
-  // salesInvoices / purchaseInvoices: normalise field names to match ledgerEntries shape
+  // salesInvoices / purchaseInvoices: render as debit/credit ledger
   if (source === 'salesInvoices' || source === 'purchaseInvoices') {
-    const isCustomerSrc = source === 'salesInvoices';
-    entries = entries.map(e => ({
-      ...e,
-      documentNumber: e.number,
-      documentType: isCustomerSrc ? 'Invoice' : 'Invoice',
-      amount: e.totalAmountIncludingTax,
-      remainingAmount: e.remainingAmount ?? e.totalAmountIncludingTax,
-      open: (e.status === 'Open'),
-      customerName: e.customerName || e.vendorName,
-      vendorName: e.vendorName || e.customerName,
-    }));
+    renderInvoiceLedger(entries, type, source, l);
+    return;
   }
 
   const fmt = v => v != null && v !== 0
@@ -4605,6 +4596,147 @@ function renderSubledger(entries, type, source, l) {
           </tr>`;
         }).join('')}
         </tbody>
+      </table>
+      </div>
+    </div>`;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// =========================================
+// Invoice-based AR/AP Ledger renderer
+// Shows debit/credit/running balance per customer/vendor
+// =========================================
+function renderInvoiceLedger(entries, type, source, l) {
+  const container = document.getElementById('ledgerResults');
+  const isCustomer = type === 'customer';
+  const numKey  = isCustomer ? 'customerNumber' : 'vendorNumber';
+  const nameKey = isCustomer ? 'customerName'   : 'vendorName';
+  const title   = isCustomer ? '應收帳款明細帳' : '應付帳款明細帳';
+
+  if (!entries || entries.length === 0) {
+    container.innerHTML = `<div class="loading" style="color:#999;">查無資料</div>`;
+    return;
+  }
+
+  const fmt = v => (v != null && v !== 0)
+    ? Math.abs(Number(v)).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    : '';
+
+  const thS = 'padding:7px 8px;white-space:nowrap;position:sticky;top:0;z-index:2;background:#1a1a2e;color:#fff;font-size:12px;';
+  const thR = thS + 'text-align:right;';
+
+  // Group by customer/vendor
+  const groups = new Map();
+  entries.forEach(e => {
+    const key = e[numKey] || '(未知)';
+    if (!groups.has(key)) groups.set(key, { name: e[nameKey] || '', rows: [] });
+    groups.get(key).rows.push(e);
+  });
+
+  // Build summary
+  let grandTotal = 0;
+  const summaryRows = [];
+  groups.forEach((g, num) => {
+    let bal = 0;
+    g.rows.forEach(r => {
+      const amt = r.totalAmountIncludingTax || 0;
+      bal += r._type === 'creditMemo' ? -amt : amt;
+    });
+    grandTotal += bal;
+    summaryRows.push({ num, name: g.name, count: g.rows.length, bal });
+  });
+  summaryRows.sort((a, b) => Math.abs(b.bal) - Math.abs(a.bal));
+
+  let html = `<div style="display:flex;flex-direction:column;gap:16px;">`;
+
+  // Summary card
+  html += `<div style="border:1px solid #d0d0d0;border-radius:8px;overflow:hidden;">
+    <div style="background:#1a1a2e;color:#fff;padding:8px 14px;font-weight:700;font-size:13px;">${title} — 彙總</div>
+    <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;min-width:380px;">
+      <thead><tr>
+        <th style="${thS}">編號</th><th style="${thS}">名稱</th>
+        <th style="${thR}">筆數</th><th style="${thR}">餘額</th>
+      </tr></thead>
+      <tbody>
+      ${summaryRows.map((r, i) => `<tr style="background:${i%2?'#f8f9fb':'#fff'};">
+        <td style="padding:5px 8px;font-size:12px;font-family:monospace;">${r.num}</td>
+        <td style="padding:5px 8px;font-size:12px;">${r.name}</td>
+        <td style="padding:5px 8px;text-align:right;font-size:12px;">${r.count}</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px;color:${r.bal<0?'#c62828':'#1565c0'};">${fmt(r.bal) || '-'}</td>
+      </tr>`).join('')}
+      </tbody>
+      <tfoot><tr style="background:#e8eaf6;font-weight:700;border-top:2px solid #1a1a2e;">
+        <td colspan="3" style="padding:8px;font-size:12px;">合計</td>
+        <td style="padding:8px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;color:${grandTotal<0?'#c62828':'#1565c0'};">${fmt(grandTotal) || '-'}</td>
+      </tr></tfoot>
+    </table>
+    </div>
+  </div>`;
+
+  // Detail per customer/vendor
+  groups.forEach((g, num) => {
+    let running = 0;
+    let totDr = 0, totCr = 0;
+
+    const rowsHtml = g.rows.map((e, i) => {
+      const amt = e.totalAmountIncludingTax || 0;
+      const isCM = e._type === 'creditMemo';
+      const dr = isCM ? 0 : amt;   // 應收增加 = 借方
+      const cr = isCM ? amt : 0;   // 折讓/折扣 = 貸方
+      running += dr - cr;
+      totDr += dr; totCr += cr;
+      const bg = i % 2 === 0 ? '#fff' : '#f8f9fb';
+      const isOpen = e.status === 'Open';
+      const overdue = isOpen && e.dueDate && e.dueDate < new Date().toISOString().slice(0,10);
+      const balColor = running < 0 ? '#c62828' : '#1a1a2e';
+      const typeLabel = isCM ? '折讓單' : '發票';
+      const typeColor = isCM ? '#c62828' : '#1565c0';
+      return `<tr style="background:${bg};">
+        <td style="padding:5px 8px;font-size:12px;">${e.postingDate || ''}</td>
+        <td style="padding:5px 8px;font-size:11px;"><span style="color:${typeColor};font-weight:600;">${typeLabel}</span></td>
+        <td style="padding:5px 8px;font-size:11px;font-family:monospace;">${e.number || ''}</td>
+        <td style="padding:5px 8px;font-size:12px;${overdue?'color:#c62828;font-weight:600;':''}">${e.dueDate || ''}</td>
+        <td style="padding:5px 8px;font-size:12px;color:#555;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(e.invoiceNumber||e.number||'').replace(/"/g,'&quot;')}">${isCM && e.invoiceNumber ? '對應發票：'+e.invoiceNumber : e.status||''}</td>
+        <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#1565c0;">${dr ? fmt(dr) : ''}</td>
+        <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:#c62828;">${cr ? fmt(cr) : ''}</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:12px;color:${balColor};">${fmt(Math.abs(running)) || '-'}</td>
+        <td style="padding:5px 8px;text-align:center;font-size:11px;">
+          <span style="padding:2px 6px;border-radius:10px;background:${isOpen?'#fff3e0':'#e8f5e9'};color:${isOpen?'#e65100':'#2e7d32'};">${isOpen?'未結':'已結'}</span>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const closing = totDr - totCr;
+    html += `<div style="border:1px solid #d0d0d0;border-radius:8px;overflow:hidden;">
+      <div style="background:#37474f;color:#fff;padding:8px 14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+        <span style="font-weight:700;font-size:13px;">${num} ${g.name}</span>
+        <span style="font-size:12px;opacity:.9;">餘額：<strong style="color:${closing<0?'#ef9a9a':'#80cbc4'};">${fmt(Math.abs(closing)) || '0'}</strong></span>
+      </div>
+      <div style="overflow-x:auto;max-height:50vh;overflow-y:auto;">
+      <table style="width:100%;border-collapse:collapse;min-width:750px;">
+        <thead><tr>
+          <th style="${thS}background:#455a64;min-width:90px;">過帳日</th>
+          <th style="${thS}background:#455a64;min-width:55px;">類型</th>
+          <th style="${thS}background:#455a64;min-width:110px;">單號</th>
+          <th style="${thS}background:#455a64;min-width:90px;">到期日</th>
+          <th style="${thS}background:#455a64;">說明</th>
+          <th style="${thR}background:#455a64;min-width:95px;">借方</th>
+          <th style="${thR}background:#455a64;min-width:95px;">貸方</th>
+          <th style="${thR}background:#455a64;min-width:100px;">餘額</th>
+          <th style="${thS}background:#455a64;text-align:center;">狀態</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+        <tfoot><tr style="background:#e8eaf6;font-weight:700;border-top:2px solid #1a1a2e;">
+          <td colspan="5" style="padding:8px;font-size:12px;">本期合計（${g.rows.length} 筆）</td>
+          <td style="padding:8px;text-align:right;font-variant-numeric:tabular-nums;color:#1565c0;">${fmt(totDr)}</td>
+          <td style="padding:8px;text-align:right;font-variant-numeric:tabular-nums;color:#c62828;">${fmt(totCr)}</td>
+          <td style="padding:8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${closing<0?'#c62828':'#1a1a2e'};">${fmt(Math.abs(closing)) || '0'}</td>
+          <td></td>
+        </tr></tfoot>
       </table>
       </div>
     </div>`;

@@ -462,6 +462,83 @@ class BCClient {
   }
 
   /**
+   * 客戶流水帳 — 合併 salesInvoices + salesCreditMemos，排序後回傳
+   * 每筆含 _type: 'invoice'|'creditMemo'，供前端計算借貸與 running balance
+   */
+  async getCustomerLedgerFromInvoices(options = {}) {
+    const invoiceFilters = [];
+    const memoFilters = ["status ne 'Draft'"];
+    if (options.startDate) {
+      invoiceFilters.push(`postingDate ge ${options.startDate}`);
+      memoFilters.push(`postingDate ge ${options.startDate}`);
+    }
+    if (options.endDate) {
+      invoiceFilters.push(`postingDate le ${options.endDate}`);
+      memoFilters.push(`postingDate le ${options.endDate}`);
+    }
+    if (options.customerNumber) {
+      invoiceFilters.push(`customerNumber eq '${options.customerNumber}'`);
+      memoFilters.push(`customerNumber eq '${options.customerNumber}'`);
+    }
+
+    const [invoices, memos] = await Promise.all([
+      this.requestAll(this.companyUrl('salesInvoices', options.companyId), {
+        $select: 'id,number,postingDate,dueDate,customerNumber,customerName,currencyCode,totalAmountIncludingTax,remainingAmount,status',
+        $filter: invoiceFilters.length > 0 ? invoiceFilters.join(' and ') : undefined,
+      }).catch(() => []),
+      this.requestAll(this.companyUrl('salesCreditMemos', options.companyId), {
+        $select: 'id,number,postingDate,dueDate,customerNumber,customerName,currencyCode,totalAmountIncludingTax,status,invoiceNumber',
+        $filter: memoFilters.join(' and '),
+      }).catch(() => []),
+    ]);
+
+    const rows = [
+      ...(invoices || []).map(e => ({ ...e, _type: 'invoice' })),
+      ...(memos   || []).map(e => ({ ...e, _type: 'creditMemo' })),
+    ];
+    // Sort: customerNumber asc → postingDate asc → number asc
+    rows.sort((a, b) => {
+      if (a.customerNumber !== b.customerNumber) return (a.customerNumber||'').localeCompare(b.customerNumber||'');
+      if (a.postingDate !== b.postingDate) return (a.postingDate||'').localeCompare(b.postingDate||'');
+      return (a.number||'').localeCompare(b.number||'');
+    });
+    return rows;
+  }
+
+  /**
+   * 廠商流水帳 — 合併 purchaseInvoices + purchaseCreditMemos
+   */
+  async getVendorLedgerFromInvoices(options = {}) {
+    const invFilters = [];
+    const memoFilters = ["status ne 'Draft'"];
+    if (options.startDate) { invFilters.push(`postingDate ge ${options.startDate}`); memoFilters.push(`postingDate ge ${options.startDate}`); }
+    if (options.endDate)   { invFilters.push(`postingDate le ${options.endDate}`);   memoFilters.push(`postingDate le ${options.endDate}`); }
+    if (options.vendorNumber) { invFilters.push(`vendorNumber eq '${options.vendorNumber}'`); memoFilters.push(`vendorNumber eq '${options.vendorNumber}'`); }
+
+    const [invoices, memos] = await Promise.all([
+      this.requestAll(this.companyUrl('purchaseInvoices', options.companyId), {
+        $select: 'id,number,postingDate,dueDate,vendorNumber,vendorName,currencyCode,totalAmountIncludingTax,status',
+        $filter: invFilters.length > 0 ? invFilters.join(' and ') : undefined,
+      }).catch(() => []),
+      this.requestAll(this.companyUrl('purchaseCreditMemos', options.companyId), {
+        $select: 'id,number,postingDate,dueDate,vendorNumber,vendorName,currencyCode,totalAmountIncludingTax,status',
+        $filter: memoFilters.join(' and '),
+      }).catch(() => []),
+    ]);
+
+    const rows = [
+      ...(invoices || []).map(e => ({ ...e, _type: 'invoice' })),
+      ...(memos   || []).map(e => ({ ...e, _type: 'creditMemo' })),
+    ];
+    rows.sort((a, b) => {
+      if (a.vendorNumber !== b.vendorNumber) return (a.vendorNumber||'').localeCompare(b.vendorNumber||'');
+      if (a.postingDate !== b.postingDate) return (a.postingDate||'').localeCompare(b.postingDate||'');
+      return (a.number||'').localeCompare(b.number||'');
+    });
+    return rows;
+  }
+
+  /**
    * AR 明細 via salesInvoices (Open) — 當 customerLedgerEntries / agedAR 不可用時的備援
    */
   async getARFromSalesInvoices(options = {}) {

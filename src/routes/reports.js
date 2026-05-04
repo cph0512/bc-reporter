@@ -893,10 +893,9 @@ module.exports = function(reportEngine) {
         return res.json({ data: filtered, source: 'agedReceivable' });
       }
 
-      // Fallback 3: salesInvoices (Open) with remainingAmount
-      const siData = await reportEngine.bc.getARFromSalesInvoices({ ...co, startDate, endDate, customerNumber });
-      if (siData === null) return res.status(404).json({ error: 'No AR data source available on this BC environment' });
-      res.json({ data: siData, source: 'salesInvoices' });
+      // Fallback 3: salesInvoices + salesCreditMemos (debit/credit ledger view)
+      const siData = await reportEngine.bc.getCustomerLedgerFromInvoices({ ...co, startDate, endDate, customerNumber });
+      res.json({ data: siData || [], source: 'salesInvoices' });
     } catch (error) {
       console.error('[API] Customer Ledger error:', error.message);
       res.status(500).json({ error: error.message });
@@ -924,10 +923,9 @@ module.exports = function(reportEngine) {
         return res.json({ data: filtered, source: 'agedPayable' });
       }
 
-      // Fallback 3: purchaseInvoices (Open)
-      const piData = await reportEngine.bc.getAPFromPurchaseInvoices({ ...co, startDate, endDate, vendorNumber });
-      if (piData === null) return res.status(404).json({ error: 'No AP data source available on this BC environment' });
-      res.json({ data: piData, source: 'purchaseInvoices' });
+      // Fallback 3: purchaseInvoices + purchaseCreditMemos (debit/credit ledger view)
+      const piData = await reportEngine.bc.getVendorLedgerFromInvoices({ ...co, startDate, endDate, vendorNumber });
+      res.json({ data: piData || [], source: 'purchaseInvoices' });
     } catch (error) {
       console.error('[API] Vendor Ledger error:', error.message);
       res.status(500).json({ error: error.message });
