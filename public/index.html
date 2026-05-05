@@ -310,6 +310,7 @@
           <input type="text" id="myPlSearch" oninput="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;width:160px;" placeholder="">
           <select id="myPlFilterStatus" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
           <select id="myPlFilterCat" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
+          <select id="myPlWeekSelect" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;" title="週次篩選"></select>
           <input type="month" id="myPlFilterMonth" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;">
           <select id="myPlFilterStale" onchange="renderMyPipelineTable()" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
           <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openCreateLead()" id="myPlAddLeadBtn"></button>
@@ -2514,6 +2515,13 @@ function renderMyPipelineTable() {
     });
   }
   updateSortArrows('myPl', myPlSortField, myPlSortDir);
+  // Update title with current filtered count
+  const titleEl = document.getElementById('myPlListTitle');
+  if (titleEl) {
+    const baseTitle = (getLang() === 'en' ? 'My Pipeline List' : '我的商機列表');
+    const weekTag = weekLabel === '__all__' ? '' : `（${getWeekRangeLabel(weekLabel)}）`;
+    titleEl.textContent = `${baseTitle}${weekTag} — 顯示 ${leads.length} / 我的 ${myPlLeadsCache.length} 筆`;
+  }
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = leads.map(lead => {
@@ -2999,6 +3007,14 @@ function renderPipelineTable() {
     });
   }
   updateSortArrows('pl', plSortField, plSortDir);
+
+  // Update title with current filtered count
+  const plTitleEl = document.getElementById('plLeadListTitle');
+  if (plTitleEl) {
+    const baseTitle = (getLang() === 'en' ? 'Leads List' : '商機列表');
+    const weekTag = weekLabel === '__all__' ? '' : `（${getWeekRangeLabel(weekLabel)}）`;
+    plTitleEl.textContent = `${baseTitle}${weekTag} — 顯示 ${leads.length} / 共 ${plLeadsCache.length} 筆`;
+  }
 
   if (!leads.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
