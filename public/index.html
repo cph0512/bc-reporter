@@ -194,6 +194,39 @@
   .ct-batch-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
   .ct-batch-item input[type="checkbox"] { width: 18px; height: 18px; }
 
+  /* ===== Expense Claims Module ===== */
+  .exp-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .exp-summary-card { background: #fff; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .exp-summary-card .label { font-size: 11px; color: #777; margin-bottom: 5px; }
+  .exp-summary-card .value { font-size: 20px; font-weight: 700; color: #1a1a2e; }
+  .exp-badge { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .exp-status-draft { background: #f2f4f7; color: #475467; }
+  .exp-status-submitted { background: #fff3e0; color: #e65100; }
+  .exp-status-manager_approved { background: #e3f2fd; color: #1565c0; }
+  .exp-status-finance_approved { background: #ede7f6; color: #5e35b1; }
+  .exp-status-paid { background: #e8f5e9; color: #2e7d32; }
+  .exp-status-rejected { background: #ffebee; color: #c62828; }
+  .exp-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+  .exp-field label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; font-weight: 500; }
+  .exp-field input, .exp-field select, .exp-field textarea { width: 100%; padding: 8px 10px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 13px; }
+  .exp-field textarea { resize: vertical; min-height: 70px; }
+  .exp-items-table input { width: 100%; min-width: 92px; padding: 6px 8px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 12px; }
+  .exp-items-table .exp-summary-input { min-width: 180px; }
+  .exp-items-table .exp-action-col { position: sticky; left: 0; z-index: 1; min-width: 70px; background: #fff; }
+  .exp-items-table th.exp-action-col { z-index: 2; background: #f8f9fa; }
+  .exp-delete-item-btn { min-width: 52px; padding: 5px 8px; border: 1px solid #ffcdd2; border-radius: 6px; background: #fff5f5; color: #c62828; font-size: 12px; cursor: pointer; }
+  .exp-delete-item-btn:hover { background: #ffebee; }
+  .exp-upload-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .exp-attachment-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; background: #f5f7fa; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 12px; color: #333; }
+  .exp-detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .exp-detail-item { background: #f8f9fa; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+  .exp-detail-item label { display: block; font-size: 11px; color: #888; margin-bottom: 3px; }
+  .exp-history-item { padding: 8px 10px; border-left: 3px solid #d0d7de; background: #fafbfc; margin-bottom: 6px; font-size: 12px; color: #444; }
+  @media (max-width: 760px) {
+    .exp-form-grid, .exp-detail-grid { grid-template-columns: 1fr; }
+    .exp-items-table th, .exp-items-table td { padding: 6px; }
+  }
+
   /* Dashboard filter bar */
   .dash-filters { display: flex; gap: 12px; padding: 12px 24px; background: #fafafa; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; align-items: flex-end; }
   .dash-filters label { font-size: 12px; color: #666; display: block; margin-bottom: 2px; }
@@ -406,6 +439,67 @@
   </div>
   </div><!-- /adminPlLeadsSubView -->
   <div id="adminPlContactsSubView" style="display:none;padding:12px 24px;"></div>
+</div>
+
+<!-- Expense Claims -->
+<div id="expenseView" style="display:none">
+  <div class="dash-filters">
+    <div>
+      <label>狀態</label>
+      <select id="expFilterStatus" onchange="renderExpenseTable()">
+        <option value="">全部</option>
+        <option value="draft">草稿</option>
+        <option value="submitted">主管待簽核</option>
+        <option value="manager_approved">財務待處理</option>
+        <option value="finance_approved">財務已核准</option>
+        <option value="paid">已付款</option>
+        <option value="rejected">退回</option>
+      </select>
+    </div>
+    <div>
+      <label>範圍</label>
+      <select id="expFilterScope" onchange="loadExpenses()">
+        <option value="">可檢視全部</option>
+        <option value="mine">我的單據</option>
+        <option value="manager">主管待簽核</option>
+        <option value="finance">財務待處理</option>
+      </select>
+    </div>
+    <div>
+      <label>搜尋</label>
+      <input type="text" id="expSearch" oninput="renderExpenseTable()" placeholder="付款對象、摘要、申請人">
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="loadExpenses()">查詢</button>
+    <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="openExpenseModal()">+ 新增費用單</button>
+  </div>
+  <div class="dashboard-content">
+    <div class="exp-summary-grid" id="expenseSummary"></div>
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <h2>費用簽收單</h2>
+        <span style="font-size:12px;color:#777;">送出後由主管簽核，再交由財務處理</span>
+      </div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>單號</th>
+              <th>申請人</th>
+              <th>申請部門</th>
+              <th>付款對象</th>
+              <th>申請日期</th>
+              <th style="text-align:right;">含稅總額</th>
+              <th>附件</th>
+              <th>狀態</th>
+              <th>更新時間</th>
+            </tr>
+          </thead>
+          <tbody id="expenseTable"></tbody>
+        </table>
+        <div id="expenseEmpty" class="empty-msg" style="display:none;">尚無費用單</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Lead Modal -->
@@ -1043,6 +1137,119 @@
   </div>
 </div>
 
+<!-- Expense Claim Modal -->
+<div id="expenseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:320;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:24px;max-width:980px;width:95%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.22);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="expenseModalTitle" style="margin:0;font-size:17px;">新增費用簽收單</h3>
+      <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeExpenseModal()">✕</span>
+    </div>
+    <div id="expenseModalError" style="display:none;color:#c62828;font-size:12px;margin-bottom:10px;"></div>
+    <input type="hidden" id="expenseId">
+
+    <div class="exp-form-grid">
+      <div class="exp-field">
+        <label>申請部門 *</label>
+        <select id="expenseDepartment"></select>
+      </div>
+      <div class="exp-field">
+        <label>付款對象 *</label>
+        <input type="text" id="expensePayee" placeholder="例：供應商 / 員工 / 客戶">
+      </div>
+      <div class="exp-field">
+        <label>申請日期</label>
+        <input type="date" id="expenseRequestDate">
+      </div>
+      <div class="exp-field">
+        <label>預計付款日</label>
+        <input type="date" id="expenseExpectedPayDate">
+      </div>
+      <div class="exp-field">
+        <label>付款方式</label>
+        <select id="expensePaymentMethod" onchange="renderExpensePaymentFields()">
+          <option value="匯款">匯款</option>
+          <option value="現金">現金</option>
+          <option value="支票">支票</option>
+          <option value="繳款單">繳款單</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="exp-field">
+        <label style="display:flex;align-items:center;gap:8px;margin-top:22px;">
+          <input type="checkbox" id="expenseIsMonthly" style="width:auto;"> 月結
+        </label>
+      </div>
+    </div>
+
+    <div id="expensePaymentFields" class="exp-form-grid" style="margin-top:10px;"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 8px;">
+      <h4 style="font-size:14px;margin:0;">費用明細</h4>
+      <button class="btn btn-sm" onclick="addExpenseItemRow()" style="background:#e3f2fd;color:#1565c0;">+ 新增明細</button>
+    </div>
+    <div style="overflow-x:auto;border:1px solid #eee;border-radius:8px;">
+      <table class="exp-items-table">
+        <thead>
+          <tr>
+            <th class="exp-action-col">操作</th>
+            <th>發票日期</th>
+            <th>發票號碼</th>
+            <th>摘要</th>
+            <th>數量</th>
+            <th>含稅單價</th>
+            <th>未稅總額</th>
+            <th>稅額</th>
+          </tr>
+        </thead>
+        <tbody id="expenseItemsBody"></tbody>
+      </table>
+    </div>
+    <div id="expenseTotals" style="text-align:right;font-size:13px;color:#333;margin-top:8px;"></div>
+
+    <div class="exp-form-grid" style="margin-top:16px;">
+      <div class="exp-field" style="grid-column:1/-1;">
+        <label>備註</label>
+        <textarea id="expenseNotes" placeholder="補充說明、付款注意事項等"></textarea>
+      </div>
+      <div class="exp-field" style="grid-column:1/-1;">
+        <label>附件（發票、收據、請款文件）</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="file" id="expenseAttachmentInput" multiple accept="image/*,.pdf,.xlsx,.xls,.doc,.docx">
+          <label class="btn btn-sm" style="background:#e3f2fd;color:#1565c0;cursor:pointer;margin:0;">
+            手機拍照
+            <input type="file" id="expenseCameraInput" accept="image/*" capture="environment" style="display:none;">
+          </label>
+          <button type="button" class="btn btn-sm" style="background:#5e35b1;color:white;" onclick="scanExpensePendingFiles()">辨識附件</button>
+        </div>
+        <div id="expenseScanStatus" style="font-size:12px;color:#777;margin-top:6px;"></div>
+        <div id="expensePendingFiles" class="exp-upload-list"></div>
+        <div id="expenseExistingAttachments" class="exp-upload-list"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeExpenseModal()">取消</button>
+      <button class="btn btn-sm btn-primary" onclick="saveExpense(false)">儲存草稿</button>
+      <button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="saveExpense(true)">送出簽核</button>
+    </div>
+  </div>
+</div>
+
+<!-- Expense Detail Modal -->
+<div id="expenseDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:320;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:24px;max-width:920px;width:95%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.22);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div>
+        <h3 id="expenseDetailTitle" style="margin:0;font-size:17px;">費用簽收單</h3>
+        <div id="expenseDetailSub" style="font-size:12px;color:#777;margin-top:3px;"></div>
+      </div>
+      <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeExpenseDetail()">✕</span>
+    </div>
+    <div id="expenseDetailBody"></div>
+    <div id="expenseDetailActions" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px;"></div>
+  </div>
+</div>
+
 <!-- Change Password Modal -->
 <div id="pwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:10px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,0.2);">
@@ -1066,6 +1273,8 @@ let companiesList = [];
 let userDashboards = []; // empty = all dashboards
 let userRole = 'user';
 let userDisplayName = '';
+let userDepartment = '';
+let userManagedSalespeople = [];
 let userCanExport = false;
 let userStrategyRole = 'viewer'; // finance_editor | sales_manager | viewer
 
@@ -1075,10 +1284,12 @@ let userStrategyRole = 'viewer'; // finance_editor | sales_manager | viewer
     if (!res.ok) { window.location.href = '/login'; return; }
     const { user } = await res.json();
     userDisplayName = user.displayName || user.username;
+    userDepartment = user.department || '';
     document.getElementById('userDisplay').textContent = userDisplayName;
     if (user.role === 'admin') document.getElementById('adminLink').style.display = 'inline-flex';
 
     userRole = user.role;
+    userManagedSalespeople = user.managedSalespeople || [];
     userStrategyRole = user.role === 'admin' ? 'finance_editor' : (user.strategyRole || 'viewer');
     userDashboards = user.role === 'admin' ? [] : (user.dashboards || []);
     userCanExport = user.role === 'admin' || user.canExport === true;
@@ -1116,6 +1327,7 @@ function renderTabs() {
     { id: 'dashboard', label: l.dFinancialTab, perm: 'financial' },
     { id: 'sales-dashboard', label: l.dSalesTab, perm: 'sales' },
     { id: 'purchasing-dashboard', label: l.dPurchasingTab, perm: 'purchasing' },
+    { id: 'expense', label: l.dExpenseTab || '費用簽收', perm: 'expense' },
     { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline', userOnly: true },
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
     { id: 'tw-stock', label: l.dTwStockTab, perm: 'twstock' },
@@ -1128,6 +1340,9 @@ function renderTabs() {
     if (t.userOnly && userRole === 'admin') return false;
     return canAccessDashboard(t.perm);
   });
+  if (visibleTabs.length && !visibleTabs.some(t => t.id === currentTab)) {
+    currentTab = visibleTabs[0].id;
+  }
   const container = document.getElementById('tabButtons');
   container.innerHTML = visibleTabs.map(t =>
     `<button class="tab${t.id === currentTab ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`
@@ -1185,6 +1400,7 @@ function loadCurrentDashboard() {
   if (currentTab === 'dashboard') loadDashboard();
   else if (currentTab === 'sales-dashboard') loadSalesDashboard();
   else if (currentTab === 'purchasing-dashboard') loadPurchasingDashboard();
+  else if (currentTab === 'expense') loadExpenses();
   else if (currentTab === 'my-pipeline') loadMyPipeline();
   else if (currentTab === 'pipeline-dashboard') loadPipelineDashboard();
   else if (currentTab === 'ledger') initLedgerView();
@@ -1329,7 +1545,7 @@ const LABELS = {
 
     // Dashboard tabs
     dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dReports: '報表', dLedgerTab: '查帳', dStrategyTab: '策略戰情室',
-    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dTwStockTab: '台股財報', dReports: '報表', dLedgerTab: '查帳',
+    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dExpenseTab: '費用簽收', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dTwStockTab: '台股財報', dReports: '報表', dLedgerTab: '查帳',
     // Ledger labels
     ledgerType: '查詢類型', ledgerGL: '總帳分錄', ledgerTB: '試算表', ledgerJournal: '日記帳',
     ledgerAccounts: '科目篩選（可多選）', ledgerClearAll: '清除全部', ledgerFetch: '查詢',
@@ -1517,7 +1733,7 @@ const LABELS = {
 
     // Dashboard tabs
     dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dReports: 'Reports', dLedgerTab: 'Ledger', dStrategyTab: 'Strategy War Room',
-    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dTwStockTab: 'TW Stocks', dReports: 'Reports', dLedgerTab: 'Ledger',
+    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dExpenseTab: 'Expense Claims', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dTwStockTab: 'TW Stocks', dReports: 'Reports', dLedgerTab: 'Ledger',
     // Ledger labels
     ledgerType: 'Query Type', ledgerGL: 'GL Entries', ledgerTB: 'Trial Balance', ledgerJournal: 'Journals',
     ledgerAccounts: 'Account Filter (multi-select)', ledgerClearAll: 'Clear All', ledgerFetch: 'Query',
@@ -1856,6 +2072,668 @@ function summaryBadge(ch, key, compLabel) {
   const cls = d > 0 ? 'change-up' : d < 0 ? 'change-down' : 'change-zero';
   const arrow = d > 0 ? '↑' : d < 0 ? '↓' : '';
   return `<div class="change-info ${cls}">${arrow} ${fmt(Math.abs(d))} vs ${compLabel}</div>`;
+}
+
+// ==========================================
+//  Expense Claims
+// ==========================================
+let expenseClaimsCache = [];
+let expensePendingFiles = [];
+let expenseDepartments = [];
+
+const EXP_STATUS_LABELS = {
+  draft: '草稿',
+  submitted: '主管待簽核',
+  manager_approved: '財務待處理',
+  finance_approved: '財務已核准',
+  paid: '已付款',
+  rejected: '退回',
+};
+
+function expenseStatusBadge(status) {
+  const label = EXP_STATUS_LABELS[status] || status || '未設定';
+  return `<span class="exp-badge exp-status-${status || 'draft'}">${label}</span>`;
+}
+
+function expenseDate(value) {
+  if (!value) return '—';
+  return new Date(value).toLocaleDateString('zh-TW');
+}
+
+function expenseDateTime(value) {
+  if (!value) return '—';
+  return new Date(value).toLocaleString('zh-TW');
+}
+
+function expenseMoney(value) {
+  return Number(value || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 });
+}
+
+function setExpenseDepartmentOptions(selected = '') {
+  const select = document.getElementById('expenseDepartment');
+  if (!select) return;
+  const names = [...new Set([...(expenseDepartments || []), selected].map(v => String(v || '').trim()).filter(Boolean))];
+  select.innerHTML = [
+    '<option value="">請選擇部門</option>',
+    ...names.map(name => `<option value="${escHtml(name)}">${escHtml(name)}</option>`),
+  ].join('');
+  select.value = selected || '';
+}
+
+async function loadExpenseConfig() {
+  try {
+    const companyId = getCompanyId();
+    const res = await fetch(`/api/expenses/config?companyId=${encodeURIComponent(companyId)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '費用設定載入失敗');
+    expenseDepartments = Array.isArray(data.departments) ? data.departments : [];
+    setExpenseDepartmentOptions(document.getElementById('expenseDepartment')?.value || '');
+  } catch (err) {
+    expenseDepartments = ['業務部', '財務部', '管理部', '營運部', '物流部'];
+    setExpenseDepartmentOptions(document.getElementById('expenseDepartment')?.value || '');
+  }
+}
+
+async function loadExpenses() {
+  const summaryEl = document.getElementById('expenseSummary');
+  const tbody = document.getElementById('expenseTable');
+  if (summaryEl) summaryEl.innerHTML = '<div class="loading" style="grid-column:1/-1;">載入費用單中...</div>';
+  if (tbody) tbody.innerHTML = '';
+  try {
+    await loadExpenseConfig();
+    const params = new URLSearchParams();
+    const companyId = getCompanyId();
+    const scope = document.getElementById('expFilterScope')?.value || '';
+    if (companyId) params.set('companyId', companyId);
+    if (scope) params.set('scope', scope);
+    const [summaryRes, listRes] = await Promise.all([
+      fetch(`/api/expenses/summary?companyId=${encodeURIComponent(companyId)}`),
+      fetch(`/api/expenses?${params.toString()}`),
+    ]);
+    const summary = await summaryRes.json();
+    const claims = await listRes.json();
+    if (!summaryRes.ok) throw new Error(summary.error || '摘要載入失敗');
+    if (!listRes.ok) throw new Error(claims.error || '清單載入失敗');
+    expenseClaimsCache = claims;
+    renderExpenseSummary(summary);
+    renderExpenseTable();
+  } catch (e) {
+    if (summaryEl) summaryEl.innerHTML = `<div class="error" style="grid-column:1/-1;">${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderExpenseSummary(summary) {
+  const el = document.getElementById('expenseSummary');
+  if (!el) return;
+  const cards = [
+    ['總單數', summary.totalClaims || 0],
+    ['含稅總額', `$ ${expenseMoney(summary.totalAmount)}`],
+    ['主管待簽核', summary.submitted || 0],
+    ['財務待處理', summary.managerApproved || 0],
+    ['已付款', summary.paid || 0],
+  ];
+  el.innerHTML = cards.map(([label, value]) => `
+    <div class="exp-summary-card">
+      <div class="label">${label}</div>
+      <div class="value">${value}</div>
+    </div>
+  `).join('');
+}
+
+function renderExpenseTable() {
+  const tbody = document.getElementById('expenseTable');
+  const empty = document.getElementById('expenseEmpty');
+  if (!tbody) return;
+  const status = document.getElementById('expFilterStatus')?.value || '';
+  const q = (document.getElementById('expSearch')?.value || '').trim().toLowerCase();
+  let claims = expenseClaimsCache.slice();
+  if (status) claims = claims.filter(c => c.status === status);
+  if (q) {
+    claims = claims.filter(c => [
+      c.id, c.applicantName, c.department, c.payee, c.notes,
+      ...(c.items || []).map(i => `${i.summary || ''} ${i.invoiceNo || ''}`),
+    ].join(' ').toLowerCase().includes(q));
+  }
+  if (!claims.length) {
+    tbody.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  tbody.innerHTML = claims.map(claim => `
+    <tr onclick="openExpenseDetail('${claim.id}')" style="cursor:pointer;">
+      <td><strong>${escHtml(claim.id)}</strong></td>
+      <td>${escHtml(claim.applicantName || '—')}</td>
+      <td>${escHtml(claim.department || '—')}</td>
+      <td>${escHtml(claim.payee || '—')}</td>
+      <td>${expenseDate(claim.requestDate)}</td>
+      <td class="amount">${expenseMoney(claim.totals?.total)}</td>
+      <td>${(claim.attachments || []).length}</td>
+      <td>${expenseStatusBadge(claim.status)}</td>
+      <td>${expenseDateTime(claim.updatedAt)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderExpensePaymentFields(payment = {}) {
+  const method = document.getElementById('expensePaymentMethod')?.value || payment.paymentMethod || '匯款';
+  const box = document.getElementById('expensePaymentFields');
+  if (!box) return;
+  if (method === '匯款') {
+    box.innerHTML = `
+      <div class="exp-field"><label>銀行名</label><input id="expenseBankName" value="${escHtml(payment.bankName || '')}"></div>
+      <div class="exp-field"><label>分行別</label><input id="expenseBranchName" value="${escHtml(payment.branchName || '')}"></div>
+      <div class="exp-field"><label>戶名</label><input id="expenseAccountName" value="${escHtml(payment.accountName || '')}"></div>
+      <div class="exp-field"><label>帳號</label><input id="expenseAccountNumber" value="${escHtml(payment.accountNumber || '')}"></div>
+    `;
+  } else if (method === '支票') {
+    box.innerHTML = `
+      <div class="exp-field"><label>抬頭</label><input id="expenseCheckTitle" value="${escHtml(payment.checkTitle || '')}"></div>
+      <div class="exp-field"><label>票期</label><input type="date" id="expenseCheckDueDate" value="${escHtml(payment.checkDueDate || '')}"></div>
+    `;
+  } else if (method === '其他') {
+    box.innerHTML = `<div class="exp-field" style="grid-column:1/-1;"><label>其他付款方式說明</label><input id="expenseOtherPaymentNote" value="${escHtml(payment.otherPaymentNote || '')}"></div>`;
+  } else {
+    box.innerHTML = '';
+  }
+}
+
+function openExpenseModal(id = null) {
+  const claim = id ? expenseClaimsCache.find(c => c.id === id) : null;
+  document.getElementById('expenseModalTitle').textContent = claim ? `編輯費用單 ${claim.id}` : '新增費用簽收單';
+  document.getElementById('expenseModalError').style.display = 'none';
+  document.getElementById('expenseId').value = claim?.id || '';
+  setExpenseDepartmentOptions(claim?.department || userDepartment || '');
+  document.getElementById('expensePayee').value = claim?.payee || '';
+  document.getElementById('expenseRequestDate').value = claim?.requestDate || new Date().toISOString().slice(0, 10);
+  document.getElementById('expenseExpectedPayDate').value = claim?.payment?.expectedPaymentDate || '';
+  document.getElementById('expenseIsMonthly').checked = !!claim?.payment?.isMonthly;
+  document.getElementById('expensePaymentMethod').value = claim?.payment?.paymentMethod || '匯款';
+  document.getElementById('expenseNotes').value = claim?.notes || '';
+  const input = document.getElementById('expenseAttachmentInput');
+  input.value = '';
+  input.onchange = () => addExpensePendingFiles(input.files);
+  const cameraInput = document.getElementById('expenseCameraInput');
+  cameraInput.value = '';
+  cameraInput.onchange = () => addExpensePendingFiles(cameraInput.files);
+  expensePendingFiles = [];
+  document.getElementById('expenseScanStatus').textContent = '';
+  document.getElementById('expensePendingFiles').innerHTML = '';
+  renderExpenseExistingAttachments(claim);
+  renderExpensePaymentFields(claim?.payment || {});
+  const body = document.getElementById('expenseItemsBody');
+  body.innerHTML = '';
+  (claim?.items?.length ? claim.items : [{}]).forEach(item => addExpenseItemRow(item));
+  recalcExpenseModalTotals();
+  document.getElementById('expenseModal').style.display = 'flex';
+}
+
+function closeExpenseModal() {
+  document.getElementById('expenseModal').style.display = 'none';
+}
+
+function addExpenseItemRow(item = {}) {
+  const body = document.getElementById('expenseItemsBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="exp-action-col"><button type="button" class="exp-delete-item-btn" onclick="removeExpenseItemRow(this)">刪除</button></td>
+    <td><input type="date" class="exp-item-date" value="${escHtml(item.invoiceDate || '')}"></td>
+    <td><input type="text" class="exp-item-no" value="${escHtml(item.invoiceNo || '')}" placeholder="發票號碼"></td>
+    <td><input type="text" class="exp-item-summary exp-summary-input" value="${escHtml(item.summary || '')}" placeholder="摘要"></td>
+    <td><input type="number" class="exp-item-qty" min="0" step="1" value="${item.quantity ?? 1}" oninput="recalcExpenseModalTotals()"></td>
+    <td><input type="number" class="exp-item-price" min="0" step="1" value="${item.taxIncludedUnitPrice || ''}" oninput="recalcExpenseModalTotals()"></td>
+    <td class="amount exp-line-untaxed">0</td>
+    <td class="amount exp-line-tax">0</td>
+  `;
+  body.appendChild(tr);
+  recalcExpenseModalTotals();
+}
+
+function removeExpenseItemRow(button) {
+  const row = button.closest('tr');
+  if (row) row.remove();
+  recalcExpenseModalTotals();
+}
+
+function recalcExpenseModalTotals() {
+  let untaxed = 0;
+  let tax = 0;
+  let total = 0;
+  document.querySelectorAll('#expenseItemsBody tr').forEach(row => {
+    const qty = Number(row.querySelector('.exp-item-qty').value || 0);
+    const price = Number(row.querySelector('.exp-item-price').value || 0);
+    const lineTotal = qty * price;
+    const lineUntaxed = lineTotal / 1.05;
+    const lineTax = lineTotal - lineUntaxed;
+    untaxed += lineUntaxed;
+    tax += lineTax;
+    total += lineTotal;
+    row.querySelector('.exp-line-untaxed').textContent = expenseMoney(lineUntaxed);
+    row.querySelector('.exp-line-tax').textContent = expenseMoney(lineTax);
+  });
+  const totals = document.getElementById('expenseTotals');
+  if (totals) totals.textContent = `未稅 ${expenseMoney(untaxed)}　稅額 ${expenseMoney(tax)}　含稅總額 ${expenseMoney(total)}`;
+}
+
+function collectExpenseForm() {
+  const items = Array.from(document.querySelectorAll('#expenseItemsBody tr')).map(row => ({
+    invoiceDate: row.querySelector('.exp-item-date').value || null,
+    invoiceNo: row.querySelector('.exp-item-no').value.trim(),
+    summary: row.querySelector('.exp-item-summary').value.trim(),
+    quantity: Number(row.querySelector('.exp-item-qty').value || 0),
+    taxIncludedUnitPrice: Number(row.querySelector('.exp-item-price').value || 0),
+  })).filter(item => item.summary || item.invoiceNo || item.taxIncludedUnitPrice > 0);
+
+  return {
+    companyId: getCompanyId(),
+    department: document.getElementById('expenseDepartment').value.trim(),
+    payee: document.getElementById('expensePayee').value.trim(),
+    requestDate: document.getElementById('expenseRequestDate').value,
+    notes: document.getElementById('expenseNotes').value.trim(),
+    payment: {
+      isMonthly: document.getElementById('expenseIsMonthly').checked,
+      expectedPaymentDate: document.getElementById('expenseExpectedPayDate').value || null,
+      paymentMethod: document.getElementById('expensePaymentMethod').value,
+      bankName: document.getElementById('expenseBankName')?.value || '',
+      branchName: document.getElementById('expenseBranchName')?.value || '',
+      accountName: document.getElementById('expenseAccountName')?.value || '',
+      accountNumber: document.getElementById('expenseAccountNumber')?.value || '',
+      checkTitle: document.getElementById('expenseCheckTitle')?.value || '',
+      checkDueDate: document.getElementById('expenseCheckDueDate')?.value || null,
+      otherPaymentNote: document.getElementById('expenseOtherPaymentNote')?.value || '',
+    },
+    items,
+  };
+}
+
+function addExpensePendingFiles(fileList) {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  files.forEach(file => expensePendingFiles.push(file));
+  document.getElementById('expenseAttachmentInput').value = '';
+  document.getElementById('expenseCameraInput').value = '';
+  renderExpensePendingFiles();
+}
+
+function removeExpensePendingFile(index) {
+  expensePendingFiles.splice(index, 1);
+  renderExpensePendingFiles();
+}
+
+function renderExpensePendingFiles() {
+  const box = document.getElementById('expensePendingFiles');
+  if (!box) return;
+  box.innerHTML = expensePendingFiles.map((file, index) => (
+    `<span class="exp-attachment-chip">${file.type?.startsWith('image/') ? '可辨識 ' : ''}${escHtml(file.name)} (${Math.ceil(file.size / 1024)} KB)<button type="button" onclick="removeExpensePendingFile(${index})" style="border:none;background:transparent;color:#c62828;cursor:pointer;font-size:13px;">×</button></span>`
+  )).join('');
+}
+
+function renderExpenseExistingAttachments(claim) {
+  const el = document.getElementById('expenseExistingAttachments');
+  if (!el) return;
+  const attachments = claim?.attachments || [];
+  el.innerHTML = attachments.map(att => (
+    `<a class="exp-attachment-chip" href="${att.dataUrl}" download="${escHtml(att.fileName)}">${escHtml(att.fileName)}</a>`
+  )).join('');
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatExpenseFileSize(bytes) {
+  if (!bytes) return '0 KB';
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.ceil(bytes / 1024)} KB`;
+}
+
+function loadExpenseImageElement(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('圖片無法在瀏覽器解碼，請改用 JPG/PNG'));
+    };
+    img.src = url;
+  });
+}
+
+async function imageFileToExpenseScanPayload(file) {
+  const maxEdge = 1800;
+  const quality = 0.82;
+  try {
+    const img = await loadExpenseImageElement(file);
+    const scale = Math.min(1, maxEdge / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+    const width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+    const height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    return {
+      image: dataUrl,
+      mimeType: 'image/jpeg',
+      fileName: file.name,
+      originalSize: file.size,
+      scanSize: Math.ceil((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75),
+      width,
+      height,
+    };
+  } catch (err) {
+    const dataUrl = await fileToDataUrl(file);
+    return {
+      image: dataUrl,
+      mimeType: file.type || 'image/jpeg',
+      fileName: file.name,
+      originalSize: file.size,
+      scanSize: file.size,
+      warning: err.message,
+    };
+  }
+}
+
+function fetchWithTimeout(url, options = {}, timeoutMs = 65000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
+function expenseFetchErrorMessage(err, fallback = '操作失敗') {
+  if (err?.name === 'AbortError') return '連線逾時，請稍後再試。';
+  if (String(err?.message || '').includes('Failed to fetch')) {
+    return '連線中斷，請重新整理頁面後再試。若剛好在測試站重啟時操作，資料可能尚未送出。';
+  }
+  return err?.message || fallback;
+}
+
+async function uploadExpenseAttachments(claimId) {
+  for (const file of expensePendingFiles) {
+    const dataUrl = await fileToDataUrl(file);
+    const res = await fetch(`/api/expenses/${claimId}/attachments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName: file.name, mimeType: file.type, size: file.size, dataUrl }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `附件上傳失敗：${file.name}`);
+  }
+}
+
+function isBlankExpenseRow(row) {
+  return !row.querySelector('.exp-item-date').value
+    && !row.querySelector('.exp-item-no').value.trim()
+    && !row.querySelector('.exp-item-summary').value.trim()
+    && Number(row.querySelector('.exp-item-price').value || 0) === 0;
+}
+
+function clearBlankExpenseRowsBeforeScan() {
+  const rows = Array.from(document.querySelectorAll('#expenseItemsBody tr'));
+  if (rows.length === 1 && isBlankExpenseRow(rows[0])) rows[0].remove();
+}
+
+function applyExpenseScanResult(scanData) {
+  const suggestions = scanData.suggestions || {};
+  if (suggestions.payee && !document.getElementById('expensePayee').value.trim()) {
+    document.getElementById('expensePayee').value = suggestions.payee;
+  }
+  if (suggestions.department && !document.getElementById('expenseDepartment').value) {
+    setExpenseDepartmentOptions(suggestions.department);
+  }
+
+  const payment = suggestions.payment || {};
+  if (payment.bankName || payment.branchName || payment.accountName || payment.accountNumber) {
+    document.getElementById('expensePaymentMethod').value = payment.paymentMethod || '匯款';
+    renderExpensePaymentFields(payment);
+  }
+
+  const items = scanData.items || [];
+  if (!items.length) throw new Error('AI 沒有辨識到可帶入的費用明細，請手動填寫');
+  clearBlankExpenseRowsBeforeScan();
+  items.forEach(item => addExpenseItemRow({
+    invoiceDate: item.invoiceDate || '',
+    invoiceNo: item.invoiceNo || '',
+    summary: item.summary || '',
+    quantity: item.quantity || 1,
+    taxIncludedUnitPrice: item.taxIncludedUnitPrice || '',
+  }));
+  recalcExpenseModalTotals();
+
+  const failed = (scanData.results || []).filter(r => !r.success);
+  const warnings = (scanData.results || []).flatMap(r => r.warnings || []);
+  const maxDuration = Math.max(0, ...(scanData.results || []).map(r => Number(r.durationMs || 0)));
+  const status = document.getElementById('expenseScanStatus');
+  const parts = [`已辨識 ${scanData.totalRecognized || 0}/${scanData.totalFiles || 0} 張圖片，請核對日期、發票號碼與金額。`];
+  if (maxDuration) parts.push(`AI 辨識耗時：約 ${(maxDuration / 1000).toFixed(1)} 秒。`);
+  if (warnings.length) parts.push(`提醒：${warnings.map(escHtml).join('；')}`);
+  if (failed.length) parts.push(`未成功：${failed.map(r => `${escHtml(r.fileName)}（${escHtml(r.error)}）`).join('；')}`);
+  status.innerHTML = parts.join('<br>');
+}
+
+async function scanExpensePendingFiles() {
+  const status = document.getElementById('expenseScanStatus');
+  const imageFiles = expensePendingFiles.filter(file => file.type?.startsWith('image/'));
+  if (!imageFiles.length) {
+    status.textContent = '請先上傳或拍攝圖片附件；目前辨識先支援 JPG/PNG/WebP 等圖片。';
+    return;
+  }
+  const limited = imageFiles.slice(0, 5);
+  const originalTotal = limited.reduce((sum, file) => sum + file.size, 0);
+  status.textContent = `正在處理 ${limited.length} 張圖片（原始 ${formatExpenseFileSize(originalTotal)}）...`;
+  try {
+    const images = [];
+    for (let i = 0; i < limited.length; i++) {
+      const file = limited[i];
+      status.textContent = `正在壓縮圖片 ${i + 1}/${limited.length}：${file.name}（${formatExpenseFileSize(file.size)}）...`;
+      images.push(await imageFileToExpenseScanPayload(file));
+    }
+    const scanTotal = images.reduce((sum, img) => sum + (img.scanSize || 0), 0);
+    status.textContent = `正在辨識 ${limited.length} 張圖片（已壓縮為 ${formatExpenseFileSize(scanTotal)}）...`;
+    const res = await fetchWithTimeout('/api/expenses/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyId: getCompanyId(), images }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '附件辨識失敗');
+    applyExpenseScanResult(data);
+  } catch (e) {
+    status.textContent = e.name === 'AbortError'
+      ? '附件辨識超過 65 秒，請先裁切/重拍較清楚的收據，或稍後再試。'
+      : expenseFetchErrorMessage(e, '附件辨識失敗');
+  }
+}
+
+async function saveExpense(submitAfterSave) {
+  const err = document.getElementById('expenseModalError');
+  err.style.display = 'none';
+  try {
+    const id = document.getElementById('expenseId').value;
+    const body = collectExpenseForm();
+    if (!body.department || !body.payee || !body.items.length) {
+      throw new Error('請填寫申請部門、付款對象，並至少新增一筆費用明細');
+    }
+    const res = await fetch(id ? `/api/expenses/${id}` : '/api/expenses', {
+      method: id ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    let claim = await res.json();
+    if (!res.ok) throw new Error(claim.error || '儲存失敗');
+    await uploadExpenseAttachments(claim.id);
+    if (submitAfterSave && ['draft', 'rejected'].includes(claim.status)) {
+      const submitRes = await fetch(`/api/expenses/${claim.id}/submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      claim = await submitRes.json();
+      if (!submitRes.ok) throw new Error(claim.error || '送出失敗');
+    }
+    closeExpenseModal();
+    await loadExpenses();
+    openExpenseDetail(claim.id);
+  } catch (e) {
+    err.textContent = expenseFetchErrorMessage(e, submitAfterSave ? '送出失敗' : '儲存失敗');
+    err.style.display = 'block';
+  }
+}
+
+async function openExpenseDetail(id) {
+  try {
+    const res = await fetch(`/api/expenses/${id}`);
+    const claim = await res.json();
+    if (!res.ok) throw new Error(claim.error || '載入失敗');
+    const idx = expenseClaimsCache.findIndex(c => c.id === id);
+    if (idx >= 0) expenseClaimsCache[idx] = claim;
+    else expenseClaimsCache.unshift(claim);
+    renderExpenseDetail(claim);
+    document.getElementById('expenseDetailModal').style.display = 'flex';
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+function closeExpenseDetail() {
+  document.getElementById('expenseDetailModal').style.display = 'none';
+}
+
+function canEditExpense(claim) {
+  return userRole === 'admin' || (claim.applicantName === userDisplayName && ['draft', 'rejected'].includes(claim.status));
+}
+
+function canManagerApproveExpense(claim) {
+  if (userRole === 'admin') return claim.status === 'submitted';
+  return userRole === 'manager' && claim.status === 'submitted' && claim.applicantName !== userDisplayName && userManagedSalespeople.includes(claim.applicantName);
+}
+
+function canFinanceExpense(claim) {
+  return (userRole === 'admin' || userStrategyRole === 'finance_editor') && ['manager_approved', 'finance_approved'].includes(claim.status);
+}
+
+function renderExpenseDetail(claim) {
+  document.getElementById('expenseDetailTitle').innerHTML = `${escHtml(claim.id)} ${expenseStatusBadge(claim.status)}`;
+  document.getElementById('expenseDetailSub').textContent = `${escHtml(claim.applicantName || '—')} · ${expenseDate(claim.requestDate)} · ${escHtml(getCompanyName())}`;
+  const payment = claim.payment || {};
+  const paymentLine = payment.paymentMethod === '匯款'
+    ? `匯款：${payment.bankName || '—'} ${payment.branchName || ''} / ${payment.accountName || '—'} / ${payment.accountNumber || '—'}`
+    : payment.paymentMethod === '支票'
+      ? `支票：${payment.checkTitle || '—'} / 票期 ${payment.checkDueDate || '—'}`
+      : `${payment.paymentMethod || '—'} ${payment.otherPaymentNote || ''}`;
+
+  document.getElementById('expenseDetailBody').innerHTML = `
+    <div class="exp-detail-grid">
+      <div class="exp-detail-item"><label>申請部門</label>${escHtml(claim.department || '—')}</div>
+      <div class="exp-detail-item"><label>付款對象</label>${escHtml(claim.payee || '—')}</div>
+      <div class="exp-detail-item"><label>預計付款</label>${payment.isMonthly ? '月結' : expenseDate(payment.expectedPaymentDate)}</div>
+      <div class="exp-detail-item" style="grid-column:1/-1;"><label>付款方式</label>${escHtml(paymentLine)}</div>
+    </div>
+    <div style="overflow-x:auto;border:1px solid #eee;border-radius:8px;margin-bottom:14px;">
+      <table>
+        <thead><tr><th>發票日期</th><th>發票號碼</th><th>摘要</th><th class="amount">數量</th><th class="amount">含稅單價</th><th class="amount">未稅總額</th><th class="amount">稅額</th><th class="amount">含稅總額</th></tr></thead>
+        <tbody>
+          ${(claim.items || []).map(item => `<tr>
+            <td>${expenseDate(item.invoiceDate)}</td>
+            <td>${escHtml(item.invoiceNo || '—')}</td>
+            <td>${escHtml(item.summary || '—')}</td>
+            <td class="amount">${expenseMoney(item.quantity)}</td>
+            <td class="amount">${expenseMoney(item.taxIncludedUnitPrice)}</td>
+            <td class="amount">${expenseMoney(item.untaxedTotal)}</td>
+            <td class="amount">${expenseMoney(item.taxAmount)}</td>
+            <td class="amount">${expenseMoney(item.total)}</td>
+          </tr>`).join('')}
+          <tr class="total"><td colspan="5">合計</td><td class="amount">${expenseMoney(claim.totals?.untaxedTotal)}</td><td class="amount">${expenseMoney(claim.totals?.taxTotal)}</td><td class="amount">${expenseMoney(claim.totals?.total)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-bottom:14px;"><strong style="font-size:13px;">附件</strong>
+      <div class="exp-upload-list">${(claim.attachments || []).map(att => `<a class="exp-attachment-chip" href="${att.dataUrl}" download="${escHtml(att.fileName)}">${escHtml(att.fileName)}</a>`).join('') || '<span style="font-size:12px;color:#999;">尚無附件</span>'}</div>
+    </div>
+    ${claim.notes ? `<div style="margin-bottom:14px;font-size:13px;"><strong>備註</strong><div style="white-space:pre-wrap;margin-top:4px;color:#444;">${escHtml(claim.notes)}</div></div>` : ''}
+    <div><strong style="font-size:13px;">簽核紀錄</strong>
+      <div style="margin-top:8px;">${(claim.history || []).slice().reverse().map(h => `<div class="exp-history-item">${escHtml(h.userName || 'System')} · ${expenseDateTime(h.at)} · ${escHtml(expenseHistoryLabel(h.action))}${h.comment ? `<div style="color:#777;margin-top:3px;">${escHtml(h.comment)}</div>` : ''}</div>`).join('')}</div>
+    </div>
+  `;
+  renderExpenseActions(claim);
+}
+
+function expenseHistoryLabel(action) {
+  const map = {
+    created: '建立',
+    updated: '更新',
+    submit: '送出簽核',
+    manager_approve: '主管核准',
+    finance_approve: '財務核准',
+    paid: '標記付款',
+    reject: '退回',
+    attachment_added: '新增附件',
+    attachment_deleted: '刪除附件',
+  };
+  return map[action] || action;
+}
+
+function renderExpenseActions(claim) {
+  const actions = [];
+  actions.push(`<button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeExpenseDetail()">關閉</button>`);
+  if (canEditExpense(claim)) {
+    actions.push(`<button class="btn btn-sm btn-edit" onclick="closeExpenseDetail();openExpenseModal('${claim.id}')">編輯</button>`);
+    actions.push(`<button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="expenseTransition('${claim.id}','submit')">送出簽核</button>`);
+    actions.push(`<button class="btn btn-sm" style="background:#f8d7da;color:#c62828;" onclick="deleteExpense('${claim.id}')">刪除</button>`);
+  }
+  if (canManagerApproveExpense(claim)) {
+    actions.push(`<button class="btn btn-sm" style="background:#2e7d32;color:white;" onclick="expenseTransition('${claim.id}','manager-approve')">主管核准</button>`);
+    actions.push(`<button class="btn btn-sm" style="background:#f8d7da;color:#c62828;" onclick="expenseTransition('${claim.id}','reject')">退回</button>`);
+  }
+  if (canFinanceExpense(claim)) {
+    if (claim.status === 'manager_approved') actions.push(`<button class="btn btn-sm" style="background:#5e35b1;color:white;" onclick="expenseTransition('${claim.id}','finance-approve')">財務核准</button>`);
+    actions.push(`<button class="btn btn-sm btn-primary" onclick="expenseTransition('${claim.id}','paid')">標記已付款</button>`);
+    actions.push(`<button class="btn btn-sm" style="background:#f8d7da;color:#c62828;" onclick="expenseTransition('${claim.id}','reject')">退回</button>`);
+  }
+  document.getElementById('expenseDetailActions').innerHTML = actions.join('');
+}
+
+async function expenseTransition(id, action) {
+  let comment = '';
+  if (action === 'reject') {
+    comment = prompt('請輸入退回原因') || '';
+    if (!comment.trim()) return;
+  }
+  try {
+    const res = await fetch(`/api/expenses/${id}/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment }),
+    });
+    const claim = await res.json();
+    if (!res.ok) throw new Error(claim.error || '操作失敗');
+    await loadExpenses();
+    renderExpenseDetail(claim);
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function deleteExpense(id) {
+  if (!confirm(`確定刪除費用單 ${id}？`)) return;
+  try {
+    const res = await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '刪除失敗');
+    closeExpenseDetail();
+    await loadExpenses();
+  } catch (e) {
+    alert(e.message);
+  }
 }
 
 // ===== Table helper functions =====
@@ -2352,6 +3230,7 @@ function switchTab(tab) {
   document.getElementById('dashboardView').style.display = 'none';
   document.getElementById('salesDashboardView').style.display = 'none';
   document.getElementById('purchasingDashboardView').style.display = 'none';
+  document.getElementById('expenseView').style.display = 'none';
   document.getElementById('myPipelineView').style.display = 'none';
   document.getElementById('pipelineDashboardView').style.display = 'none';
   document.getElementById('reportsView').style.display = 'none';
@@ -2368,6 +3247,9 @@ function switchTab(tab) {
   } else if (tab === 'purchasing-dashboard') {
     document.getElementById('purchasingDashboardView').style.display = '';
     loadPurchasingDashboard();
+  } else if (tab === 'expense') {
+    document.getElementById('expenseView').style.display = '';
+    loadExpenses();
   } else if (tab === 'my-pipeline') {
     document.getElementById('myPipelineView').style.display = '';
     loadMyPipeline();

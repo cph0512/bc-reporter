@@ -15,6 +15,7 @@ const authRoutes = require('./routes/auth');
 const botAuthRoutes = require('./routes/botAuth');
 const adminRoutes = require('./routes/admin');
 const pipelineRoutes = require('./routes/pipeline');
+const expenseRoutes = require('./routes/expenses');
 const strategyRoutes = require('./routes/strategy');
 const twStockRoutes = require('./routes/twStock');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
@@ -24,6 +25,7 @@ const { loginLimiter, apiLimiter, aiLimiter } = require('./middleware/rateLimite
 const { auditLog, auditMiddleware } = require('./middleware/auditLog');
 const companyStore = require('./services/companyStore');
 const pipelineStore = require('./services/pipelineStore');
+const expenseStore = require('./services/expenseStore');
 const contactStore = require('./services/contactStore');
 const contactRoutes = require('./routes/contacts');
 
@@ -124,6 +126,7 @@ app.get('/api/sync/export', (req, res) => {
   res.json({
     users: safeUsers,
     pipeline: pipelineStore.getRawData(),
+    expenses: expenseStore.getRawData(),
     contacts: contactStore.getRawData(),
   });
 });
@@ -291,6 +294,7 @@ app.get('/api/companies', requireAuth, (req, res) => {
 });
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/api/pipeline', requireAuth, pipelineRoutes);
+app.use('/api/expenses', requireAuth, expenseRoutes);
 app.use('/api/strategy', requireAuth, strategyRoutes);
 app.use('/api/tw-stock', requireAuth, twStockRoutes);
 app.use('/api/contacts', requireAuth, aiLimiter, contactRoutes);

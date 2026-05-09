@@ -57,7 +57,7 @@ const userStore = {
     return safe;
   },
 
-  async create({ username, password, role = 'user', displayName = '', companies = [], dashboards = [], managedSalespeople = [], canExport, isSales, strategyRole }) {
+  async create({ username, password, role = 'user', displayName = '', department = '', companies = [], dashboards = [], managedSalespeople = [], canExport, isSales, strategyRole }) {
     const users = readUsers();
     if (users.find(u => u.username === username)) {
       throw new Error('Username already exists');
@@ -71,6 +71,7 @@ const userStore = {
       passwordHash,
       role,
       displayName: displayName || username,
+      department: String(department || '').trim(),
       companies,
       dashboards,
       managedSalespeople,
@@ -97,6 +98,7 @@ const userStore = {
       users[idx].username = fields.username;
     }
     if (fields.displayName !== undefined) users[idx].displayName = fields.displayName;
+    if (fields.department !== undefined) users[idx].department = String(fields.department || '').trim();
     if (fields.role) users[idx].role = fields.role;
     if (fields.companies !== undefined) users[idx].companies = fields.companies;
     if (fields.dashboards !== undefined) users[idx].dashboards = fields.dashboards;

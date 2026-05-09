@@ -22,7 +22,7 @@
   .btn-danger:hover { background: #b71c1c; }
   .btn-edit { background: #e3f2fd; color: #1565c0; }
   .btn-edit:hover { background: #bbdefb; }
-  .content { padding: 24px; max-width: 900px; margin: 0 auto; }
+  .content { padding: 24px; max-width: 1180px; margin: 0 auto; }
   .card { background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; }
   .card-header { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
   .card-header h2 { font-size: 15px; font-weight: 600; }
@@ -38,6 +38,10 @@
   .managed-tags { display: flex; flex-wrap: wrap; gap: 4px; }
   .managed-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #e3f2fd; color: #1565c0; }
   .actions { display: flex; gap: 6px; }
+  .status-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .status-active { background: #e8f5e9; color: #2e7d32; }
+  .status-inactive { background: #f2f4f7; color: #667085; }
+  .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
   /* Modal */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
@@ -81,6 +85,30 @@
 <div class="content">
   <div class="card">
     <div class="card-header">
+      <h2>部門管理</h2>
+      <div class="toolbar">
+        <select id="deptCompanyFilter" onchange="loadDepartmentItems()" style="padding:5px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;"></select>
+        <button class="btn btn-primary btn-sm" onclick="openDeptCreate()">+ 新增部門</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <table>
+        <thead>
+          <tr>
+            <th>公司</th>
+            <th>部門名稱</th>
+            <th>狀態</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="departmentTable"></tbody>
+      </table>
+      <div class="empty-msg" id="deptEmptyMsg" style="display:none;">尚無部門資料</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
       <h2>使用者列表</h2>
       <button class="btn btn-primary btn-sm" onclick="openCreate()">+ 新增帳號</button>
     </div>
@@ -90,6 +118,7 @@
           <tr>
             <th>帳號</th>
             <th>顯示名稱</th>
+            <th>部門</th>
             <th>角色</th>
             <th>管理業務</th>
             <th>公司權限</th>
@@ -106,6 +135,33 @@
   </div>
 </div>
 
+<!-- Department Modal -->
+<div class="modal-overlay" id="deptModal">
+  <div class="modal">
+    <h3 id="deptModalTitle">新增部門</h3>
+    <div class="error-msg" id="deptModalError"></div>
+    <input type="hidden" id="deptOriginalCompanyId">
+    <input type="hidden" id="deptOriginalName">
+    <div class="form-group">
+      <label>公司</label>
+      <select id="deptCompany"></select>
+    </div>
+    <div class="form-group">
+      <label>部門名稱</label>
+      <input type="text" id="deptName" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="deptActive" style="width:auto;"> 啟用
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" style="background:#eee;color:#333;" onclick="closeDeptModal()">取消</button>
+      <button class="btn btn-sm btn-primary" onclick="saveDepartment()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Create / Edit Modal -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
@@ -118,6 +174,10 @@
     <div class="form-group">
       <label>顯示名稱</label>
       <input type="text" id="mDisplayName">
+    </div>
+    <div class="form-group">
+      <label>所屬部門</label>
+      <select id="mDepartment"></select>
     </div>
     <div class="form-group">
       <label>角色</label>
@@ -141,6 +201,7 @@
         <label><input type="checkbox" value="financial">財務儀表板 Financial</label>
         <label><input type="checkbox" value="sales">銷售儀表板 Sales</label>
         <label><input type="checkbox" value="purchasing">採購儀表板 Purchasing</label>
+        <label><input type="checkbox" value="expense">費用簽收 Expense Claims</label>
         <label><input type="checkbox" value="pipeline">業務管線 Pipeline</label>
         <label><input type="checkbox" value="twstock">台股財報 TW Stocks</label>
         <label><input type="checkbox" value="reports">報表 Reports</label>
@@ -186,6 +247,8 @@
 let currentUser = null;
 let editingId = null;
 let allCompanies = [];
+let allDepartments = [];
+let departmentItems = [];
 let usersData = [];
 
 // Auth check + load companies
@@ -200,10 +263,143 @@ let usersData = [];
 
     const cRes = await fetch('/api/companies');
     if (cRes.ok) allCompanies = await cRes.json();
+    renderDepartmentCompanyControls();
+    await loadDepartments();
+    await loadDepartmentItems();
 
     loadUsers();
   } catch { window.location.href = '/login'; }
 })();
+
+async function loadDepartments() {
+  try {
+    const res = await fetch('/api/admin/departments');
+    if (!res.ok) throw new Error('departments failed');
+    allDepartments = await res.json();
+  } catch {
+    allDepartments = ['業務部', '財務部', '管理部', '營運部', '物流部', '客服部', '採購部', '資訊部'];
+  }
+}
+
+function companyName(companyId) {
+  const company = allCompanies.find(c => c.id === companyId);
+  return company ? company.name : companyId;
+}
+
+function renderDepartmentCompanyControls() {
+  const filter = document.getElementById('deptCompanyFilter');
+  const modalSelect = document.getElementById('deptCompany');
+  const options = allCompanies.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+  if (filter) filter.innerHTML = `<option value="">全部公司</option>${options}`;
+  if (modalSelect) modalSelect.innerHTML = options;
+}
+
+async function loadDepartmentItems() {
+  const companyId = document.getElementById('deptCompanyFilter')?.value || '';
+  const url = companyId ? `/api/admin/departments/items?companyId=${encodeURIComponent(companyId)}` : '/api/admin/departments/items';
+  const res = await fetch(url);
+  if (res.status === 401) { window.location.href = '/login'; return; }
+  departmentItems = await res.json();
+  renderDepartmentTable();
+}
+
+function renderDepartmentTable() {
+  const tbody = document.getElementById('departmentTable');
+  const empty = document.getElementById('deptEmptyMsg');
+  if (!departmentItems.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = departmentItems.map(d => `
+    <tr>
+      <td>${esc(companyName(d.companyId))}</td>
+      <td><strong>${esc(d.name)}</strong></td>
+      <td><span class="status-pill ${d.active ? 'status-active' : 'status-inactive'}">${d.active ? '啟用' : '停用'}</span></td>
+      <td class="actions">
+        <button class="btn btn-sm btn-edit" onclick='openDeptEdit(${JSON.stringify(d.companyId)},${JSON.stringify(d.name)},${JSON.stringify(d.active)})'>編輯</button>
+        <button class="btn btn-sm btn-danger" onclick='deleteDepartment(${JSON.stringify(d.companyId)},${JSON.stringify(d.name)})'>刪除</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openDeptCreate() {
+  document.getElementById('deptModalTitle').textContent = '新增部門';
+  document.getElementById('deptModalError').style.display = 'none';
+  document.getElementById('deptOriginalCompanyId').value = '';
+  document.getElementById('deptOriginalName').value = '';
+  document.getElementById('deptCompany').disabled = false;
+  document.getElementById('deptCompany').value = document.getElementById('deptCompanyFilter')?.value || allCompanies[0]?.id || '';
+  document.getElementById('deptName').value = '';
+  document.getElementById('deptActive').checked = true;
+  document.getElementById('deptModal').classList.add('show');
+}
+
+function openDeptEdit(companyId, name, active) {
+  document.getElementById('deptModalTitle').textContent = '編輯部門';
+  document.getElementById('deptModalError').style.display = 'none';
+  document.getElementById('deptOriginalCompanyId').value = companyId;
+  document.getElementById('deptOriginalName').value = name;
+  document.getElementById('deptCompany').disabled = true;
+  document.getElementById('deptCompany').value = companyId;
+  document.getElementById('deptName').value = name;
+  document.getElementById('deptActive').checked = !!active;
+  document.getElementById('deptModal').classList.add('show');
+}
+
+function closeDeptModal() {
+  document.getElementById('deptModal').classList.remove('show');
+}
+
+async function refreshDepartmentsAfterChange() {
+  await loadDepartments();
+  await loadDepartmentItems();
+  await loadUsers();
+}
+
+async function saveDepartment() {
+  const errEl = document.getElementById('deptModalError');
+  errEl.style.display = 'none';
+  const originalCompanyId = document.getElementById('deptOriginalCompanyId').value;
+  const originalName = document.getElementById('deptOriginalName').value;
+  const companyId = document.getElementById('deptCompany').value;
+  const name = document.getElementById('deptName').value.trim();
+  const active = document.getElementById('deptActive').checked;
+  if (!companyId || !name) {
+    errEl.textContent = '請選擇公司並填寫部門名稱';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/admin/departments', {
+      method: originalName ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(originalName ? { companyId: originalCompanyId, originalName, name, active } : { companyId, name }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '儲存部門失敗');
+    closeDeptModal();
+    await refreshDepartmentsAfterChange();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function deleteDepartment(companyId, name) {
+  if (!confirm(`確定刪除「${companyName(companyId)} / ${name}」？\\n若仍有使用者屬於此部門，系統會阻擋刪除。`)) return;
+  try {
+    const res = await fetch(`/api/admin/departments?companyId=${encodeURIComponent(companyId)}&name=${encodeURIComponent(name)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '刪除部門失敗');
+    await refreshDepartmentsAfterChange();
+  } catch (err) {
+    alert(err.message);
+  }
+}
 
 async function loadUsers() {
   const res = await fetch('/api/admin/users');
@@ -215,7 +411,7 @@ async function loadUsers() {
   if (!usersData.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  const dashLabels = { financial: '財務', sales: '銷售', purchasing: '採購', pipeline: '業務管線', twstock: '台股財報' };
+  const dashLabels = { financial: '財務', sales: '銷售', purchasing: '採購', expense: '費用簽收', pipeline: '業務管線', twstock: '台股財報', reports: '報表', ledger: '查帳', strategy: '策略戰情室' };
   tbody.innerHTML = usersData.map(u => {
     const comps = u.companies && u.companies.length
       ? u.companies.map(cid => { const c = allCompanies.find(x => x.id === cid); return c ? esc(c.name) : esc(cid); }).join(', ')
@@ -226,6 +422,7 @@ async function loadUsers() {
     return `<tr>
       <td><strong>${esc(u.username)}</strong></td>
       <td>${esc(u.displayName)}</td>
+      <td>${u.department ? esc(u.department) : '<span style="color:#ccc;">—</span>'}</td>
       <td><span class="role-badge role-${u.role}">${u.role === 'admin' ? '管理員' : u.role === 'manager' ? '主管' : '使用者'}</span></td>
       <td style="font-size:12px;"><div class="managed-tags">${(u.managedSalespeople||[]).map(s=>'<span class="managed-tag">'+esc(s)+'</span>').join('')||'<span style="color:#ccc;">—</span>'}</div></td>
       <td style="font-size:12px;">${comps}</td>
@@ -233,7 +430,7 @@ async function loadUsers() {
       <td style="text-align:center;">${u.role === 'admin' || u.canExport ? '<span style="color:#2e7d32;font-size:13px;">✓</span>' : '<span style="color:#ccc;font-size:13px;">—</span>'}</td>
       <td>${new Date(u.createdAt).toLocaleDateString('zh-TW')}</td>
       <td class="actions">
-        <button class="btn btn-sm btn-edit" onclick='openEdit(${JSON.stringify(u.id)},${JSON.stringify(u.username)},${JSON.stringify(u.displayName)},${JSON.stringify(u.role)},${JSON.stringify(u.companies||[])},${JSON.stringify(u.dashboards||[])},${JSON.stringify(u.managedSalespeople||[])},${JSON.stringify(!!u.canExport)},${JSON.stringify(!!u.isSales)},${JSON.stringify(u.strategyRole||"viewer")})'>編輯</button>
+        <button class="btn btn-sm btn-edit" onclick='openEdit(${JSON.stringify(u.id)},${JSON.stringify(u.username)},${JSON.stringify(u.displayName)},${JSON.stringify(u.department||"")},${JSON.stringify(u.role)},${JSON.stringify(u.companies||[])},${JSON.stringify(u.dashboards||[])},${JSON.stringify(u.managedSalespeople||[])},${JSON.stringify(!!u.canExport)},${JSON.stringify(!!u.isSales)},${JSON.stringify(u.strategyRole||"viewer")})'>編輯</button>
         ${u.id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}','${esc(u.username)}')">刪除</button>` : ''}
       </td>
     </tr>`;
@@ -241,6 +438,16 @@ async function loadUsers() {
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function renderDepartmentOptions(selected = '') {
+  const select = document.getElementById('mDepartment');
+  const names = [...new Set([...(allDepartments || []), selected].map(v => String(v || '').trim()).filter(Boolean))];
+  select.innerHTML = [
+    '<option value="">未指定</option>',
+    ...names.map(name => `<option value="${esc(name)}">${esc(name)}</option>`),
+  ].join('');
+  select.value = selected || '';
+}
 
 function renderCompanyCheckboxes(selected = []) {
   const container = document.getElementById('mCompanies');
@@ -291,6 +498,7 @@ function openCreate() {
   document.getElementById('mUsername').value = '';
   document.getElementById('mUsername').disabled = false;
   document.getElementById('mDisplayName').value = '';
+  renderDepartmentOptions('');
   document.getElementById('mRole').value = 'user';
   document.getElementById('mPassword').value = '';
   document.getElementById('pwLabel').textContent = '密碼';
@@ -305,12 +513,13 @@ function openCreate() {
   document.getElementById('modal').classList.add('show');
 }
 
-function openEdit(id, username, displayName, role, companies, dashboards, managedSalespeople, canExport, isSales, strategyRole) {
+function openEdit(id, username, displayName, department, role, companies, dashboards, managedSalespeople, canExport, isSales, strategyRole) {
   editingId = id;
   document.getElementById('modalTitle').textContent = '編輯帳號';
   document.getElementById('mUsername').value = username;
   document.getElementById('mUsername').disabled = true;
   document.getElementById('mDisplayName').value = displayName;
+  renderDepartmentOptions(department || '');
   document.getElementById('mRole').value = role;
   document.getElementById('mPassword').value = '';
   document.getElementById('pwLabel').textContent = '新密碼（留空不更改）';
@@ -335,6 +544,7 @@ async function saveUser() {
 
   const username = document.getElementById('mUsername').value.trim();
   const displayName = document.getElementById('mDisplayName').value.trim();
+  const department = document.getElementById('mDepartment').value;
   const role = document.getElementById('mRole').value;
   const password = document.getElementById('mPassword').value;
 
@@ -352,7 +562,7 @@ async function saveUser() {
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, role, displayName: displayName || username, companies, dashboards, managedSalespeople, canExport, isSales, strategyRole }),
+        body: JSON.stringify({ username, password, role, displayName: displayName || username, department, companies, dashboards, managedSalespeople, canExport, isSales, strategyRole }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -361,7 +571,7 @@ async function saveUser() {
     } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
   } else {
     // Update
-    const body = { displayName, role, companies, dashboards, managedSalespeople, canExport, isSales, strategyRole };
+    const body = { displayName, department, role, companies, dashboards, managedSalespeople, canExport, isSales, strategyRole };
     if (password) body.password = password;
     try {
       const res = await fetch(`/api/admin/users/${editingId}`, {
