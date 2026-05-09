@@ -194,7 +194,7 @@
   .ct-batch-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
   .ct-batch-item input[type="checkbox"] { width: 18px; height: 18px; }
 
-  /* ===== Expense Claims Module ===== */
+  /* ===== Expense Reimbursement Module ===== */
   .exp-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
   .exp-summary-card { background: #fff; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
   .exp-summary-card .label { font-size: 11px; color: #777; margin-bottom: 5px; }
@@ -441,7 +441,7 @@
   <div id="adminPlContactsSubView" style="display:none;padding:12px 24px;"></div>
 </div>
 
-<!-- Expense Claims -->
+<!-- Expense Reimbursement -->
 <div id="expenseView" style="display:none">
   <div class="dash-filters">
     <div>
@@ -476,7 +476,7 @@
     <div class="exp-summary-grid" id="expenseSummary"></div>
     <div class="card">
       <div class="card-header" style="justify-content:space-between;gap:10px;flex-wrap:wrap;">
-        <h2>費用簽收單</h2>
+        <h2>費用報帳</h2>
         <span style="font-size:12px;color:#777;">送出後由主管簽核，再交由財務處理</span>
       </div>
       <div class="card-body" style="overflow-x:auto;">
@@ -1141,7 +1141,7 @@
 <div id="expenseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:320;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:12px;padding:24px;max-width:980px;width:95%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.22);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h3 id="expenseModalTitle" style="margin:0;font-size:17px;">新增費用簽收單</h3>
+      <h3 id="expenseModalTitle" style="margin:0;font-size:17px;">新增費用報帳</h3>
       <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeExpenseModal()">✕</span>
     </div>
     <div id="expenseModalError" style="display:none;color:#c62828;font-size:12px;margin-bottom:10px;"></div>
@@ -1240,7 +1240,7 @@
   <div style="background:#fff;border-radius:12px;padding:24px;max-width:920px;width:95%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.22);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div>
-        <h3 id="expenseDetailTitle" style="margin:0;font-size:17px;">費用簽收單</h3>
+        <h3 id="expenseDetailTitle" style="margin:0;font-size:17px;">費用報帳</h3>
         <div id="expenseDetailSub" style="font-size:12px;color:#777;margin-top:3px;"></div>
       </div>
       <span style="cursor:pointer;font-size:20px;color:#999;" onclick="closeExpenseDetail()">✕</span>
@@ -1327,7 +1327,7 @@ function renderTabs() {
     { id: 'dashboard', label: l.dFinancialTab, perm: 'financial' },
     { id: 'sales-dashboard', label: l.dSalesTab, perm: 'sales' },
     { id: 'purchasing-dashboard', label: l.dPurchasingTab, perm: 'purchasing' },
-    { id: 'expense', label: l.dExpenseTab || '費用簽收', perm: 'expense' },
+    { id: 'expense', label: l.dExpenseTab || '費用報帳', perm: 'expense' },
     { id: 'my-pipeline', label: l.dMyPipelineTab, perm: 'pipeline', userOnly: true },
     { id: 'pipeline-dashboard', label: l.dPipelineTab, perm: 'pipeline', adminOnly: true },
     { id: 'tw-stock', label: l.dTwStockTab, perm: 'twstock' },
@@ -1545,7 +1545,7 @@ const LABELS = {
 
     // Dashboard tabs
     dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dReports: '報表', dLedgerTab: '查帳', dStrategyTab: '策略戰情室',
-    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dExpenseTab: '費用簽收', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dTwStockTab: '台股財報', dReports: '報表', dLedgerTab: '查帳',
+    dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dExpenseTab: '費用報帳', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dTwStockTab: '台股財報', dReports: '報表', dLedgerTab: '查帳',
     // Ledger labels
     ledgerType: '查詢類型', ledgerGL: '總帳分錄', ledgerTB: '試算表', ledgerJournal: '日記帳',
     ledgerAccounts: '科目篩選（可多選）', ledgerClearAll: '清除全部', ledgerFetch: '查詢',
@@ -1733,7 +1733,7 @@ const LABELS = {
 
     // Dashboard tabs
     dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dReports: 'Reports', dLedgerTab: 'Ledger', dStrategyTab: 'Strategy War Room',
-    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dExpenseTab: 'Expense Claims', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dTwStockTab: 'TW Stocks', dReports: 'Reports', dLedgerTab: 'Ledger',
+    dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dExpenseTab: 'Expense Reimbursement', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dTwStockTab: 'TW Stocks', dReports: 'Reports', dLedgerTab: 'Ledger',
     // Ledger labels
     ledgerType: 'Query Type', ledgerGL: 'GL Entries', ledgerTB: 'Trial Balance', ledgerJournal: 'Journals',
     ledgerAccounts: 'Account Filter (multi-select)', ledgerClearAll: 'Clear All', ledgerFetch: 'Query',
@@ -2075,7 +2075,7 @@ function summaryBadge(ch, key, compLabel) {
 }
 
 // ==========================================
-//  Expense Claims
+//  Expense Reimbursement
 // ==========================================
 let expenseClaimsCache = [];
 let expensePendingFiles = [];
@@ -2240,7 +2240,7 @@ function renderExpensePaymentFields(payment = {}) {
 
 function openExpenseModal(id = null) {
   const claim = id ? expenseClaimsCache.find(c => c.id === id) : null;
-  document.getElementById('expenseModalTitle').textContent = claim ? `編輯費用單 ${claim.id}` : '新增費用簽收單';
+  document.getElementById('expenseModalTitle').textContent = claim ? `編輯費用單 ${claim.id}` : '新增費用報帳';
   document.getElementById('expenseModalError').style.display = 'none';
   document.getElementById('expenseId').value = claim?.id || '';
   setExpenseDepartmentOptions(claim?.department || userDepartment || '');

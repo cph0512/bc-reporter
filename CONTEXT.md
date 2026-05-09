@@ -5,11 +5,11 @@ AI 接續協定: 收到 `resume` → 讀此檔 → 摘要 Current State + Next s
 ---
 
 ## 🎯 Current State
-- **Status**: in-progress (本機已完成費用簽收單 + Qwen 附件 OCR/手機拍照 + 三角色本機模擬 + 部門 CRUD/使用者部門指派; 待部署)
+- **Status**: deployed (正式站已改用「費用報帳」標頭)
 - **Branch**: `main`
-- **Last session**: feature — department CRUD in admin
-- **Working on**: reports.velopulse.io 新增費用簽收單，支援附件、OCR 帶入草稿、手機拍照、業務送出、主管簽核、財務核准/付款
-- **Next step**: 部署到 GCP VM，並在帳號管理替需要的人開 `expense` 儀表板權限
+- **Last session**: rename — expense module label to 費用報帳
+- **Working on**: reports.velopulse.io 新增費用報帳，支援附件、OCR 帶入草稿、手機拍照、業務送出、主管簽核、財務核准/付款
+- **Next step**: 在正式站替實際使用者開 `expense` 儀表板權限，並設定部門/主管管理名單
 - **Blockers**: 無
 
 ## 🗂 Project Overview
@@ -31,7 +31,7 @@ AI 接續協定: 收到 `resume` → 讀此檔 → 摘要 Current State + Next s
 - **Cookie 認證** admin/admin123 (cookie 存 `/Users/cph/bots/Cphteleline_bot/velopulse_cookie.txt`, 過期自動重登)
 - **多公司隔離** — pinchen / bbtruck / shine / thexin (companyId 參數)
 - **權限系統獨立** — financial / sales / purchasing / pipeline / reports 各自控制
-- **費用簽收單** — 以 `config/expenses.json` / DATA_DIR JSON store 保存；附件先沿用 data URL 模式，每張單最多 12 個附件、單檔 8MB
+- **費用報帳** — 以 `config/expenses.json` / DATA_DIR JSON store 保存；附件先沿用 data URL 模式，每張單最多 12 個附件、單檔 8MB
 - **部門主檔** — 以 `config/departments.json` / DATA_DIR JSON store 保存；admin 可新增/編輯/刪除/停用部門，使用者可指派 `department`，費用單申請部門預設帶入登入者部門並改走公司別下拉選單
 - **附件辨識** — `src/services/expenseScanner.js` 預設走 Qwen/OpenAI-compatible vision API (`EXPENSE_SCAN_*` 或沿用 `LINE_DIRECT_API_*`)；Gemini 只在 `EXPENSE_SCAN_PROVIDER=gemini` 時使用。Web 先支援圖片 OCR，辨識結果只帶入草稿，需人工核對後再送出
 - **Cell-level Excel 匯入** (commit 5490f06) — 取代整檔覆蓋
@@ -39,14 +39,13 @@ AI 接續協定: 收到 `resume` → 讀此檔 → 摘要 Current State + Next s
 - **部署**: GCP VM `/home/cph/deploy/bc-reporter` (docker compose), NOT Cloud Run
 
 ## 🚧 Pending / TODO
-- [ ] 部署費用簽收單功能到 GCP VM / reports.velopulse.io
 - [ ] 到帳號管理開通使用者 `expense` 權限；主管帳號需設定 `managedSalespeople`
 - [ ] 確認 production 有 `EXPENSE_SCAN_API_URL` / `EXPENSE_SCAN_API_KEY` / `EXPENSE_SCAN_MODEL`（可沿用 SALESPA01 bot 的 `LINE_DIRECT_API_*`），讓附件 OCR 可正式使用
 - [ ] 第二階段再接 SALESPA01 bot：收到照片 → OCR → 建立費用草稿 → 回覆審核連結
 - [ ] 若要正式會計紙本格式，可再加 Excel/PDF 匯出，對齊「品辰科技 - 請款單 v20251202.xlsx」
 
 ## 🐛 Known Issues
-- **限制**: 費用簽收附件目前存 JSON data URL，適合收據/發票等小檔；若日後大量 PDF/照片，建議改成本機/物件儲存
+- **限制**: 費用報帳附件目前存 JSON data URL，適合收據/發票等小檔；若日後大量 PDF/照片，建議改成本機/物件儲存
 - **近期修復**: Excel label parsing 用 col A (item name) 不用 col B (unit) — commit 7691ac6
 - **近期修復**: strategy module merge conflict (twStockView nested in hidden modal) — commit 995b3e2
 - **Security 已修**: admin export 剝離 passwordHash — commit b1c9a9f
@@ -76,6 +75,12 @@ AI 接續協定: 收到 `resume` → 讀此檔 → 摘要 Current State + Next s
 - `thexin` — 泰欣通運
 
 ## 📜 Session Log
+### 2026-05-09 11:12 (m4pro, codex)
+- 依使用者要求把模組功能標頭/顯示名稱改為「費用報帳」
+- 改了 `public/index.html`, `public/admin.html`, `src/services/expenseScanner.js`, `CONTEXT.md`
+- 驗證：搜尋確認費用模組不再使用舊中英文標頭；Node syntax、HTML script compile 通過
+- 下次從: 正式站快速檢查「費用報帳」顯示，然後開通實際使用者權限
+
 ### 2026-05-09 10:27 (m4pro, codex)
 - 帳號管理新增「部門管理」卡片：可依公司查看部門、新增、編輯名稱/啟用狀態、刪除
 - 改了 `src/services/departmentStore.js`, `src/routes/admin.js`, `public/admin.html`, `CONTEXT.md`
@@ -103,10 +108,3 @@ AI 接續協定: 收到 `resume` → 讀此檔 → 摘要 Current State + Next s
 - 種了本機 `/tmp/bc-exp-test-20260508` demo users: `sales.expense`, `manager.expense`, `finance.expense`，密碼 `demo123`；demo claims: `draft`, `submitted`, `manager_approved`
 - 驗證：login/index HTML script compile、登入頁可看到快捷鈕、三個角色 API 視角正確
 - 下次從: 使用瀏覽器逐角色檢查操作體驗，或部署到 GCP 前移除/避免 demo login 顯示於正式網域
-
-### 2026-05-09 09:37 (m4pro, codex)
-- 排查使用者回報「辨識很慢 / Failed to fetch / 送出簽核後去哪裡」
-- 改了 `public/index.html`: OCR 前端先壓縮手機照片再送 Qwen、顯示 AI 耗時、Failed to fetch 改成可讀錯誤、費用明細刪除鍵移到左側 sticky 操作欄
-- 改了 `src/services/expenseScanner.js`: 回傳 provider/model/durationMs，失敗也帶 durationMs
-- 驗證：HTML script compile、Node syntax、localhost API smoke test 建立→送出簽核 status=submitted；測試單已刪除
-- 下次從: 使用實際收據驗證 OCR 品質，或部署到 GCP 並設定正式 `EXPENSE_SCAN_*`

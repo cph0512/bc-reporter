@@ -31,7 +31,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-const EXPENSE_SCAN_PROMPT = `你是台灣公司費用報帳的發票/收據辨識助手。請分析圖片中的發票、收據、請款單或消費憑證，擷取可用於費用簽收單的資料。
+const EXPENSE_SCAN_PROMPT = `你是台灣公司費用報帳的發票/收據辨識助手。請分析圖片中的發票、收據、請款單或消費憑證，擷取可用於費用報帳單的資料。
 
 請只回傳 JSON，不要加 markdown code block。格式如下：
 {

@@ -201,7 +201,7 @@
         <label><input type="checkbox" value="financial">財務儀表板 Financial</label>
         <label><input type="checkbox" value="sales">銷售儀表板 Sales</label>
         <label><input type="checkbox" value="purchasing">採購儀表板 Purchasing</label>
-        <label><input type="checkbox" value="expense">費用簽收 Expense Claims</label>
+        <label><input type="checkbox" value="expense">費用報帳 Expense Reimbursement</label>
         <label><input type="checkbox" value="pipeline">業務管線 Pipeline</label>
         <label><input type="checkbox" value="twstock">台股財報 TW Stocks</label>
         <label><input type="checkbox" value="reports">報表 Reports</label>
@@ -411,7 +411,7 @@ async function loadUsers() {
   if (!usersData.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  const dashLabels = { financial: '財務', sales: '銷售', purchasing: '採購', expense: '費用簽收', pipeline: '業務管線', twstock: '台股財報', reports: '報表', ledger: '查帳', strategy: '策略戰情室' };
+  const dashLabels = { financial: '財務', sales: '銷售', purchasing: '採購', expense: '費用報帳', pipeline: '業務管線', twstock: '台股財報', reports: '報表', ledger: '查帳', strategy: '策略戰情室' };
   tbody.innerHTML = usersData.map(u => {
     const comps = u.companies && u.companies.length
       ? u.companies.map(cid => { const c = allCompanies.find(x => x.id === cid); return c ? esc(c.name) : esc(cid); }).join(', ')
