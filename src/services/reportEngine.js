@@ -50,23 +50,50 @@ class ReportEngine {
    * @returns {{ startDate: string, endDate: string }}
    */
   getComparisonRange(startDate, endDate, compareType) {
-    const s = new Date(startDate + 'T00:00:00');
-    const e = new Date(endDate + 'T00:00:00');
-
     let shift;
     if (compareType === 'yoy') shift = 12;
     else if (compareType === 'qoq') shift = 3;
     else shift = 1; // mom
 
-    const ps = new Date(s);
-    ps.setMonth(ps.getMonth() - shift);
-    const pe = new Date(e);
-    pe.setMonth(pe.getMonth() - shift);
-
     return {
-      startDate: this.fmtDate(ps),
-      endDate: this.fmtDate(pe),
+      startDate: this.shiftDateByMonths(startDate, -shift),
+      endDate: this.shiftDateByMonths(endDate, -shift),
     };
+  }
+
+  shiftDateByMonths(dateStr, monthDelta) {
+    const { year, month, day } = this.parseDateParts(dateStr);
+    const sourceLastDay = this.daysInMonth(year, month);
+    const shifted = this.shiftYearMonth(year, month, monthDelta);
+    const targetLastDay = this.daysInMonth(shifted.year, shifted.month);
+    const targetDay = day === sourceLastDay ? targetLastDay : Math.min(day, targetLastDay);
+    return this.fmtDateParts(shifted.year, shifted.month, targetDay);
+  }
+
+  parseDateParts(dateStr) {
+    const match = String(dateStr || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) throw new Error(`Invalid date: ${dateStr}`);
+    return {
+      year: Number(match[1]),
+      month: Number(match[2]),
+      day: Number(match[3]),
+    };
+  }
+
+  shiftYearMonth(year, month, monthDelta) {
+    const zeroBased = (year * 12) + (month - 1) + monthDelta;
+    return {
+      year: Math.floor(zeroBased / 12),
+      month: (zeroBased % 12) + 1,
+    };
+  }
+
+  daysInMonth(year, month) {
+    return new Date(year, month, 0).getDate();
+  }
+
+  fmtDateParts(year, month, day) {
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
 
   fmtDate(d) {
