@@ -220,9 +220,13 @@ class BCClient {
    */
   async getCustomers(options = {}) {
     try {
-      return await this.requestAll(this.companyUrl('customers', options.companyId), {
-        $select: 'id,number,displayName,balance',
+      const customers = await this.requestAll(this.companyUrl('customers', options.companyId), {
+        $select: 'id,number,displayName,balanceDue',
       });
+      return (customers || []).map(c => ({
+        ...c,
+        balance: c.balance ?? c.balanceDue ?? 0,
+      }));
     } catch (error) {
       if (error.response?.status === 404) {
         console.log('[BCClient] customers API not available');
