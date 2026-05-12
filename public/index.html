@@ -5467,6 +5467,7 @@ async function deleteCategoryConfirm(id) {
 let ledgerAccountsCache = [];
 let ledgerSelectedAccounts = new Map(); // number → displayName
 let ledgerInitialized = false;
+let ledgerAutoAccountType = '';
 
 function initLedgerView() {
   const l = L();
@@ -5515,6 +5516,8 @@ async function loadLedgerAccounts() {
     if (res.ok) {
       const json = await res.json();
       ledgerAccountsCache = (json.data || json).sort((a, b) => (a.number || '').localeCompare(b.number || ''));
+      applyLedgerPresetAccounts(document.getElementById('ledgerQueryType').value);
+      renderLedgerSelectedChips();
       renderLedgerAccountList();
     }
   } catch (e) {
@@ -5524,11 +5527,37 @@ async function loadLedgerAccounts() {
 
 function onLedgerTypeChange() {
   const type = document.getElementById('ledgerQueryType').value;
-  const usesDateRange = ['gl-entries', 'trial-balance', 'item-ledger-entries'].includes(type);
+  const usesDateRange = !['journals', 'customer-payment-journals', 'vendor-payment-journals'].includes(type);
+  const usesAccountFilter = ['gl-entries', 'customers', 'vendors'].includes(type);
   document.getElementById('ledgerStartDateWrap').style.display = usesDateRange ? '' : 'none';
   document.getElementById('ledgerEndDateWrap').style.display = usesDateRange ? '' : 'none';
-  // Show account filter only for GL entries.
-  document.getElementById('ledgerAccountFilter').style.display = type === 'gl-entries' ? '' : 'none';
+  document.getElementById('ledgerAccountFilter').style.display = usesAccountFilter ? '' : 'none';
+
+  if (type === 'customers' || type === 'vendors') {
+    applyLedgerPresetAccounts(type);
+  }
+  renderLedgerSelectedChips();
+  renderLedgerAccountList();
+}
+
+function getLedgerPresetAccounts(type) {
+  if (!ledgerAccountsCache.length) return [];
+  if (type === 'customers') {
+    return ledgerAccountsCache.filter(a => a.accountType === 'Posting' && /應收帳款/.test(a.displayName || ''));
+  }
+  if (type === 'vendors') {
+    return ledgerAccountsCache.filter(a => a.accountType === 'Posting' && /應付帳款/.test(a.displayName || ''));
+  }
+  return [];
+}
+
+function applyLedgerPresetAccounts(type) {
+  if (type !== 'customers' && type !== 'vendors') return;
+  if (!ledgerAccountsCache.length) return;
+  if (ledgerAutoAccountType === type && ledgerSelectedAccounts.size > 0) return;
+  ledgerSelectedAccounts.clear();
+  getLedgerPresetAccounts(type).forEach(a => ledgerSelectedAccounts.set(a.number, a.displayName || ''));
+  ledgerAutoAccountType = type;
 }
 
 function filterLedgerAccounts() {
@@ -5579,6 +5608,7 @@ function renderLedgerAccountList() {
 }
 
 function toggleLedgerAccount(number, name) {
+  ledgerAutoAccountType = '';
   if (ledgerSelectedAccounts.has(number)) {
     ledgerSelectedAccounts.delete(number);
   } else {
@@ -5603,12 +5633,14 @@ function renderLedgerSelectedChips() {
 }
 
 function removeLedgerAccount(number) {
+  ledgerAutoAccountType = '';
   ledgerSelectedAccounts.delete(number);
   renderLedgerSelectedChips();
   renderLedgerAccountList();
 }
 
 function clearLedgerAccounts() {
+  ledgerAutoAccountType = '';
   ledgerSelectedAccounts.clear();
   renderLedgerSelectedChips();
   renderLedgerAccountList();
@@ -5627,10 +5659,15 @@ async function fetchLedger() {
   summaryEl.textContent = '';
 
   try {
-    if (type === 'gl-entries') {
+    if (type === 'gl-entries' || type === 'customers' || type === 'vendors') {
       if (!startDate || !endDate) {
         resultsEl.innerHTML = '<div class="loading" style="color:#c62828;">請選擇開始和結束日期</div>';
         return;
+      }
+      if ((type === 'customers' || type === 'vendors') && ledgerSelectedAccounts.size === 0) {
+        applyLedgerPresetAccounts(type);
+        renderLedgerSelectedChips();
+        renderLedgerAccountList();
       }
       let url = `/api/ledger/gl-entries?companyId=${companyId}&startDate=${startDate}&endDate=${endDate}`;
       if (ledgerSelectedAccounts.size > 0) {
@@ -5640,7 +5677,9 @@ async function fetchLedger() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       renderGLEntries(json.data || [], l);
-      summaryEl.textContent = `${startDate} ~ ${endDate} | ${(json.data || []).length} ${l.ledgerCount}`;
+      const label = type === 'customers' ? l.ledgerCustomers : type === 'vendors' ? l.ledgerVendors : l.ledgerGL;
+      const accountHint = ledgerSelectedAccounts.size > 0 ? ` | ${Array.from(ledgerSelectedAccounts.keys()).join(', ')}` : '';
+      summaryEl.textContent = `${label} | ${startDate} ~ ${endDate} | ${(json.data || []).length} ${l.ledgerCount}${accountHint}`;
 
     } else if (type === 'trial-balance') {
       const dateFilter = startDate && endDate ? `${startDate}..${endDate}` : undefined;
@@ -5651,22 +5690,6 @@ async function fetchLedger() {
       if (!res.ok) throw new Error(json.error);
       renderTrialBalance(json.data || [], l);
       summaryEl.textContent = dateFilter ? `${startDate} ~ ${endDate}` : '';
-
-    } else if (type === 'customers') {
-      const res = await fetch(`/api/ledger/customers?companyId=${companyId}`);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error);
-      const rows = json.data || [];
-      renderPartyBalances(rows, 'customer', l);
-      summaryEl.textContent = `${rows.length} ${l.ledgerCount} | ${l.ledgerBalance}: ${fmtLedgerAmount(sumLedgerBalance(rows))}`;
-
-    } else if (type === 'vendors') {
-      const res = await fetch(`/api/ledger/vendors?companyId=${companyId}`);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error);
-      const rows = json.data || [];
-      renderPartyBalances(rows, 'vendor', l);
-      summaryEl.textContent = `${rows.length} ${l.ledgerCount} | ${l.ledgerBalance}: ${fmtLedgerAmount(sumLedgerBalance(rows))}`;
 
     } else if (type === 'journals') {
       const res = await fetch(`/api/ledger/journals?companyId=${companyId}`);
