@@ -792,14 +792,19 @@
       <select id="ledgerQueryType" onchange="onLedgerTypeChange()">
         <option value="gl-entries" id="ledgerOptGL">總帳分錄</option>
         <option value="trial-balance" id="ledgerOptTB">試算表</option>
+        <option value="customers" id="ledgerOptCustomers">應收帳款</option>
+        <option value="vendors" id="ledgerOptVendors">應付帳款</option>
         <option value="journals" id="ledgerOptJournal">日記帳</option>
+        <option value="customer-payment-journals" id="ledgerOptCustomerPayments">客戶付款日記帳</option>
+        <option value="vendor-payment-journals" id="ledgerOptVendorPayments">供應商付款日記帳</option>
+        <option value="item-ledger-entries" id="ledgerOptItemLedger">品項分類帳</option>
       </select>
     </div>
-    <div>
+    <div id="ledgerStartDateWrap">
       <label class="i18n-start-date"></label>
       <input type="date" id="ledgerStartDate">
     </div>
-    <div>
+    <div id="ledgerEndDateWrap">
       <label class="i18n-end-date"></label>
       <input type="date" id="ledgerEndDate">
     </div>
@@ -1547,7 +1552,8 @@ const LABELS = {
     dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dReports: '報表', dLedgerTab: '查帳', dStrategyTab: '策略戰情室',
     dFinancialTab: '財務儀表板', dSalesTab: '銷售儀表板', dPurchasingTab: '採購儀表板', dExpenseTab: '費用報帳', dMyPipelineTab: '我的商機', dPipelineTab: '業務管線', dTwStockTab: '台股財報', dReports: '報表', dLedgerTab: '查帳',
     // Ledger labels
-    ledgerType: '查詢類型', ledgerGL: '總帳分錄', ledgerTB: '試算表', ledgerJournal: '日記帳',
+    ledgerType: '查詢類型', ledgerGL: '總帳分錄', ledgerTB: '試算表', ledgerCustomers: '應收帳款', ledgerVendors: '應付帳款', ledgerJournal: '日記帳',
+    ledgerCustomerPayments: '客戶付款日記帳', ledgerVendorPayments: '供應商付款日記帳', ledgerItemLedger: '品項分類帳',
     ledgerAccounts: '科目篩選（可多選）', ledgerClearAll: '清除全部', ledgerFetch: '查詢',
     ledgerDate: '過帳日期', ledgerDocNo: '傳票號碼', ledgerAcctNo: '科目編號', ledgerAcctName: '科目名稱',
     ledgerDesc: '說明', ledgerDebit: '借方', ledgerCredit: '貸方', ledgerAmount: '金額',
@@ -1555,7 +1561,9 @@ const LABELS = {
     ledgerCode: '代碼', ledgerDisplayName: '名稱', ledgerLastModified: '最後修改',
     ledgerClickExpand: '點擊查看明細', ledgerNoData: '無資料', ledgerLoading: '載入中...',
     ledgerCount: '筆', ledgerSearchAcct: '搜尋科目編號或名稱...', ledgerSelectHint: '選擇查詢條件後點擊「查詢」',
-    ledgerLineNo: '行號', ledgerExtDocNo: '外部單據號',
+    ledgerLineNo: '行號', ledgerExtDocNo: '外部單據號', ledgerCustomerNo: '客戶編號', ledgerCustomerName: '客戶名稱',
+    ledgerVendorNo: '供應商編號', ledgerVendorName: '供應商名稱', ledgerEntryNo: '項目編號', ledgerItemNo: '品項編號', ledgerEntryType: '類型',
+    ledgerSourceNo: '來源編號', ledgerDocType: '單據類型', ledgerQuantity: '數量', ledgerSalesAmount: '銷售金額', ledgerCostAmount: '成本金額',
     // Financial Dashboard
     dRevenue: '營業收入', dNetProfit: '稅後淨利', dNetProfitMargin: '淨利率',
     dTotalAssets: '總資產', dDSO: '應收帳款天數 (DSO)', dDIO: '存貨週轉天數 (DIO)', dDPO: '應付帳款天數 (DPO)',
@@ -1735,7 +1743,8 @@ const LABELS = {
     dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dReports: 'Reports', dLedgerTab: 'Ledger', dStrategyTab: 'Strategy War Room',
     dFinancialTab: 'Financial', dSalesTab: 'Sales', dPurchasingTab: 'Purchasing', dExpenseTab: 'Expense Reimbursement', dMyPipelineTab: 'My Pipeline', dPipelineTab: 'Pipeline', dTwStockTab: 'TW Stocks', dReports: 'Reports', dLedgerTab: 'Ledger',
     // Ledger labels
-    ledgerType: 'Query Type', ledgerGL: 'GL Entries', ledgerTB: 'Trial Balance', ledgerJournal: 'Journals',
+    ledgerType: 'Query Type', ledgerGL: 'GL Entries', ledgerTB: 'Trial Balance', ledgerCustomers: 'Accounts Receivable', ledgerVendors: 'Accounts Payable', ledgerJournal: 'Journals',
+    ledgerCustomerPayments: 'Customer Payment Journals', ledgerVendorPayments: 'Vendor Payment Journals', ledgerItemLedger: 'Item Ledger Entries',
     ledgerAccounts: 'Account Filter (multi-select)', ledgerClearAll: 'Clear All', ledgerFetch: 'Query',
     ledgerDate: 'Posting Date', ledgerDocNo: 'Document No.', ledgerAcctNo: 'Account No.', ledgerAcctName: 'Account Name',
     ledgerDesc: 'Description', ledgerDebit: 'Debit', ledgerCredit: 'Credit', ledgerAmount: 'Amount',
@@ -1743,7 +1752,9 @@ const LABELS = {
     ledgerCode: 'Code', ledgerDisplayName: 'Name', ledgerLastModified: 'Last Modified',
     ledgerClickExpand: 'Click to view details', ledgerNoData: 'No data', ledgerLoading: 'Loading...',
     ledgerCount: 'entries', ledgerSearchAcct: 'Search account no. or name...', ledgerSelectHint: 'Select query conditions and click "Query"',
-    ledgerLineNo: 'Line No.', ledgerExtDocNo: 'Ext. Document No.',
+    ledgerLineNo: 'Line No.', ledgerExtDocNo: 'Ext. Document No.', ledgerCustomerNo: 'Customer No.', ledgerCustomerName: 'Customer Name',
+    ledgerVendorNo: 'Vendor No.', ledgerVendorName: 'Vendor Name', ledgerEntryNo: 'Entry No.', ledgerItemNo: 'Item No.', ledgerEntryType: 'Type',
+    ledgerSourceNo: 'Source No.', ledgerDocType: 'Document Type', ledgerQuantity: 'Quantity', ledgerSalesAmount: 'Sales Amount', ledgerCostAmount: 'Cost Amount',
     // Financial Dashboard
     dRevenue: 'Revenue', dNetProfit: 'Net Profit', dNetProfitMargin: 'Net Profit Margin',
     dTotalAssets: 'Total Assets', dDSO: 'Days Sales Outstanding (DSO)', dDIO: 'Days Inventory Outstanding (DIO)', dDPO: 'Days Payable Outstanding (DPO)',
@@ -5464,7 +5475,12 @@ function initLedgerView() {
   document.getElementById('ledgerLabelType').textContent = l.ledgerType;
   document.getElementById('ledgerOptGL').textContent = l.ledgerGL;
   document.getElementById('ledgerOptTB').textContent = l.ledgerTB;
+  document.getElementById('ledgerOptCustomers').textContent = l.ledgerCustomers;
+  document.getElementById('ledgerOptVendors').textContent = l.ledgerVendors;
   document.getElementById('ledgerOptJournal').textContent = l.ledgerJournal;
+  document.getElementById('ledgerOptCustomerPayments').textContent = l.ledgerCustomerPayments;
+  document.getElementById('ledgerOptVendorPayments').textContent = l.ledgerVendorPayments;
+  document.getElementById('ledgerOptItemLedger').textContent = l.ledgerItemLedger;
   document.getElementById('ledgerFetchBtn').textContent = l.ledgerFetch;
   document.getElementById('ledgerLabelAccounts').textContent = l.ledgerAccounts;
   document.getElementById('ledgerBtnClearAccounts').textContent = l.ledgerClearAll;
@@ -5508,7 +5524,10 @@ async function loadLedgerAccounts() {
 
 function onLedgerTypeChange() {
   const type = document.getElementById('ledgerQueryType').value;
-  // Show account filter only for GL entries
+  const usesDateRange = ['gl-entries', 'trial-balance', 'item-ledger-entries'].includes(type);
+  document.getElementById('ledgerStartDateWrap').style.display = usesDateRange ? '' : 'none';
+  document.getElementById('ledgerEndDateWrap').style.display = usesDateRange ? '' : 'none';
+  // Show account filter only for GL entries.
   document.getElementById('ledgerAccountFilter').style.display = type === 'gl-entries' ? '' : 'none';
 }
 
@@ -5633,11 +5652,55 @@ async function fetchLedger() {
       renderTrialBalance(json.data || [], l);
       summaryEl.textContent = dateFilter ? `${startDate} ~ ${endDate}` : '';
 
+    } else if (type === 'customers') {
+      const res = await fetch(`/api/ledger/customers?companyId=${companyId}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      const rows = json.data || [];
+      renderPartyBalances(rows, 'customer', l);
+      summaryEl.textContent = `${rows.length} ${l.ledgerCount} | ${l.ledgerBalance}: ${fmtLedgerAmount(sumLedgerBalance(rows))}`;
+
+    } else if (type === 'vendors') {
+      const res = await fetch(`/api/ledger/vendors?companyId=${companyId}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      const rows = json.data || [];
+      renderPartyBalances(rows, 'vendor', l);
+      summaryEl.textContent = `${rows.length} ${l.ledgerCount} | ${l.ledgerBalance}: ${fmtLedgerAmount(sumLedgerBalance(rows))}`;
+
     } else if (type === 'journals') {
       const res = await fetch(`/api/ledger/journals?companyId=${companyId}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       renderJournals(json.data || [], l, companyId);
+
+    } else if (type === 'customer-payment-journals') {
+      const res = await fetch(`/api/ledger/customer-payment-journals?companyId=${companyId}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      const rows = json.data || [];
+      renderLedgerMasterList(rows, l);
+      summaryEl.textContent = `${rows.length} ${l.ledgerCount}`;
+
+    } else if (type === 'vendor-payment-journals') {
+      const res = await fetch(`/api/ledger/vendor-payment-journals?companyId=${companyId}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      const rows = json.data || [];
+      renderLedgerMasterList(rows, l);
+      summaryEl.textContent = `${rows.length} ${l.ledgerCount}`;
+
+    } else if (type === 'item-ledger-entries') {
+      if (!startDate || !endDate) {
+        resultsEl.innerHTML = '<div class="loading" style="color:#c62828;">請選擇開始和結束日期</div>';
+        return;
+      }
+      const res = await fetch(`/api/ledger/item-ledger-entries?companyId=${companyId}&startDate=${startDate}&endDate=${endDate}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      const rows = json.data || [];
+      renderItemLedgerEntries(rows, l);
+      summaryEl.textContent = `${startDate} ~ ${endDate} | ${rows.length} ${l.ledgerCount}`;
     }
     // Show export bar only for types that support Excel export (not journals) and only if user can export
     const ledgerExportBar = document.getElementById('ledgerExportBar');
@@ -5771,6 +5834,134 @@ function renderTrialBalance(data, l) {
       </tr>
     </tfoot>
   </table>`;
+  container.innerHTML = html;
+}
+
+function fmtLedgerAmount(v) {
+  const num = Number(v || 0);
+  return num.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function sumLedgerBalance(rows) {
+  return (rows || []).reduce((sum, row) => sum + Number(row.balance || 0), 0);
+}
+
+function renderPartyBalances(rows, kind, l) {
+  const container = document.getElementById('ledgerResults');
+  if (!rows || rows.length === 0) {
+    container.innerHTML = `<div class="loading" style="color:#999;">${l.ledgerNoData}</div>`;
+    return;
+  }
+
+  const sorted = [...rows].sort((a, b) => Math.abs(Number(b.balance || 0)) - Math.abs(Number(a.balance || 0)));
+  const numberLabel = kind === 'vendor' ? l.ledgerVendorNo : l.ledgerCustomerNo;
+  const nameLabel = kind === 'vendor' ? l.ledgerVendorName : l.ledgerCustomerName;
+  const total = sumLedgerBalance(sorted);
+
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:auto;">
+    <thead>
+      <tr style="background:#1a1a2e;color:#fff;">
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${numberLabel}</th>
+        <th style="padding:6px 8px;text-align:left;">${nameLabel}</th>
+        <th style="padding:6px 8px;text-align:right;white-space:nowrap;">${l.ledgerBalance}</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  sorted.forEach((row, i) => {
+    const balance = Number(row.balance || 0);
+    const bg = i % 2 === 0 ? '' : 'background:#fafafa;';
+    html += `<tr style="${bg}">
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;font-weight:500;white-space:nowrap;">${escHtml(row.number || '')}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;">${escHtml(row.displayName || '')}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;color:${balance >= 0 ? '#1565c0' : '#c62828'};white-space:nowrap;">${fmtLedgerAmount(balance)}</td>
+    </tr>`;
+  });
+
+  html += `<tr style="background:#e8eaf6;font-weight:700;">
+      <td colspan="2" style="padding:7px 8px;text-align:right;">${getLang() === 'en' ? 'Total' : '合計'}</td>
+      <td style="padding:7px 8px;text-align:right;color:${total >= 0 ? '#1565c0' : '#c62828'};">${fmtLedgerAmount(total)}</td>
+    </tr>
+    </tbody></table>`;
+  container.innerHTML = html;
+}
+
+function renderLedgerMasterList(rows, l) {
+  const container = document.getElementById('ledgerResults');
+  if (!rows || rows.length === 0) {
+    container.innerHTML = `<div class="loading" style="color:#999;">${l.ledgerNoData}</div>`;
+    return;
+  }
+
+  let html = `<div style="overflow-x:auto;">
+  <table class="report-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="background:#1a1a2e;color:#fff;">
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerCode}</th>
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerDisplayName}</th>
+        <th style="padding:8px 6px;text-align:left;">${getLang() === 'en' ? 'Balancing Account' : '平衡科目'}</th>
+        <th style="padding:8px 6px;text-align:left;">${l.ledgerLastModified}</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  rows.forEach((row, i) => {
+    const bg = i % 2 === 0 ? '' : 'background:#fafafa;';
+    const modified = row.lastModifiedDateTime ? new Date(row.lastModifiedDateTime).toLocaleString('zh-TW') : '';
+    html += `<tr style="${bg}">
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;font-weight:500;">${escHtml(row.code || '')}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${escHtml(row.displayName || '')}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;">${escHtml(row.balancingAccountNumber || '')}</td>
+      <td style="padding:5px 6px;border-bottom:1px solid #eee;color:#888;">${escHtml(modified)}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+function renderItemLedgerEntries(entries, l) {
+  const container = document.getElementById('ledgerResults');
+  if (!entries || entries.length === 0) {
+    container.innerHTML = `<div class="loading" style="color:#999;">${l.ledgerNoData}</div>`;
+    return;
+  }
+
+  let html = `<div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:auto;">
+    <thead>
+      <tr style="background:#1a1a2e;color:#fff;">
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerEntryNo}</th>
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerDate}</th>
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerItemNo || 'Item No.'}</th>
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerEntryType}</th>
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerDocNo}</th>
+        <th style="padding:6px 8px;text-align:left;white-space:nowrap;">${l.ledgerSourceNo}</th>
+        <th style="padding:6px 8px;text-align:left;">${l.ledgerDesc}</th>
+        <th style="padding:6px 8px;text-align:right;white-space:nowrap;">${l.ledgerQuantity}</th>
+        <th style="padding:6px 8px;text-align:right;white-space:nowrap;">${l.ledgerSalesAmount}</th>
+        <th style="padding:6px 8px;text-align:right;white-space:nowrap;">${l.ledgerCostAmount}</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  entries.forEach((row, i) => {
+    const bg = i % 2 === 0 ? '' : 'background:#fafafa;';
+    html += `<tr style="${bg}">
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;white-space:nowrap;">${escHtml(row.entryNumber || '')}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;white-space:nowrap;">${escHtml(row.postingDate || '')}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;white-space:nowrap;">${escHtml(row.itemNumber || '')}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;white-space:nowrap;">${escHtml(row.entryType || '')}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;white-space:nowrap;">${escHtml(row.documentNumber || '')}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;white-space:nowrap;">${escHtml(row.sourceNumber || '')}</td>
+      <td class="ledger-desc" style="padding:4px 8px;border-bottom:1px solid #eee;color:#666;">${escHtml(row.description || '')}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;">${fmtLedgerAmount(row.quantity || 0)}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;">${fmtLedgerAmount(row.salesAmountActual || 0)}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;">${fmtLedgerAmount(row.costAmountActual || 0)}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
   container.innerHTML = html;
 }
 

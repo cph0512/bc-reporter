@@ -704,6 +704,28 @@ module.exports = function(reportEngine) {
     }
   });
 
+  router.get('/ledger/customers', requireDashboard('ledger'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      const data = await reportEngine.bc.getCustomers(co);
+      res.json({ data: data || [] });
+    } catch (error) {
+      console.error('[API] Customers ledger error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.get('/ledger/vendors', requireDashboard('ledger'), async (req, res) => {
+    try {
+      const co = companyOpts(req);
+      const data = await reportEngine.bc.getVendors(co);
+      res.json({ data: data || [] });
+    } catch (error) {
+      console.error('[API] Vendors ledger error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   router.get('/ledger/customer-payment-journals', requireDashboard('ledger'), async (req, res) => {
     try {
       const co = companyOpts(req);
